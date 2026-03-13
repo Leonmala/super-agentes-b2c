@@ -555,12 +555,33 @@ MENSAGEM DO ALUNO PARA ${persona}:
 RESPONDA AGORA COMO ${persona}:`
 }
 
+function extrairTextoDoJSON(json: Record<string, unknown>): string | null {
+  // Campos conhecidos em ordem de prioridade
+  const campos = [
+    'resposta_para_aluno',
+    'reply_text',
+    'mensagem_ao_aluno',
+    'mensagem',
+    'texto',
+    'resumo_text',
+    'resposta',
+    'response',
+    'message',
+  ]
+  for (const campo of campos) {
+    if (typeof json[campo] === 'string' && json[campo]) {
+      return json[campo] as string
+    }
+  }
+  return null
+}
+
 function extrairJSONouTexto(raw: string, persona: string): { texto: string, json?: any } {
   const markdownMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
   if (markdownMatch) {
     try {
       const json = JSON.parse(markdownMatch[1].trim())
-      const texto = json.resposta_para_aluno || json.reply_text || JSON.stringify(json)
+      const texto = extrairTextoDoJSON(json) || JSON.stringify(json)
       return { texto, json }
     } catch {
       return { texto: markdownMatch[1].trim() }
@@ -569,7 +590,7 @@ function extrairJSONouTexto(raw: string, persona: string): { texto: string, json
 
   try {
     const json = JSON.parse(raw.trim())
-    const texto = json.resposta_para_aluno || json.reply_text || raw.trim()
+    const texto = extrairTextoDoJSON(json) || raw.trim()
     return { texto, json }
   } catch {
     return { texto: raw.trim() }
