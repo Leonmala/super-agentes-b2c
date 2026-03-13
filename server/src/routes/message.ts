@@ -417,11 +417,19 @@ router.post('/message', async (req: Request, res: Response) => {
       })
       .then(() => {
         console.log(`[${aluno_id}] Uso incrementado`)
-        // Incrementar turno completo (herói respondeu com sucesso)
-        return incrementarTurnoCompleto(aluno_id)
+        // Incrementar turno completo APENAS em troca de matéria
+        // Um "turno" = sessão pedagógica com uma matéria, não uma mensagem
+        const houveTrocaDeMateria = temaDetectado
+          && sessao.tema_atual
+          && temaDetectado !== sessao.tema_atual
+        if (houveTrocaDeMateria) {
+          console.log(`[${aluno_id}] Troca de matéria: ${sessao.tema_atual} → ${temaDetectado}. Incrementando turno completo.`)
+          return incrementarTurnoCompleto(aluno_id)
+        }
+        return Promise.resolve()
       })
       .then(() => {
-        console.log(`[${aluno_id}] Turno completo incrementado`)
+        console.log(`[${aluno_id}] Pós-persistência OK`)
       })
       .catch(erro => {
         console.error(`[${aluno_id}] Erro na persistência/uso:`, erro)
