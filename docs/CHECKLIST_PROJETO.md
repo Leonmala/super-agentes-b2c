@@ -1,7 +1,7 @@
 # CHECKLIST DO PROJETO — Super Agentes V1.0
 
 > **Regra:** A cada task concluída, marcar [x]. A cada fase concluída com Gate passando, marcar o Gate.
-> **Última atualização:** 2026-03-13 00:30
+> **Última atualização:** 2026-03-13 (deploy + visual polish)
 
 ---
 
@@ -67,8 +67,11 @@
 - [x] **3.3** Chat com SSE streaming (3 interfaces: fundamental, médio, pai)
 - [x] **3.4** Menu lateral overlay (Super Agentes / Supervisor / Professor IA / seletor filho)
 - [x] **3.5** Imagens institucionais integradas (Logo_SuperAgentesPenseAI + buble)
+- [x] **3.6** Deploy Railway funcionando (Vite 8→6, variáveis de ambiente)
+- [x] **3.7** Visual polish: cores por perfil, cards brancos, logo retangular, fix Professor IA
 - [x] **3.T** Scripts de teste Gate 3 (6 smoke tests)
 - [x] **GATE 3** — Todos os testes passando ✅ (6/6 — 2026-03-12)
+- [x] **DEPLOY** — App rodando em produção no Railway ✅ (2026-03-13)
 
 ### Arquivos Fase 3
 

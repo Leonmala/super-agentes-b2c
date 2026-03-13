@@ -7,7 +7,7 @@
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** 3 — Frontend (COMPLETA ✅)
+**Fase:** Deploy + Visual Polish (COMPLETA ✅) → Próximo: Fase 4
 **Próximo passo:** Fase 2.5 Workshop PROFESSOR_IA (com Leon) → Fase 4 Infra
 **Bloqueios:** Nenhum
 
@@ -19,9 +19,11 @@
 | Fase 2: Agentes | 100% ✅ | PASSED (13/13) 2026-03-12 |
 | Fase 2.5: Workshop PROFESSOR_IA | 0% | Adiada — sessão colaborativa com Leon |
 | Fase 3: Frontend | 100% ✅ | PASSED (6/6) 2026-03-12 |
+| Deploy Railway | 100% ✅ | App rodando em produção 2026-03-13 |
+| Visual Polish | 100% ✅ | Leon aprovou interface 2026-03-13 |
 | Fase 4: Infra | 0% | - |
 | Fase 5: SaaS | 0% | - |
-| Fase 6: Deploy | 0% | - |
+| Fase 6: Deploy Final | 0% | - |
 
 ---
 
@@ -47,10 +49,17 @@
 | 16 | 4 variantes de imagem por herói | _buble (avatar circular), -card (corpo inteiro), -logo (nome+matéria), -limpo (só nome) | 2026-03-12 |
 | 17 | Seletor perfil = modal overlay | Não é página inteira. Leon confirmou no brainstorm. | 2026-03-12 |
 | 18 | 3 interfaces: fundamental, médio, pai | TODAS têm menu slide. Fundamental incluído (Leon confirmou). | 2026-03-12 |
-| 19 | Frontend Vite 8 + React 18 | Stack leve, mobile-first, Tailwind CSS | 2026-03-12 |
+| 19 | Frontend Vite 6 + React 18 | Stack leve, mobile-first, Tailwind CSS. Vite downgraded de 8→6 para Railway. | 2026-03-12 |
 | 20 | Logos institucionais adicionados por Leon | Logo_SuperAgentesPenseAI.png (retangular) + SuperAgentesPenseAi_buble.png (circular amarelo) | 2026-03-12 |
 | 21 | ALLOWED_ELEMENTS no markdown | Sanitização de segurança — react-markdown só renderiza tags seguras | 2026-03-12 |
 | 22 | selectedFilhoId no AuthContext | Pai precisa rastrear qual filho está ativo para enviar mensagens corretas | 2026-03-12 |
+| 23 | Downgrade Vite 8→6.3.5 para Railway | Railway usa Docker com Node 22.11, Vite 8 precisa 22.12+ e rolldown (nativo C). Vite 6 usa esbuild (JS puro). | 2026-03-13 |
+| 24 | Escape Hatch Claude Code CLI | Quando Cowork VM não pode executar (git push, permissões), montar prompt para Leon rodar no Claude Code CLI | 2026-03-13 |
+| 25 | Sistema de cores por perfil | Pai=azul (#2563EB), Filhos=paleta vibrante por índice (FILHO_COLORS). Cor propagada via AuthContext (filhoIndex + cor). | 2026-03-13 |
+| 26 | Cards brancos no SlideMenu | Itens de menu em bg-white/90 rounded-xl sobre fundo colorido — alivia peso visual | 2026-03-13 |
+| 27 | Professor IA só para médio + pai | Bug fix: antes era always:true. Fundamental não tem acesso ao Professor IA. | 2026-03-13 |
+| 28 | Logo retangular no header (h-16) | logo-buble.png substituído por logo.png no header e menu. h-8→h-16 para legibilidade. | 2026-03-13 |
+| 29 | Balão agente com cor do herói | ChatBubble: fundo `${corHeroi}15` (15% opacidade), borda `${corHeroi}40`. Balão user usa cor do perfil. | 2026-03-13 |
 
 ---
 
@@ -122,7 +131,7 @@ web/
 
 ### Dependências Principais (Frontend)
 
-React 18, react-router-dom, react-markdown, lucide-react, Tailwind CSS, Vite 8
+React 18, react-router-dom, react-markdown, lucide-react, Tailwind CSS, Vite 6.3.5 (downgraded de 8 para Railway)
 
 ### Banco de Dados (Supabase)
 
@@ -162,6 +171,13 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 | 2026-03-13 ~00:28 | Task 13 (Gate 3 tests) | 6/6 smoke tests passando (Vitest) |
 | 2026-03-13 ~00:30 | Imagens institucionais integradas | Leon adicionou logos, substituíram placeholders "SA" |
 | 2026-03-13 ~00:30 | Task 14 (Ralph Loop docs) | CHECKLIST + MEMORIA_CURTA + MEMORIA_LONGA atualizados |
+| 2026-03-13 ~sessão2 | Deploy Railway — Round 1 falhou | Node 22.11 < 22.12 (Vite 8) + rolldown binding missing |
+| 2026-03-13 ~sessão2 | Fix: Vite 8→6.3.5 | Removeu rolldown, funciona com Node 18+ |
+| 2026-03-13 ~sessão2 | Deploy Railway — Round 2 | Build OK, mas env vars ausentes |
+| 2026-03-13 ~sessão2 | Variáveis configuradas no Railway | App rodando em produção ✅ |
+| 2026-03-13 ~sessão2 | Visual polish — Round 1 | Cores por perfil, cards brancos, logo retangular, fix Professor IA |
+| 2026-03-13 ~sessão2 | Visual polish — Round 2 | ProfileModal cores casando + logo header dobrado (h-16) |
+| 2026-03-13 ~sessão2 | Interface aprovada pelo Leon | "está incrível...perfeito" → seguir para próxima fase |
 
 ---
 
