@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Agentes — Mockup V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; display: flex; justify-content: center; gap: 32px; padding: 24px; flex-wrap: wrap; }
+
+  h1.title { width: 100%; text-align: center; font-size: 22px; color: #1a1a1a; margin-bottom: 4px; }
+  p.desc { width: 100%; text-align: center; font-size: 14px; color: #888; margin-bottom: 24px; }
+
+  /* Phone frame */
+  .phone { width: 375px; height: 760px; background: #fff; border-radius: 40px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06); display: flex; flex-direction: column; position: relative; }
+  .status-bar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 12px; font-weight: 600; color: #1a1a1a; background: #fff; }
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+  .status-bar .icons { display: flex; gap: 4px; font-size: 11px; color: #666; }
+
+  .label { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 600; color: #fff; padding: 4px 14px; border-radius: 8px; white-space: nowrap; }
+
+  /* Header */
+  .header { display: flex; align-items: center; padding: 8px 16px 12px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+  .header .hamburger { font-size: 22px; color: #666; cursor: pointer; padding: 4px 8px 4px 0; display: none; }
+  .header .hamburger.show { display: block; }
+  .header .logo-area { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .header .agent-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .header .agent-info { display: flex; flex-direction: column; }
+  .header .agent-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .header .agent-subject { font-size: 12px; color: #888; }
+  .header .header-icon { width: 32px; height: 32px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #666; }
+
+  /* Chat area */
+  .chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; background: #fff; }
+
+  /* Empty state */
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px 24px; }
+  .empty-logo { width: 64px; height: 64px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; font-weight: 800; }
+  .empty-title { font-size: 20px; font-weight: 700; color: #1a1a1a; text-align: center; }
+  .empty-subtitle { font-size: 14px; color: #999; text-align: center; line-height: 1.5; max-width: 260px; }
+
+  /* Messages */
+  .msg-group { display: flex; flex-direction: column; gap: 4px; }
+  .msg-group.agent { align-items: flex-start; }
+  .msg-group.user { align-items: flex-end; }
+  .msg-row { display: flex; gap: 8px; align-items: flex-end; max-width: 85%; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .bubble { padding: 10px 14px; font-size: 14px; line-height: 1.55; }
+  .bubble.agent { background: #f5f5f5; color: #1a1a1a; border-radius: 2px 18px 18px 18px; }
+  .bubble.user { background: #1a1a1a; color: #fff; border-radius: 18px 18px 2px 18px; }
+  .cursor { display: inline-block; width: 2px; height: 14px; background: #1a1a1a; animation: blink 1s infinite; vertical-align: middle; margin-left: 1px; }
+  @keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+
+  /* Input bar */
+  .input-bar { padding: 8px 12px 28px; background: #fff; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .input-plus { width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #666; flex-shrink: 0; cursor: pointer; }
+  .input-field { flex: 1; background: #f5f5f5; border-radius: 20px; padding: 10px 16px; font-size: 14px; color: #999; border: 1px solid #e8e8e8; }
+  .input-send { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+  .input-send svg { width: 16px; height: 16px; fill: white; }
+
+  /* Sidebar overlay */
+  .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 10; display: none; }
+  .overlay.show { display: block; }
+  .sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 280px; background: #fafafa; z-index: 11; padding: 60px 16px 24px; display: flex; flex-direction: column; gap: 4px; transform: translateX(-100%); transition: transform 0.25s ease; }
+  .sidebar.show { transform: translateX(0); }
+  .sidebar-title { font-size: 11px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px 4px; }
+  .sidebar-item { padding: 12px; border-radius: 10px; font-size: 14px; color: #444; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .sidebar-item:hover { background: #f0f0f0; }
+  .sidebar-item.active { background: #ebebeb; font-weight: 600; color: #1a1a1a; }
+  .sidebar-item .si-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .sidebar-divider { border-top: 1px solid #e8e8e8; margin: 12px 0; }
+  .child-pill { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; }
+  .child-pill .cav { width: 28px; height: 28px; background: #2563EB; border-radius: 50%; color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .child-pill .cinfo { display: flex; flex-direction: column; }
+  .child-pill .cname { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+  .child-pill .cserie { font-size: 11px; color: #999; }
+
+  /* FAB */
+  .fab { position: absolute; bottom: 90px; right: 16px; background: #1a1a1a; color: white; padding: 10px 18px; border-radius: 24px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 6px; z-index: 5; }
+
+  /* Section titles */
+  .section-label { width: 100%; text-align: center; font-size: 13px; font-weight: 600; color: #666; margin-top: 16px; padding: 8px 16px; background: #fff; border-radius: 8px; border: 1px dashed #ddd; }
+</style>
+</head>
+<body>
+
+<h1 class="title">Super Agentes — Design V2 (Estilo ChatGPT)</h1>
+<p class="desc">Light mode · Sidebar overlay · Header din\u00e2mico com avatar do agente · Input estilo ChatGPT</p>
+
+<!-- ============ TELA 1: EMPTY STATE (Fundamental) ============ -->
+<div style="position:relative;margin-top:32px;">
+  <div class="label" style="background:#2563EB;">FUNDAMENTAL — Empty State</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">21:13</span>
+      <span class="icons">5G &nbsp; 18</span>
+    </div>
+    <div class="header">
+      <div class="logo-area">
+        <div class="agent-avatar" style="background:linear-gradient(135deg,#2563EB,#7C3AED);">SA</div>
+        <div class="agent-info">
+          <span class="agent-name">Super Agentes</span>
+          <span class="agent-subject">Pense-AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="chat">
+      <div class="empty-state">
+        <div class="empty-logo">SA</div>
+        <div class="empty-title">Ol\u00e1, Jo\u00e3o! \ud83d\udc4b</div>
+        <div class="empty-subtitle">No que posso te ajudar hoje? Pode me perguntar sobre qualquer mat\u00e9ria!</div>
+      </div>
+    </div>
+    <div class="input-bar">
+      <div class="input-plus">+</div>
+      <div class="input-field">Mensagem</div>
+      <div class="input-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA 2: CHAT ATIVO (Fundamental) ============ -->
+<div style="position:relative;margin-top:32px;">
+  <div class="label" style="background:#f97316;">FUNDAMENTAL — Chat Ativo (CALCULUS)</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">21:15</span>
+      <span class="icons">5G &nbsp; 17</span>
+    </div>
+    <div class="header">
+      <div class="logo-area">
+        <div class="agent-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">
+          <span style="font-size:18px;">🔥</span>
+        </div>
+        <div class="agent-info">
+          <span class="agent-name">CALCULUS</span>
+          <span class="agent-subject">Matem\u00e1tica</span>
+        </div>
+      </div>
+      <div class="header-icon">\u22ef</div>
+    </div>
+    <div class="chat">
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bubble agent">Oi! Fra\u00e7\u00f5es podem ser divertidas! Imagina que voc\u00ea tem uma pizza cortada em peda\u00e7os iguais... 🍕 Quantos peda\u00e7os voc\u00ea acha que d\u00e1 pra cortar?</div>
+        </div>
+      </div>
+      <div class="msg-group user">
+        <div class="msg-row" style="justify-content:flex-end;">
+          <div class="bubble user">acho que 8?</div>
+        </div>
+      </div>
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bubble agent">Isso! 8 fatias! Agora, se voc\u00ea comer 3 fatias, que fra\u00e7\u00e3o da pizza voc\u00ea comeu?</div>
+        </div>
+      </div>
+      <div class="msg-group user">
+        <div class="msg-row" style="justify-content:flex-end;">
+          <div class="bubble user">3/8?</div>
+        </div>
+      </div>
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bubble agent">Perfeito! 3/8 \u2014 tr\u00eas oitavos! Voc\u00ea j\u00e1 entendeu o conceito b\u00e1sico de fra\u00e7\u00f5es. O n\u00famero de cima (3) \u00e9 o numerador \u2014 quantos peda\u00e7os voc\u00ea pegou. O de baixo (8) \u00e9 o denominador \u2014 em quantas partes o todo foi dividido.<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="input-bar">
+      <div class="input-plus">+</div>
+      <div class="input-field">Mensagem</div>
+      <div class="input-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA 3: ENSINO MÉDIO (com FAB) ============ -->
+<div style="position:relative;margin-top:32px;">
+  <div class="label" style="background:#7C3AED;">ENSINO M\u00c9DIO — Chat + FAB Professor de IA</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">21:20</span>
+      <span class="icons">5G &nbsp; 15</span>
+    </div>
+    <div class="header">
+      <div class="logo-area">
+        <div class="agent-avatar" style="background:linear-gradient(135deg,#06b6d4,#2563EB);">
+          <span style="font-size:18px;">⚡</span>
+        </div>
+        <div class="agent-info">
+          <span class="agent-name">VECTOR</span>
+          <span class="agent-subject">F\u00edsica</span>
+        </div>
+      </div>
+      <div class="header-icon">\u22ef</div>
+    </div>
+    <div class="chat">
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#06b6d4,#2563EB);">V</div>
+          <div class="bubble agent">Cinem\u00e1tica! Se um carro sai do repouso e atinge 100 km/h em 10 segundos, qual a acelera\u00e7\u00e3o m\u00e9dia?</div>
+        </div>
+      </div>
+      <div class="msg-group user">
+        <div class="msg-row" style="justify-content:flex-end;">
+          <div class="bubble user">preciso converter pra m/s n\u00e9?</div>
+        </div>
+      </div>
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#06b6d4,#2563EB);">V</div>
+          <div class="bubble agent">Exatamente! Esse \u00e9 o primeiro passo. 100 km/h em m/s: divida por 3.6. Quanto d\u00e1?<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="fab">🤖 Professor de IA</div>
+    <div class="input-bar">
+      <div class="input-plus">+</div>
+      <div class="input-field">Mensagem</div>
+      <div class="input-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA 4: PAI (com sidebar overlay) ============ -->
+<div style="position:relative;margin-top:32px;">
+  <div class="label" style="background:#059669;">PAI — Sidebar Overlay + MODO PAI</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">21:25</span>
+      <span class="icons">5G &nbsp; 12</span>
+    </div>
+    <div class="header">
+      <div class="hamburger show">\u2630</div>
+      <div class="logo-area">
+        <div class="agent-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">
+          <span style="font-size:18px;">🔥</span>
+        </div>
+        <div class="agent-info">
+          <span class="agent-name">CALCULUS</span>
+          <span class="agent-subject">Matem\u00e1tica \u00b7 <span style="color:#059669;font-weight:600;">MODO PAI</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="chat">
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bubble agent">Para ensinar fra\u00e7\u00f5es ao Jo\u00e3o, comece com objetos do dia a dia! Corte uma ma\u00e7\u00e3 ao meio e pergunte: "Que parte da ma\u00e7\u00e3 voc\u00ea tem?"</div>
+        </div>
+      </div>
+      <div class="msg-group user">
+        <div class="msg-row" style="justify-content:flex-end;">
+          <div class="bubble user" style="background:#059669;">ele confunde numerador e denominador, como ajudo?</div>
+        </div>
+      </div>
+      <div class="msg-group agent">
+        <div class="msg-row">
+          <div class="msg-avatar" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bubble agent">Isso \u00e9 super comum! Uma dica pr\u00e1tica: Denominador fica embaixo \u2014 "D de Down". Numerador fica em cima \u2014 "N de N\u00famero (que a gente conta)". Use esse truque no dever de casa!<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar overlay -->
+    <div class="overlay show"></div>
+    <div class="sidebar show">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <div style="width:40px;height:40px;background:linear-gradient(135deg,#2563EB,#7C3AED);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;">SA</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#1a1a1a;">Super Agentes</div>
+          <div style="font-size:11px;color:#999;">Pense-AI</div>
+        </div>
+      </div>
+
+      <div class="sidebar-item active">
+        <div class="si-icon" style="background:#eef2ff;color:#2563EB;">📚</div>
+        Super Agentes
+      </div>
+      <div class="sidebar-item">
+        <div class="si-icon" style="background:#f0fdf4;color:#059669;">📊</div>
+        Supervisor
+      </div>
+      <div class="sidebar-item">
+        <div class="si-icon" style="background:#faf5ff;color:#7C3AED;">🤖</div>
+        Professor de IA
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">Filho ativo</div>
+      <div class="child-pill">
+        <div class="cav">J</div>
+        <div class="cinfo">
+          <span class="cname">Jo\u00e3o</span>
+          <span class="cserie">5\u00ba ano \u00b7 Fundamental</span>
+        </div>
+      </div>
+      <div class="child-pill" style="opacity:0.5;margin-top:4px;">
+        <div class="cav" style="background:#a855f7;">M</div>
+        <div class="cinfo">
+          <span class="cname">Maria</span>
+          <span class="cserie">2\u00ba EM \u00b7 Ensino M\u00e9dio</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar" style="z-index:1;">
+      <div class="input-plus">+</div>
+      <div class="input-field">Pergunte sobre seu filho...</div>
+      <div class="input-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary bar -->
+<div style="width:100%;max-width:1600px;margin-top:40px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+  <h2 style="font-size:18px;color:#1a1a1a;margin-bottom:16px;">Decis\u00f5es de Design V2</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+    <div style="padding:16px;background:#f8fafc;border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Header Din\u00e2mico</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Avatar + nome + mat\u00e9ria do agente ativo. Troca automaticamente quando o GESTOR muda de persona.</div>
+    </div>
+    <div style="padding:16px;background:#f8fafc;border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Sidebar Overlay</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">S\u00f3 no modo PAI. Desliza por cima do chat (n\u00e3o comprime). Abre com hamburger ou swipe.</div>
+    </div>
+    <div style="padding:16px;background:#f8fafc;border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Input ChatGPT</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">"+" \u00e0 esquerda (upload imagem), campo central, bot\u00e3o enviar \u00e0 direita. Limpo e familiar.</div>
+    </div>
+    <div style="padding:16px;background:#f8fafc;border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Light Mode</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Fundo branco, bolhas cinza claro (agente) e preto (usu\u00e1rio). Amig\u00e1vel para crian\u00e7as.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

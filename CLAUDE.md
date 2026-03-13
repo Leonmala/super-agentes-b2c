@@ -214,6 +214,42 @@ Ao encontrar bugs ou comportamentos inesperados, usar o skill **superpowers:syst
 
 ---
 
+## ESCAPE HATCH — CLAUDE CODE CLI
+
+> **Regra:** Quando o ambiente Cowork (VM Linux) não conseguir executar uma operação no sistema do usuário (git push, permissão de arquivo, acesso a rede host, etc.), **montar um prompt completo para o Leon rodar no Claude Code CLI** na máquina local dele.
+
+### Quando usar
+
+- Operações git que precisam de autenticação GitHub (push, create repo, PR)
+- Qualquer coisa bloqueada por permissão de filesystem no mount (delete, rename)
+- Acesso a serviços que só rodam no host (localhost do Windows, Docker Desktop)
+- Instalação de dependências globais no Windows
+
+### Como usar
+
+1. Montar um **prompt autocontido** com todas as instruções
+2. O prompt deve ser copy-paste direto — sem ambiguidade, sem perguntas
+3. Incluir tratamento de erros comuns (safe.directory, credenciais, etc.)
+4. Leon cola o prompt no Claude Code CLI e ele executa autonomamente
+
+### Exemplo de prompt
+
+```
+Preciso que você execute no terminal local:
+1. cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
+2. [comandos sequenciais claros]
+Não pergunte nada, execute tudo e mostre o resultado de cada passo.
+```
+
+### Repositório GitHub
+
+- **Repo:** `https://github.com/Leonmala/super-agentes-b2c`
+- **Branch principal:** `main`
+- **Deploy automático:** Railway (conectado ao repo)
+- **Pasta local do Leon:** `C:\Users\Leon\Desktop\SuperAgentes_B2C_V2`
+
+---
+
 ## SISTEMA DE MEMÓRIA — RALPH WIGGUM LOOP
 
 > **Princípio:** O estado vive nos ARQUIVOS, não na conversa. Progresso persiste. Falhas evaporam.

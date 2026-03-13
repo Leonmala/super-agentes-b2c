@@ -18,6 +18,10 @@ web/dist2/
 # Vite cache
 web/node_modules/.vite/
 
+# Lock files (regenerated on install)
+web/package-lock.json
+server/package-lock.json
+
 # IDE
 .vscode/
 .idea/

@@ -30,8 +30,8 @@
 
 | # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
 |---|------|------|-----------|------------|----------|--------|
-| 9 | 2026-03-13 | Deploy | Railway Node.js 22.11.0 < 22.12 (req Vite 8) | Nixpacks default Node version desatualizada | `.node-version` + `nixpacks.toml` + engines >=22.12.0 | ⏳ Aguardando redeploy |
-| 10 | 2026-03-13 | Deploy | @rolldown/binding-linux-x64-gnu not found | npm skip optional deps em CI | `--include=optional` no install:all | ⏳ Aguardando redeploy |
+| 9 | 2026-03-13 | Deploy | Railway Node.js 22.11.0 < 22.12 (req Vite 8) + rolldown binding missing | Vite 8 usa rolldown (nativo), Railway usa Docker com Node 22.11, nixpacks.toml ignorado | **Downgrade Vite 8→6.3.5** (usa esbuild, funciona com Node 18+). Também: plugin-react 6→4.3.4, vitest 4→3.2.1, TS 5.9→5.8.3 | ✅ Fix aplicado |
+| 10 | 2026-03-13 | Deploy | Tentativa 1: nixpacks.toml + .node-version (não funcionou) | Railway usa Dockerfile, não Nixpacks | Removidos nixpacks.toml e .node-version. Solução real: downgrade Vite | ✅ Resolvido |
 
 ## Erros Pendentes
 

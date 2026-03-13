@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Agentes — Design V3</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eee; display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; padding: 24px; }
+
+  .page-title { width: 100%; text-align: center; font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 0; }
+  .page-sub { width: 100%; text-align: center; font-size: 13px; color: #888; margin-bottom: 20px; }
+
+  /* Phone frame */
+  .phone-wrap { position: relative; margin-top: 28px; }
+  .phone-label { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: #fff; padding: 3px 12px; border-radius: 6px; white-space: nowrap; letter-spacing: 0.3px; }
+  .phone { width: 360px; height: 720px; background: #fff; border-radius: 36px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; position: relative; }
+
+  /* Status bar */
+  .sbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 12px; font-weight: 600; color: #1a1a1a; }
+
+  /* App header */
+  .app-header { display: flex; align-items: center; padding: 6px 14px 10px; border-bottom: 1px solid #f0f0f0; gap: 8px; }
+  .hamburger { font-size: 20px; color: #555; cursor: pointer; padding: 4px; }
+  .agent-av { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #e8e8e8; }
+  .agent-av-placeholder { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .agent-info { flex: 1; display: flex; flex-direction: column; }
+  .agent-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .agent-sub { font-size: 12px; color: #888; }
+  .mode-pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+  .header-action { width: 30px; height: 30px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #666; }
+
+  /* Chat */
+  .chat { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Empty state */
+  .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .empty-logo { width: 56px; height: 56px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: 800; }
+  .empty-title { font-size: 19px; font-weight: 700; color: #1a1a1a; }
+  .empty-text { font-size: 14px; color: #999; text-align: center; line-height: 1.5; max-width: 240px; }
+
+  /* Messages */
+  .msg { display: flex; gap: 8px; align-items: flex-end; }
+  .msg.u { justify-content: flex-end; }
+  .msg-av { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .msg-av-ph { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .bbl { padding: 10px 14px; font-size: 14px; line-height: 1.55; max-width: 80%; }
+  .bbl.a { background: #f4f4f4; color: #1a1a1a; border-radius: 2px 16px 16px 16px; }
+  .bbl.u { background: #1a1a1a; color: #fff; border-radius: 16px 16px 2px 16px; }
+  .bbl.u-green { background: #059669; }
+  .cur { display: inline-block; width: 2px; height: 14px; background: #1a1a1a; animation: bl 1s infinite; vertical-align: middle; margin-left: 1px; }
+  @keyframes bl { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+
+  /* Input bar */
+  .ibar { padding: 8px 12px 24px; background: #fff; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .i-plus { width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #666; flex-shrink: 0; }
+  .i-field { flex: 1; background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 20px; padding: 10px 16px; font-size: 14px; color: #aaa; }
+  .i-send { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .i-send svg { width: 14px; height: 14px; fill: white; }
+
+  /* Sidebar overlay */
+  .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.25); z-index: 10; }
+  .sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 270px; background: #fafafa; z-index: 11; padding: 56px 14px 20px; display: flex; flex-direction: column; gap: 2px; }
+  .sb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .sb-logo { width: 36px; height: 36px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 12px; }
+  .sb-title { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .sb-sub { font-size: 11px; color: #999; }
+  .sb-item { padding: 11px 12px; border-radius: 10px; font-size: 14px; color: #444; display: flex; align-items: center; gap: 10px; }
+  .sb-item.active { background: #ebebeb; font-weight: 600; color: #1a1a1a; }
+  .sb-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .sb-divider { border-top: 1px solid #e8e8e8; margin: 10px 0; }
+  .sb-label { font-size: 10px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px 2px; }
+
+  /* Close session button */
+  .close-session { margin-top: auto; padding: 11px 12px; border-radius: 10px; font-size: 13px; color: #ef4444; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .close-session:hover { background: #fef2f2; }
+
+  /* Child pill */
+  .child-pill { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; margin-bottom: 4px; cursor: pointer; }
+  .child-pill.active { border-color: #2563EB; background: #eff6ff; }
+  .child-pill .cav { width: 26px; height: 26px; border-radius: 50%; color: white; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .child-pill .cn { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+  .child-pill .cs { font-size: 11px; color: #999; }
+
+  /* Profile selector overlay */
+  .profile-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 20; display: flex; align-items: center; justify-content: center; }
+  .profile-modal { width: 300px; background: #fff; border-radius: 20px; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+  .pm-logo { width: 48px; height: 48px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 16px; }
+  .pm-title { font-size: 17px; font-weight: 700; color: #1a1a1a; }
+  .pm-sub { font-size: 13px; color: #999; text-align: center; }
+  .pm-profiles { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .pm-profile { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid #e8e8e8; cursor: pointer; }
+  .pm-profile:hover { background: #f8fafc; border-color: #d0d0d0; }
+  .pm-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 15px; font-weight: 700; }
+  .pm-info { flex: 1; }
+  .pm-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .pm-serie { font-size: 12px; color: #888; }
+  .pm-arrow { font-size: 16px; color: #ccc; }
+  .pm-divider { width: 100%; border-top: 1px solid #f0f0f0; }
+  .pm-pai { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid #e8e8e8; width: 100%; cursor: pointer; }
+  .pm-pai:hover { background: #f8fafc; }
+  .pm-pai-icon { width: 40px; height: 40px; border-radius: 50%; background: #059669; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+  .pm-pin { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .pm-pin-label { font-size: 12px; color: #666; }
+  .pm-pin-dots { display: flex; gap: 10px; }
+  .pm-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #d0d0d0; }
+  .pm-dot.filled { background: #1a1a1a; border-color: #1a1a1a; }
+
+  /* Section divider */
+  .section-break { width: 100%; display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .section-break .line { flex: 1; border-top: 1px solid #ddd; }
+  .section-break .text { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Super Agentes V3 — Design Final</h1>
+<p class="page-sub">Menu slide overlay em TODAS as interfaces · Modal de perfil · Avatares reais · Fechar sess\u00e3o</p>
+
+<!-- =========== TELA 1: SELETOR DE PERFIL (Modal Overlay) =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#1a1a1a;">SELETOR DE PERFIL (Modal)</div>
+  <div class="phone">
+    <div class="sbar"><span>21:13</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <!-- Background blurred/dimmed -->
+    <div style="flex:1;background:#f8fafc;position:relative;">
+      <!-- Faint background of chat -->
+      <div style="opacity:0.15;padding:20px;font-size:13px;color:#aaa;text-align:center;margin-top:80px;">
+        Super Agentes Pense-AI
+      </div>
+
+      <!-- Profile modal overlay -->
+      <div class="profile-overlay">
+        <div class="profile-modal">
+          <div class="pm-logo">SA</div>
+          <div class="pm-title">Quem vai estudar?</div>
+          <div class="pm-sub">Fam\u00edlia Malatesta</div>
+
+          <div class="pm-profiles">
+            <div class="pm-profile">
+              <div class="pm-avatar" style="background:#2563EB;">J</div>
+              <div class="pm-info">
+                <div class="pm-name">Jo\u00e3o</div>
+                <div class="pm-serie">5\u00ba ano \u00b7 Fundamental</div>
+              </div>
+              <div class="pm-arrow">\u203a</div>
+            </div>
+            <div class="pm-profile">
+              <div class="pm-avatar" style="background:#a855f7;">M</div>
+              <div class="pm-info">
+                <div class="pm-name">Maria</div>
+                <div class="pm-serie">2\u00ba EM \u00b7 Ensino M\u00e9dio</div>
+              </div>
+              <div class="pm-arrow">\u203a</div>
+            </div>
+          </div>
+
+          <div class="pm-divider"></div>
+
+          <div class="pm-pai">
+            <div class="pm-pai-icon">\ud83d\udd12</div>
+            <div class="pm-info">
+              <div class="pm-name">Sou o Respons\u00e1vel</div>
+              <div class="pm-serie">Acesso com PIN</div>
+            </div>
+            <div class="pm-arrow">\u203a</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== TELA 2: PIN DO PAI (Modal) =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#059669;">PIN DO PAI (Modal)</div>
+  <div class="phone">
+    <div class="sbar"><span>21:13</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div style="flex:1;background:#f8fafc;position:relative;">
+      <div style="opacity:0.15;padding:20px;font-size:13px;color:#aaa;text-align:center;margin-top:80px;">
+        Super Agentes Pense-AI
+      </div>
+      <div class="profile-overlay">
+        <div class="profile-modal">
+          <div class="pm-pai-icon" style="width:56px;height:56px;font-size:24px;">\ud83d\udd12</div>
+          <div class="pm-title">Digite o PIN</div>
+          <div class="pm-sub">Acesso exclusivo do respons\u00e1vel</div>
+          <div class="pm-pin">
+            <div class="pm-pin-dots">
+              <div class="pm-dot filled"></div>
+              <div class="pm-dot filled"></div>
+              <div class="pm-dot"></div>
+              <div class="pm-dot"></div>
+            </div>
+          </div>
+          <!-- Numeric keypad hint -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:180px;margin-top:4px;">
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">1</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">2</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">3</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">4</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">5</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">6</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">7</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">8</div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">9</div>
+            <div></div>
+            <div style="text-align:center;padding:10px;background:#f5f5f5;border-radius:10px;font-size:18px;font-weight:600;color:#1a1a1a;">0</div>
+            <div style="text-align:center;padding:10px;font-size:14px;color:#999;">\u232b</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== TELA 3: EMPTY STATE =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#2563EB;">EMPTY STATE (Jo\u00e3o entrou)</div>
+  <div class="phone">
+    <div class="sbar"><span>21:14</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div class="app-header">
+      <div class="hamburger">\u2630</div>
+      <div class="agent-av-placeholder" style="background:linear-gradient(135deg,#2563EB,#7C3AED);">SA</div>
+      <div class="agent-info">
+        <span class="agent-name">Super Agentes</span>
+        <span class="agent-sub">Pense-AI</span>
+      </div>
+    </div>
+    <div class="chat">
+      <div class="empty">
+        <div class="empty-logo">SA</div>
+        <div class="empty-title">Ol\u00e1, Jo\u00e3o! \ud83d\udc4b</div>
+        <div class="empty-text">No que posso te ajudar hoje? Pode me perguntar sobre qualquer mat\u00e9ria!</div>
+      </div>
+    </div>
+    <div class="ibar">
+      <div class="i-plus">+</div>
+      <div class="i-field">Mensagem</div>
+      <div class="i-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== TELA 4: CHAT ATIVO — CALCULUS =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#f97316;">CHAT ATIVO \u2014 CALCULUS (Fundamental)</div>
+  <div class="phone">
+    <div class="sbar"><span>21:16</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div class="app-header">
+      <div class="hamburger">\u2630</div>
+      <!-- Would use <img src="imagens/calculus-card.png"> in real app -->
+      <div class="agent-av-placeholder" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">\ud83d\udd25</div>
+      <div class="agent-info">
+        <span class="agent-name">CALCULUS</span>
+        <span class="agent-sub">Matem\u00e1tica</span>
+      </div>
+      <div class="header-action">\u22ef</div>
+    </div>
+    <div class="chat">
+      <div class="msg">
+        <div class="msg-av-ph" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="bbl a">Oi! Fra\u00e7\u00f5es podem ser divertidas! Imagina que voc\u00ea tem uma pizza cortada em peda\u00e7os iguais... \ud83c\udf55</div>
+      </div>
+      <div class="msg u">
+        <div class="bbl u">acho que 8 peda\u00e7os?</div>
+      </div>
+      <div class="msg">
+        <div class="msg-av-ph" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="bbl a">Isso! 8 fatias! Se voc\u00ea comer 3, que fra\u00e7\u00e3o da pizza comeu?</div>
+      </div>
+      <div class="msg u">
+        <div class="bbl u">3/8?</div>
+      </div>
+      <div class="msg">
+        <div class="msg-av-ph" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="bbl a">Perfeito! 3/8 \u2014 tr\u00eas oitavos! O de cima (3) \u00e9 o numerador, o de baixo (8) o denominador.<span class="cur"></span></div>
+      </div>
+    </div>
+    <div class="ibar">
+      <div class="i-plus">+</div>
+      <div class="i-field">Mensagem</div>
+      <div class="i-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-break">
+  <div class="line"></div>
+  <div class="text">Menu Slide (todas as interfaces)</div>
+  <div class="line"></div>
+</div>
+
+<!-- =========== TELA 5: SIDEBAR FUNDAMENTAL =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#2563EB;">MENU — Fundamental / Ens. M\u00e9dio</div>
+  <div class="phone">
+    <div class="sbar"><span>21:16</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div class="app-header" style="opacity:0.4;">
+      <div class="hamburger">\u2630</div>
+      <div class="agent-av-placeholder" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">\ud83d\udd25</div>
+      <div class="agent-info">
+        <span class="agent-name">CALCULUS</span>
+        <span class="agent-sub">Matem\u00e1tica</span>
+      </div>
+    </div>
+    <div style="flex:1;opacity:0.3;background:#fff;"></div>
+    <div class="ibar" style="opacity:0.3;">
+      <div class="i-plus">+</div>
+      <div class="i-field">Mensagem</div>
+      <div class="i-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+
+    <div class="overlay"></div>
+    <div class="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo">SA</div>
+        <div>
+          <div class="sb-title">Super Agentes</div>
+          <div class="sb-sub">Pense-AI</div>
+        </div>
+      </div>
+
+      <div class="sb-item active">
+        <div class="sb-icon" style="background:#eff6ff;color:#2563EB;">\ud83d\udcda</div>
+        Super Agentes
+      </div>
+      <div class="sb-item">
+        <div class="sb-icon" style="background:#faf5ff;color:#7C3AED;">\ud83e\udd16</div>
+        Professor de IA
+      </div>
+
+      <div style="flex:1;"></div>
+      <div class="close-session">
+        <span style="font-size:16px;">\u23fb</span>
+        Trocar perfil
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== TELA 6: SIDEBAR PAI =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#059669;">MENU — Pai / Respons\u00e1vel</div>
+  <div class="phone">
+    <div class="sbar"><span>21:25</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div class="app-header" style="opacity:0.4;">
+      <div class="hamburger">\u2630</div>
+      <div class="agent-av-placeholder" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">\ud83d\udd25</div>
+      <div class="agent-info">
+        <span class="agent-name">CALCULUS</span>
+        <span class="agent-sub">Matem\u00e1tica \u00b7 MODO PAI</span>
+      </div>
+    </div>
+    <div style="flex:1;opacity:0.3;background:#fff;"></div>
+    <div class="ibar" style="opacity:0.3;">
+      <div class="i-plus">+</div>
+      <div class="i-field">Mensagem</div>
+      <div class="i-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+
+    <div class="overlay"></div>
+    <div class="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo">SA</div>
+        <div>
+          <div class="sb-title">Super Agentes</div>
+          <div class="sb-sub">Pense-AI</div>
+        </div>
+      </div>
+
+      <div class="sb-item active">
+        <div class="sb-icon" style="background:#eff6ff;color:#2563EB;">\ud83d\udcda</div>
+        Super Agentes
+      </div>
+      <div class="sb-item">
+        <div class="sb-icon" style="background:#f0fdf4;color:#059669;">\ud83d\udcca</div>
+        Supervisor
+      </div>
+      <div class="sb-item">
+        <div class="sb-icon" style="background:#faf5ff;color:#7C3AED;">\ud83e\udd16</div>
+        Professor de IA
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="sb-label">Filho ativo</div>
+      <div class="child-pill active">
+        <div class="cav" style="background:#2563EB;">J</div>
+        <div>
+          <div class="cn">Jo\u00e3o</div>
+          <div class="cs">5\u00ba ano</div>
+        </div>
+      </div>
+      <div class="child-pill">
+        <div class="cav" style="background:#a855f7;">M</div>
+        <div>
+          <div class="cn">Maria</div>
+          <div class="cs">2\u00ba EM</div>
+        </div>
+      </div>
+
+      <div style="flex:1;"></div>
+      <div class="close-session">
+        <span style="font-size:16px;">\u23fb</span>
+        Trocar perfil
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== TELA 7: MODO PAI ATIVO =========== -->
+<div class="phone-wrap">
+  <div class="phone-label" style="background:#059669;">CHAT \u2014 MODO PAI (CALCULUS)</div>
+  <div class="phone">
+    <div class="sbar"><span>21:26</span><span style="font-size:11px;color:#888;">5G</span></div>
+    <div class="app-header">
+      <div class="hamburger">\u2630</div>
+      <div class="agent-av-placeholder" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">\ud83d\udd25</div>
+      <div class="agent-info">
+        <span class="agent-name">CALCULUS</span>
+        <span class="agent-sub">Matem\u00e1tica \u00b7 <span style="color:#059669;font-weight:600;">MODO PAI</span></span>
+      </div>
+      <div class="mode-pill" style="background:#dcfce7;color:#059669;">PAI</div>
+    </div>
+    <div class="chat">
+      <div class="msg">
+        <div class="msg-av-ph" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="bbl a">Para ensinar fra\u00e7\u00f5es ao Jo\u00e3o, comece com objetos do dia a dia! Corte uma ma\u00e7\u00e3 ao meio e pergunte: "Que parte da ma\u00e7\u00e3 voc\u00ea tem?"</div>
+      </div>
+      <div class="msg u">
+        <div class="bbl u u-green">ele confunde numerador e denominador</div>
+      </div>
+      <div class="msg">
+        <div class="msg-av-ph" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="bbl a">Isso \u00e9 super comum! Dica: Denominador fica embaixo \u2014 "D de Down". Numerador em cima \u2014 "N de N\u00famero que a gente conta". Use essa regra no dever de casa!<span class="cur"></span></div>
+      </div>
+    </div>
+    <div class="ibar">
+      <div class="i-plus">+</div>
+      <div class="i-field">Pergunte sobre seu filho...</div>
+      <div class="i-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div style="width:100%;max-width:1400px;margin-top:32px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+  <h2 style="font-size:17px;color:#1a1a1a;margin-bottom:14px;">Revis\u00e3o de Design V3</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+    <div style="padding:14px;background:#f8fafc;border-radius:10px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Modal de Perfil</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Overlay central \u2014 n\u00e3o tela cheia. Filhos clicam direto, pai digita PIN num teclado num\u00e9rico. Volta ao fechar sess\u00e3o.</div>
+    </div>
+    <div style="padding:14px;background:#f8fafc;border-radius:10px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Menu Slide Universal</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Todas as interfaces t\u00eam menu slide overlay. Filho: Super Agentes + Prof. IA. Pai: + Supervisor + seletor de filho.</div>
+    </div>
+    <div style="padding:14px;background:#f8fafc;border-radius:10px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Header Din\u00e2mico</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Avatar real do her\u00f3i (imagens da pasta) + nome + mat\u00e9ria. Troca automaticamente. Badge "MODO PAI" quando aplic\u00e1vel.</div>
+    </div>
+    <div style="padding:14px;background:#f8fafc;border-radius:10px;">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Trocar Perfil</div>
+      <div style="font-size:12px;color:#666;line-height:1.5;">Bot\u00e3o "Trocar perfil" no menu \u2014 fecha sess\u00e3o e volta ao modal. Permite 2 filhos no mesmo device.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

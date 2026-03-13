@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Agentes — Mockup 3 Interfaces</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+  h1 { text-align: center; font-size: 26px; margin-bottom: 6px; color: #818cf8; }
+  .sub { text-align: center; color: #94a3b8; margin-bottom: 28px; font-size: 14px; }
+  .grid { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; }
+  .phone { flex: 1; background: #1e293b; border-radius: 20px; overflow: hidden; border: 2px solid #334155; }
+  .phone-label { padding: 12px 16px; font-weight: 700; font-size: 13px; color: white; }
+  .phone-body { padding: 12px; background: #f8fafc; min-height: 440px; display: flex; flex-direction: column; }
+  .hbar { background: white; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .logo { width: 30px; height: 30px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 50%; color: white; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .htitle { font-weight: 600; font-size: 13px; color: #1e293b; }
+  .mbadge { font-size: 10px; font-weight: 600; margin-left: auto; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #059669; }
+  .chat { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .msg { display: flex; gap: 6px; align-items: flex-start; }
+  .msg.u { justify-content: flex-end; }
+  .av { width: 26px; height: 26px; border-radius: 50%; color: white; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .bbl { border-radius: 0 10px 10px 10px; padding: 8px 12px; font-size: 12px; line-height: 1.5; max-width: 80%; }
+  .bbl.ag { background: white; color: #334155; }
+  .bbl.us { border-radius: 10px 0 10px 10px; color: white; }
+  .cur { display: inline-block; width: 5px; height: 12px; border-radius: 2px; vertical-align: middle; margin-left: 2px; animation: bl 1s infinite; }
+  @keyframes bl { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+  .ibar { margin-top: 10px; display: flex; gap: 6px; align-items: center; }
+  .ifield { flex: 1; background: white; border-radius: 20px; padding: 8px 14px; font-size: 12px; color: #94a3b8; }
+  .sbtn { width: 32px; height: 32px; border-radius: 50%; color: white; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .pfooter { text-align: center; font-size: 10px; color: #64748b; padding: 8px; background: #f1f5f9; }
+  .fab { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .fab-btn { background: linear-gradient(135deg, #7C3AED, #a855f7); color: white; padding: 7px 14px; border-radius: 16px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .with-side { display: flex; gap: 8px; flex: 1; }
+  .side { width: 110px; background: white; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+  .slabel { font-size: 9px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+  .sitem { padding: 6px 8px; border-radius: 6px; font-size: 11px; color: #475569; }
+  .sitem.act { background: #059669; color: white; font-weight: 600; }
+  .sdiv { border-top: 1px solid #e2e8f0; margin: 4px 0; }
+  .child { display: flex; align-items: center; gap: 4px; }
+  .cav { width: 20px; height: 20px; background: #2563EB; border-radius: 50%; color: white; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .cname { font-size: 10px; color: #334155; }
+  .sum { margin-top: 24px; max-width: 1100px; margin-left: auto; margin-right: auto; background: #1e293b; border-radius: 14px; padding: 20px; border: 1px solid #334155; }
+  .sum h2 { font-size: 16px; margin-bottom: 14px; }
+  .sg { display: flex; gap: 16px; }
+  .si { flex: 1; padding: 14px; background: #0f172a; border-radius: 10px; border: 1px solid #334155; }
+  .si h3 { font-size: 13px; margin-bottom: 6px; }
+  .si p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .palette { text-align: center; margin-top: 20px; font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<h1>Super Agentes Educacionais</h1>
+<p class="sub">Mockup das 3 Interfaces — Fase 3 Frontend</p>
+
+<div class="grid">
+
+  <!-- FUNDAMENTAL -->
+  <div class="phone">
+    <div class="phone-label" style="background:linear-gradient(135deg,#2563EB,#3b82f6);">Filho — Fundamental (1º-9º ano)</div>
+    <div class="phone-body">
+      <div class="hbar">
+        <div class="logo">SA</div>
+        <span class="htitle">Super Agentes</span>
+      </div>
+      <div class="chat">
+        <div class="msg">
+          <div class="av" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bbl ag">Oi! Frações podem ser divertidas! Imagina uma pizza cortada em pedaços... 🍕</div>
+        </div>
+        <div class="msg u">
+          <div class="bbl us" style="background:#2563EB;">como dividir em 3 partes iguais?</div>
+        </div>
+        <div class="msg">
+          <div class="av" style="background:linear-gradient(135deg,#f97316,#ef4444);">C</div>
+          <div class="bbl ag">Boa pergunta! Quando dividimos em 3 partes iguais, cada parte é um terço...<span class="cur" style="background:#2563EB;"></span></div>
+        </div>
+      </div>
+      <div class="ibar">
+        <div class="ifield">Digite sua dúvida...</div>
+        <div class="sbtn" style="background:#2563EB;">→</div>
+      </div>
+    </div>
+    <div class="pfooter">Só chat. Sem menu. Foco total.</div>
+  </div>
+
+  <!-- ENSINO MÉDIO -->
+  <div class="phone">
+    <div class="phone-label" style="background:linear-gradient(135deg,#7C3AED,#a855f7);">Filho — Ensino Médio (1º-3º EM)</div>
+    <div class="phone-body">
+      <div class="hbar">
+        <div class="logo">SA</div>
+        <span class="htitle">Super Agentes</span>
+      </div>
+      <div class="chat">
+        <div class="msg">
+          <div class="av" style="background:linear-gradient(135deg,#06b6d4,#2563EB);">V</div>
+          <div class="bbl ag">Vamos pensar na cinemática! Se um carro acelera de 0 a 100 km/h em 10s...</div>
+        </div>
+        <div class="msg u">
+          <div class="bbl us" style="background:#7C3AED;">e se a aceleração for constante?</div>
+        </div>
+        <div class="msg">
+          <div class="av" style="background:linear-gradient(135deg,#06b6d4,#2563EB);">V</div>
+          <div class="bbl ag">Exatamente! Com aceleração constante, usamos a equação de Torricelli...<span class="cur" style="background:#7C3AED;"></span></div>
+        </div>
+      </div>
+      <div class="ibar">
+        <div class="ifield">Digite sua dúvida...</div>
+        <div class="sbtn" style="background:#7C3AED;">→</div>
+      </div>
+      <div class="fab">
+        <div class="fab-btn">🤖 Professor de IA</div>
+      </div>
+    </div>
+    <div class="pfooter">Chat + botão flutuante "Professor de IA"</div>
+  </div>
+
+  <!-- PAI -->
+  <div class="phone">
+    <div class="phone-label" style="background:linear-gradient(135deg,#059669,#10b981);">Pai / Responsável</div>
+    <div class="phone-body">
+      <div class="with-side">
+        <div class="side">
+          <div class="slabel">Menu</div>
+          <div class="sitem act">Super Agentes</div>
+          <div class="sitem">Supervisor</div>
+          <div class="sitem">Professor de IA</div>
+          <div style="flex:1;"></div>
+          <div class="sdiv"></div>
+          <div class="slabel">Filho ativo:</div>
+          <div class="child">
+            <div class="cav">J</div>
+            <span class="cname">João</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;">
+          <div class="hbar" style="margin-bottom:6px;">
+            <div class="logo" style="width:26px;height:26px;font-size:9px;">SA</div>
+            <span class="htitle" style="font-size:12px;">Super Agentes</span>
+            <span class="mbadge">MODO PAI</span>
+          </div>
+          <div class="chat">
+            <div class="msg">
+              <div class="av" style="background:linear-gradient(135deg,#f97316,#ef4444);width:22px;height:22px;font-size:8px;">C</div>
+              <div class="bbl ag" style="font-size:11px;">Para ensinar frações ao João, use objetos do dia a dia! Corte uma maçã em partes iguais...</div>
+            </div>
+            <div class="msg u">
+              <div class="bbl us" style="background:#059669;font-size:11px;">ele confunde numerador e denominador</div>
+            </div>
+            <div class="msg">
+              <div class="av" style="background:linear-gradient(135deg,#f97316,#ef4444);width:22px;height:22px;font-size:8px;">C</div>
+              <div class="bbl ag" style="font-size:11px;">Isso é comum! Dica: Denominador fica embaixo ("D de Down")...<span class="cur" style="background:#059669;"></span></div>
+            </div>
+          </div>
+          <div class="ibar">
+            <div class="ifield" style="font-size:11px;padding:7px 12px;">Pergunte sobre seu filho...</div>
+            <div class="sbtn" style="background:#059669;width:28px;height:28px;font-size:12px;">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pfooter">Chat + sidebar completa + seletor de filho</div>
+  </div>
+
+</div>
+
+<!-- Summary -->
+<div class="sum">
+  <h2>Resumo das Diferenças</h2>
+  <div class="sg">
+    <div class="si">
+      <h3 style="color:#3b82f6;">Fundamental</h3>
+      <p>Só chat, sem distrações. Criança pequena não precisa de menu — só conversar com o herói.</p>
+    </div>
+    <div class="si">
+      <h3 style="color:#a855f7;">Ensino Médio</h3>
+      <p>Chat + botão flutuante (FAB) para "Professor de IA". Acesso rápido sem poluir a tela.</p>
+    </div>
+    <div class="si">
+      <h3 style="color:#10b981;">Pai</h3>
+      <p>Chat + sidebar: Super Agentes, Supervisor, Professor de IA. Seletor de filho ativo embaixo.</p>
+    </div>
+  </div>
+</div>
+
+<p class="palette">Paleta: Azul (#2563EB) · Roxo (#7C3AED) · Verde (#059669) · Cada herói tem avatar com inicial + cor gradiente</p>
+
+</body>
+</html>
