@@ -56,7 +56,7 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
           {/* Header do menu */}
           <div className="flex items-center justify-between px-4 py-4">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Super Agentes" className="h-7 object-contain" />
+              <img src="/logo.png" alt="Super Agentes" className="h-12 object-contain" />
             </div>
             <button
               onClick={onClose}

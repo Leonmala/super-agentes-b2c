@@ -41,7 +41,7 @@ export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
         </>
       ) : (
         <>
-          <img src="/logo.png" alt="Super Agentes" className="h-8 object-contain shrink-0" />
+          <img src="/logo.png" alt="Super Agentes" className="h-16 object-contain shrink-0" />
         </>
       )}
 

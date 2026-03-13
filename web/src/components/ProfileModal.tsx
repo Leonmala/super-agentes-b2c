@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useState } from 'react'
 import { PinModal } from './PinModal'
+import { FILHO_COLORS, PAI_COLOR } from '../constants'
 
 export function ProfileModal() {
   const { filhos, responsavel, selectFilho, perfilAtivo } = useAuth()
@@ -30,22 +31,29 @@ export function ProfileModal() {
         <p className="text-sm text-gray-500 text-center mb-6">Selecione o perfil</p>
 
         <div className="space-y-3">
-          {filhos.map(filho => (
-            <button
-              key={filho.id}
-              onClick={() => handleFilho(filho.id)}
-              disabled={loading}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors disabled:opacity-50"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                {filho.nome.charAt(0).toUpperCase()}
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-gray-900 text-sm">{filho.nome}</p>
-                <p className="text-xs text-gray-500">{filho.serie}</p>
-              </div>
-            </button>
-          ))}
+          {filhos.map((filho, idx) => {
+            const filhoColor = FILHO_COLORS[idx % FILHO_COLORS.length]
+            return (
+              <button
+                key={filho.id}
+                onClick={() => handleFilho(filho.id)}
+                disabled={loading}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors disabled:opacity-50"
+                style={{ backgroundColor: `${filhoColor}10` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                  style={{ backgroundColor: filhoColor }}
+                >
+                  {filho.nome.charAt(0).toUpperCase()}
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900 text-sm">{filho.nome}</p>
+                  <p className="text-xs text-gray-500">{filho.serie}</p>
+                </div>
+              </button>
+            )
+          })}
 
           {responsavel && (
             <>
@@ -53,9 +61,13 @@ export function ProfileModal() {
               <button
                 onClick={() => setShowPin(true)}
                 disabled={loading}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors disabled:opacity-50"
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors disabled:opacity-50"
+                style={{ backgroundColor: `${PAI_COLOR}10` }}
               >
-                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                  style={{ backgroundColor: PAI_COLOR }}
+                >
                   {responsavel.nome.charAt(0).toUpperCase()}
                 </div>
                 <div className="text-left">
