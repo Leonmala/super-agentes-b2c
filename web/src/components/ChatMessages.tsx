@@ -5,18 +5,20 @@ import { EmptyState } from './EmptyState'
 import type { ChatMessage } from '../types'
 
 export function ChatMessages() {
-  const { mensagens, streaming, streamingText, heroiAtivo } = useChat()
+  const { mensagens, streaming, streamingText, isRevealing, heroiAtivo } = useChat()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens.length, streamingText])
 
-  if (mensagens.length === 0 && !streaming) {
+  if (mensagens.length === 0 && !streaming && !isRevealing) {
     return <EmptyState />
   }
 
-  const streamingMsg: ChatMessage | null = streaming ? {
+  // Mostrar balão de streaming enquanto estiver recebendo OU revelando
+  const showStreamingBubble = streaming || isRevealing
+  const streamingMsg: ChatMessage | null = showStreamingBubble ? {
     id: 'streaming',
     role: 'agent',
     content: '',

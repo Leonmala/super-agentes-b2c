@@ -32,7 +32,7 @@ export function LoginPage() {
           <img
             src="/logo.png"
             alt="Super Agentes Pense-AI"
-            className="h-16 mx-auto mb-2"
+            className="h-32 mx-auto mb-2"
           />
         </div>
 

@@ -3,12 +3,14 @@ import type { ReactNode } from 'react'
 import type { ChatMessage, HeroId } from '../types'
 import { sendMessage } from '../api/chat'
 import { useAuth } from './AuthContext'
+import { useTypingEffect } from '../hooks/useTypingEffect'
 
 interface ChatContextValue {
   mensagens: ChatMessage[]
   heroiAtivo: HeroId | null
   streaming: boolean
   streamingText: string
+  isRevealing: boolean
   erro: string | null
   limiteMsg: string | null
   enviar: (texto: string, agenteOverride?: string) => Promise<void>
@@ -24,10 +26,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [mensagens, setMensagens] = useState<ChatMessage[]>([])
   const [heroiAtivo, setHeroiAtivo] = useState<HeroId | null>(null)
   const [streaming, setStreaming] = useState(false)
-  const [streamingText, setStreamingText] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [limiteMsg, setLimiteMsg] = useState<string | null>(null)
-  const streamRef = useRef('')
+  const fullTextRef = useRef('')
+
+  const typing = useTypingEffect()
 
   const enviar = useCallback(async (texto: string, agenteOverride?: string) => {
     if (!perfilAtivo) return
@@ -44,8 +47,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMensagens(prev => [...prev, userMsg])
 
     setStreaming(true)
-    setStreamingText('')
-    streamRef.current = ''
+    typing.reset()
+    fullTextRef.current = ''
     setErro(null)
 
     const targetAlunoId = alunoId || perfilAtivo.selectedFilhoId || ''
@@ -59,50 +62,58 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setHeroiAtivo(agente as HeroId)
       },
       onChunk: (textoChunk) => {
-        streamRef.current += textoChunk
-        setStreamingText(streamRef.current)
+        fullTextRef.current += textoChunk
+        typing.addChunk(textoChunk)
       },
       onDone: (data) => {
-        const agentMsg: ChatMessage = {
-          id: `agent-${Date.now()}`,
-          role: 'agent',
-          content: streamRef.current,
-          agente: (data.agente as string) || undefined,
-          timestamp: Date.now(),
-        }
-        setMensagens(prev => [...prev, agentMsg])
-        setStreaming(false)
-        setStreamingText('')
-        streamRef.current = ''
+        const finalText = fullTextRef.current
+        const agente = (data.agente as string) || undefined
+
+        // Flush acelera o reveal e chama callback quando terminar
+        typing.flush(() => {
+          const agentMsg: ChatMessage = {
+            id: `agent-${Date.now()}`,
+            role: 'agent',
+            content: finalText,
+            agente,
+            timestamp: Date.now(),
+          }
+          setMensagens(prev => [...prev, agentMsg])
+          setStreaming(false)
+          typing.reset()
+          fullTextRef.current = ''
+        })
       },
       onError: (erroMsg) => {
         setErro(erroMsg)
         setStreaming(false)
-        setStreamingText('')
-        streamRef.current = ''
+        typing.reset()
+        fullTextRef.current = ''
       },
       onLimite: (msg) => {
         setLimiteMsg(msg)
         setStreaming(false)
-        setStreamingText('')
-        streamRef.current = ''
+        typing.reset()
+        fullTextRef.current = ''
       },
     })
-  }, [perfilAtivo, streaming])
+  }, [perfilAtivo, streaming, typing])
 
   const limpar = useCallback(() => {
     setMensagens([])
     setHeroiAtivo(null)
-    setStreamingText('')
-    streamRef.current = ''
-  }, [])
+    typing.reset()
+    fullTextRef.current = ''
+  }, [typing])
 
   const dismissErro = useCallback(() => setErro(null), [])
   const dismissLimite = useCallback(() => setLimiteMsg(null), [])
 
   return (
     <ChatContext.Provider value={{
-      mensagens, heroiAtivo, streaming, streamingText,
+      mensagens, heroiAtivo, streaming,
+      streamingText: typing.displayText,
+      isRevealing: typing.isRevealing,
       erro, limiteMsg, enviar, limpar, dismissErro, dismissLimite,
     }}>
       {children}

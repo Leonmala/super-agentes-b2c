@@ -1,12 +1,16 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { ChatMessage, HeroId } from '../types'
 import { HEROES } from '../constants'
 import { useAuth } from '../contexts/AuthContext'
 import { StreamingCursor } from './StreamingCursor'
 
+// Elementos permitidos — inclui tabelas e spans para emojis
 const ALLOWED_ELEMENTS = [
   'p', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li',
-  'h1', 'h2', 'h3', 'blockquote', 'br', 'hr',
+  'h1', 'h2', 'h3', 'h4', 'blockquote', 'br', 'hr',
+  'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'del', 'sup', 'sub', 'span',
 ]
 
 interface ChatBubbleProps {
@@ -54,10 +58,15 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
         <img src="/logo-buble.png" alt="Super Agentes" className="w-8 h-8 rounded-full object-cover shrink-0" />
       )}
       <div
-        className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-gray-800 shadow-sm"
+        className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-gray-800 shadow-sm chat-bubble-content"
         style={{ backgroundColor: bubbleBg, borderWidth: '1px', borderColor: bubbleBorder }}
       >
-        <ReactMarkdown allowedElements={ALLOWED_ELEMENTS}>{content}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          allowedElements={ALLOWED_ELEMENTS}
+        >
+          {content}
+        </ReactMarkdown>
         {isStreaming && <StreamingCursor color={corHeroi} />}
       </div>
     </div>

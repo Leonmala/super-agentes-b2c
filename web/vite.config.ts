@@ -5,6 +5,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['react-markdown', 'remark-gfm'],
+  },
+  build: {
+    rollupOptions: {
+      maxParallelFileOps: 50,
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

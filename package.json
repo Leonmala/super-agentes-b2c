@@ -8,7 +8,7 @@
   },
   "scripts": {
     "install:all": "cd server && npm install && cd ../web && npm install --legacy-peer-deps",
-    "build:server": "cd server && npx tsc",
+    "build:server": "cd server && npx tsc && cp -r src/personas dist/personas",
     "build:web": "cd web && npx vite build --outDir ../web-dist",
     "build": "npm run build:server && npm run build:web",
     "start": "node server/dist/index.js",
