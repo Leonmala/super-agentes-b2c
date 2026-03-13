@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+server/dist/
+web-dist/
+web/dist/
+web/dist2/
+*.tsbuildinfo
+
+# Vite cache
+web/node_modules/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Railway
+.railway/
+
+# Test coverage
+coverage/
+
+# Old project (reference only in docs, not deployed)
+teste6-railway_v2_fast/
+
+# Claude/Superpowers local config
+.claude/
+.superpowers/
+
+# Original images (copies in web/public/heroes/)
+imagens/
+
+# Pre-planning docs
+PRE_PLANEJAMENTO_V1.md
+Verdade_SuperAgentes_hoje_12_03_26.md
