@@ -241,10 +241,26 @@ router.post('/message', async (req: Request, res: Response) => {
 
       const respostaJSON = respostaLLM.jsonData
 
-      if (respostaJSON?.acao === 'ENCAMINHAR_PARA_HEROI') {
+      // Detectar se PSICO quer encaminhar (LLM pode usar variações do campo "acao")
+      const acaoPsico = respostaJSON?.acao || respostaJSON?.action || ''
+      const querEncaminhar = acaoPsico === 'ENCAMINHAR_PARA_HEROI' ||
+        acaoPsico === 'ENCAMINHAR' ||
+        respostaJSON?.agente_destino ||
+        respostaJSON?.heroi_escolhido
+
+      if (querEncaminhar) {
+        // Extrair herói de vários campos possíveis (LLM varia os nomes)
+        let heroiEscolhido: string = respostaJSON.heroi_escolhido
+          || respostaJSON.agente_destino
+          || respostaJSON.heroi
+          || respostaJSON.agente
+          || ''
+
+        // Normalizar nome do herói (LLM pode errar: VERBETA→VERBETTA, CALCULLUS→CALCULUS)
+        heroiEscolhido = normalizarNomeHeroi(heroiEscolhido)
+
         // Se temos tema detectado por keywords, usar personaPorTema como override
         // (PSICO pode alucinar o heroi_escolhido, keywords são confiáveis)
-        let heroiEscolhido = respostaJSON.heroi_escolhido
         if (temaDetectado) {
           const heroiPorTema = personaPorTema(temaDetectado)
           if (heroiPorTema !== 'PSICOPEDAGOGICO' && heroiPorTema !== heroiEscolhido) {
@@ -258,11 +274,23 @@ router.post('/message', async (req: Request, res: Response) => {
           houveCascata = true
           agenteFinal = heroiEscolhido
 
-          // Extrair plano
-          if (respostaJSON.plano_atendimento) {
-            plano = JSON.stringify(respostaJSON.plano_atendimento, null, 2)
+          // Extrair plano (LLM varia: plano_atendimento, plano_pedagogico, plano)
+          const planoObj = respostaJSON.plano_atendimento
+            || respostaJSON.plano_pedagogico
+            || respostaJSON.plano
+            || null
+          if (planoObj) {
+            plano = JSON.stringify(planoObj, null, 2)
           }
-          const instrucoesHeroi = respostaJSON.instrucoes_para_heroi || ''
+          // Extrair instruções (LLM varia: instrucoes_para_heroi, instrucoes_para_agente)
+          const instrucoesRaw = respostaJSON.instrucoes_para_heroi
+            || respostaJSON.instrucoes_para_agente
+            || respostaJSON.instrucoes
+            || ''
+          // Pode ser string ou objeto — serializar se necessário
+          const instrucoesHeroi = typeof instrucoesRaw === 'string'
+            ? instrucoesRaw
+            : JSON.stringify(instrucoesRaw, null, 2)
 
           // Montar contexto rico para o herói
           let contextoHeroi = montarContexto(sessao, aluno, ultimosTurnos, tipoUsuario)
@@ -433,6 +461,41 @@ function classificationToPersona(categoria: string): string {
     'espanhol': 'FLEX'
   }
   return mapa[categoria] || 'PSICOPEDAGOGICO'
+}
+
+// Normalizar nomes de heróis que o LLM pode errar
+// Ex: VERBETA→VERBETTA, CALCULLUS→CALCULUS, verbetta→VERBETTA
+function normalizarNomeHeroi(nome: string): string {
+  if (!nome) return ''
+  const upper = nome.trim().toUpperCase()
+
+  // Mapa de typos conhecidos → nome correto
+  const typos: Record<string, string> = {
+    'VERBETA': 'VERBETTA',
+    'VERBETA ': 'VERBETTA',
+    'CALCULLUS': 'CALCULUS',
+    'CALCULOS': 'CALCULUS',
+    'NEUROM': 'NEURON',
+    'TEMPOS': 'TEMPUS',
+    'GAÍA': 'GAIA',
+    'VETCOR': 'VECTOR',
+    'VETOR': 'VECTOR',
+    'ALCHA': 'ALKA',
+    'FLES': 'FLEX',
+  }
+
+  if (typos[upper]) return typos[upper]
+
+  // Fuzzy: encontrar herói mais parecido por distância de edição simples
+  const herois = ['CALCULUS', 'VERBETTA', 'NEURON', 'TEMPUS', 'GAIA', 'VECTOR', 'ALKA', 'FLEX']
+  for (const heroi of herois) {
+    // Match exato ou começa com o nome do herói
+    if (upper === heroi || upper.startsWith(heroi)) return heroi
+    // Match por substring (ex: VERBETT → VERBETTA)
+    if (heroi.startsWith(upper) && upper.length >= 3) return heroi
+  }
+
+  return upper
 }
 
 export default router
