@@ -32,12 +32,20 @@ export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
           <img
             src={hero.avatar}
             alt={hero.nome}
-            className="w-9 h-9 rounded-full object-cover border-2 border-white/40 transition-all duration-300"
+            className="w-16 h-16 rounded-full object-cover border-2 border-white/40 transition-all duration-300"
           />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{hero.nome}</p>
-            <p className="text-xs text-white/70 truncate">{hero.materia}</p>
-          </div>
+          {hero.logo ? (
+            <img
+              src={hero.logo}
+              alt={`${hero.nome} — ${hero.materia}`}
+              className="h-12 object-contain shrink-0"
+            />
+          ) : (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{hero.nome}</p>
+              <p className="text-xs text-white/70 truncate">{hero.materia}</p>
+            </div>
+          )}
         </>
       ) : (
         <>

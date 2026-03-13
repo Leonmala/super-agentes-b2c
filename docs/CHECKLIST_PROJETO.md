@@ -116,6 +116,20 @@
   - [x] Bug fix: session state pollution → limparSessoesAluno()
   - [x] **GATE 5 E2E** — 14/14 testes passando ✅ (2026-03-13)
 
+### Hotfixes Produção (2026-03-13)
+
+- [x] **HF1** Build: personas .md não copiadas para dist/ (`tsc` só copia .ts)
+- [x] **HF2** JSON bruto na tela: LLM usa campos variáveis (`mensagem_ao_aluno` etc.)
+- [x] **HF3** Cascata falha: LLM usa `agente_destino` + typos de nomes (`VERBETA`)
+- [x] **HF4** Limite 5 turnos = 5 mensagens (turno só incrementa em troca de matéria)
+- [x] **HF5** Logo login pequeno (h-16→h-32)
+
+### UX Melhorias (2026-03-13)
+
+- [x] **UX1** Markdown rico (remark-gfm: tabelas, código, blockquotes)
+- [x] **UX2** CSS chat-bubble-content (formatação visual completa)
+- [x] **UX3** Typing effect (useTypingEffect: revelação gradual com pausa entre parágrafos)
+
 ---
 
 ## FASE 5: Site SaaS — Landing, Checkout, Onboarding

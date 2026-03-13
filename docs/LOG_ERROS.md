@@ -44,6 +44,15 @@
 | 15 | 2026-03-13 | Gate 5 | "revolução" matchava "evolução" (substring) → NEURON | KEYWORDS_CIENCIAS tinha "evolução", ciencias checada antes de historia | 1) Reordenar historia antes de ciencias; 2) "evolução" → "teoria da evolução" | ✅ Resolvido |
 | 16 | 2026-03-13 | Gate 5 | "me conta sobre" matchava "conta" (math) → CALCULUS | KEYWORDS_MATEMATICA tinha "conta" genérico | Trocar por "conta de matematica"/"fazer conta"/"fazer contas" | ✅ Resolvido |
 
+## Erros Resolvidos (Hotfixes Produção — 2026-03-13)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 17 | 2026-03-13 | Produção | Persona PSICOPEDAGOGICO não encontrada | `tsc` não copia .md para dist/. `carregarPersona()` usa `__dirname` relativo a dist/ | Build: `tsc && cp -r src/personas dist/personas` | ✅ Resolvido |
+| 18 | 2026-03-13 | Produção | JSON bruto exibido na tela do aluno | LLM usou `mensagem_ao_aluno` em vez de `resposta_para_aluno`. Extrator só conhecia 2 campos | `extrairTextoDoJSON()` com 9 campos possíveis em prioridade | ✅ Resolvido |
+| 19 | 2026-03-13 | Produção | Cascata PSICO→Herói falha (herói inválido) | LLM usou `agente_destino: "VERBETA"` em vez de `heroi_escolhido: "VERBETTA"` | Extração robusta (4 campos) + `normalizarNomeHeroi()` fuzzy match + plano/instrucoes robustos | ✅ Resolvido |
+| 20 | 2026-03-13 | Produção | Limite 5 turnos atingido após 5 mensagens | `incrementarTurnoCompleto()` chamado em TODA mensagem | Turno completo só incrementa em troca de matéria (tema novo ≠ anterior) | ✅ Resolvido |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -66,6 +75,9 @@ _(Atualizar conforme erros se repetem)_
 
 - **Supabase:** MCP padrão (mcp__supabase) vê projeto errado. Usar mcp__0150fe87 para Super Agentes.
 - **LLM/Gemini:** PSICOPEDAGOGICO nem sempre retorna JSON correto para cascata. Mitigado com seed de turnos.
+- **LLM/Gemini (PRODUÇÃO):** LLM varia nomes de campos JSON e comete typos em nomes de heróis. Mitigado com extração robusta multi-campo + fuzzy match.
+- **Build:** `tsc` NÃO copia arquivos não-TypeScript (.md, .json). Sempre copiar manualmente no script build.
+- **Dev vs Prod:** `tsx` (dev) roda direto do `src/`, `node` (prod) roda do `dist/`. Paths relativos divergem.
 - **TypeScript:** Nenhum até agora
 - **SSE:** Nenhum até agora
 - **Testes:** Isolamento de estado entre suites é crítico — usar alunos/sessões dedicados por suite

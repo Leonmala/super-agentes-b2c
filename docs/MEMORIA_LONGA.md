@@ -23,6 +23,8 @@
 | Visual Polish | 100% ✅ | Leon aprovou interface 2026-03-13 |
 | Fase 4: Infra | 100% ✅ | PASSED (12/12) 2026-03-13 |
 | Gate 5 E2E: 8 Agentes | 100% ✅ | PASSED (14/14, média 9.3/10) 2026-03-13 |
+| Hotfixes Produção | 100% ✅ | 4 bugs corrigidos (personas, JSON, cascata, turnos) 2026-03-13 |
+| UX: Markdown + Typing | 100% ✅ | remark-gfm + useTypingEffect + CSS 2026-03-13 |
 | Fase 5: SaaS | 0% | - |
 | Fase 6: Deploy Final | 0% | - |
 
@@ -72,6 +74,11 @@
 | 33 | Device check inline (não middleware global) | JWT decode acontece dentro do handler, então device check é inline após JWT, não middleware Express separado. | 2026-03-13 |
 | 34 | Reset diário automático (sem CRON meia-noite) | Primeiro request do dia cria registro em b2c_uso_diario. Sem midnight CRON. | 2026-03-13 |
 | 35 | Estratégia comercial documentada | Planos mensal + anual com desconto. 3 dias de teste + garantia devolução. Gateway: Mercado Pago (Pix). | 2026-03-13 |
+| 36 | Build copia personas para dist/ | `tsc` não copia .md → build:server faz `tsc && cp -r src/personas dist/personas` | 2026-03-13 |
+| 37 | Extração robusta de JSON do LLM | `extrairTextoDoJSON()` com 9 campos + `normalizarNomeHeroi()` fuzzy match. LLM é não-determinístico. | 2026-03-13 |
+| 38 | Turno completo = troca de matéria | Não incrementar por mensagem. Turno só conta quando `temaDetectado !== sessao.tema_atual`. | 2026-03-13 |
+| 39 | remark-gfm para markdown rico | Tabelas, strikethrough, etc. Sem isso, prompts especializados perdem diferenciação do ChatGPT. | 2026-03-13 |
+| 40 | useTypingEffect hook | Revelação gradual: 3 chars/25ms, pausa 400ms entre parágrafos, flush 15 chars/25ms. Sensação "viva". | 2026-03-13 |
 
 ---
 
@@ -194,6 +201,14 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 | 2026-03-13 ~sessão3 | Plano Fase 4 escrito | 12 tasks em 6 chunks. Review passou. |
 | 2026-03-13 ~sessão3 | Fase 4 implementada | Bug fixes + Qdrant + CRON + Dispositivos + Frontend token. Subagent-driven. |
 | 2026-03-13 ~sessão3 | Gate 4 PASSED | 12/12 testes passando ✅ |
+| 2026-03-13 ~sessão4 | Gate 5 E2E PASSED | 14/14 testes, média 9.3/10. Bugs de keywords corrigidos. |
+| 2026-03-13 ~sessão4 | UX: Markdown rico + Typing effect | remark-gfm, CSS chat-bubble-content, useTypingEffect hook |
+| 2026-03-13 ~sessão5 | Usuário real criado no Supabase | Leon + Layla (12a, 7ª) + Maria Paz (7a, 3ª). Plano familiar. |
+| 2026-03-13 ~sessão5 | HF1: Personas não encontradas em prod | Build agora copia personas para dist/ |
+| 2026-03-13 ~sessão5 | HF2: JSON bruto na tela | extrairTextoDoJSON() com 9 campos possíveis |
+| 2026-03-13 ~sessão5 | HF3: Cascata PSICO→Herói falha | Extração robusta herói + normalizarNomeHeroi() fuzzy match |
+| 2026-03-13 ~sessão5 | HF4: Limite 5 turnos = 5 msgs | Turno só incrementa em troca de matéria |
+| 2026-03-13 ~sessão5 | App testada em produção | Leon e filhas testaram no celular. Funcionando. |
 
 ---
 

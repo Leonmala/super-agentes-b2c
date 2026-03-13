@@ -31,7 +31,7 @@ export const HEROES: Record<HeroId, HeroMeta> = {
     corGradient: 'from-emerald-500 to-green-500',
     avatar: '/heroes/neuron_buble.png',
     card: '/heroes/neuron-card.png',
-    logo: null,
+    logo: '/heroes/neuron-logo.png',
     limpo: '/heroes/neuron-limpo.png',
   },
   TEMPUS: {
