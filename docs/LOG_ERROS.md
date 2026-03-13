@@ -26,6 +26,13 @@
 | 7 | 2026-03-12 | Gate 2 | Router português falha (Round 1) — "conjugação" não em keywords | Mensagem usava termos não cobertos por KEYWORDS_PORTUGUES | Trocar mensagem para "gramática e ortografia do português" | ✅ Resolvido |
 | 8 | 2026-03-12 | Gate 2 | Router português falha (Round 2) — state contamination | Turnos MODO PAI empurram seeded hero turns para fora da janela de 10 turnos | Criar seedRegressionAluno dedicado para testes de regressão | ✅ Resolvido |
 
+## Erros Resolvidos (Deploy)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 9 | 2026-03-13 | Deploy | Railway Node.js 22.11.0 < 22.12 (req Vite 8) | Nixpacks default Node version desatualizada | `.node-version` + `nixpacks.toml` + engines >=22.12.0 | ⏳ Aguardando redeploy |
+| 10 | 2026-03-13 | Deploy | @rolldown/binding-linux-x64-gnu not found | npm skip optional deps em CI | `--include=optional` no install:all | ⏳ Aguardando redeploy |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |

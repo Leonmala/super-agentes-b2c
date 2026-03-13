@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "install:all": "cd server && npm install && cd ../web && npm install --legacy-peer-deps",
+    "install:all": "cd server && npm install && cd ../web && npm install --legacy-peer-deps --include=optional",
     "build:server": "cd server && npx tsc",
     "build:web": "cd web && npx vite build --outDir ../web-dist",
     "build": "npm run build:server && npm run build:web",

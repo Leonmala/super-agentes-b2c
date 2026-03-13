@@ -7,33 +7,29 @@
 
 ## Estado Imediato
 
-**Fase atual:** 3 — Frontend (COMPLETA ✅)
-**Completion Promise:** `Gate 3 PASSED — 6/6 testes smoke passando`
-**Status:** Frontend SPA completo, build de produção OK, logos institucionais integrados.
-**Fase 2.5:** ADIADA — Workshop PROFESSOR_IA será com Leon descansado (sessão colaborativa).
+**Fase atual:** Deploy Railway (entre Fase 3 e Fase 4)
+**Status:** Fases 1-3 completas. Primeiro deploy Railway falhou por Node.js 22.11 < 22.12 (requisito Vite 8) + rolldown native binding.
+**Fix aplicado:** `.node-version`, `nixpacks.toml`, engines >=22.12.0, `--include=optional` no install.
+**Aguardando:** Push via Claude Code CLI + redeploy Railway.
 
 ## Último Slice Completado
 
-**Slice:** Implementação completa Fase 3 Frontend + integração de imagens institucionais
+**Slice:** Fix deploy Railway — Node.js version + rolldown bindings
 **O que foi feito:**
-- Scaffold Vite + React 18 + TypeScript + Tailwind CSS
-- Types, API client, Auth context, Chat context (SSE streaming)
-- Login page, Profile modal, PIN modal
-- EmptyState, ChatBubble (markdown sanitizado), ChatMessages, ChatHeader, ChatInput, StreamingCursor
-- SlideMenu overlay com seletor de filho ativo (modo pai)
-- ChatPage assemblando todos os componentes + toasts de erro/limite
-- Gate 3 smoke tests: 6/6 passando (Vitest)
-- Build produção: CSS 27.82KB, JS 371.04KB
-- Imagens institucionais integradas: `Logo_SuperAgentesPenseAI.png` → login, `SuperAgentesPenseAi_buble.png` → empty state + menu lateral
-- 31 arquivos de imagens de heróis copiados para `web/public/heroes/`
-- 2 logos institucionais em `web/public/` (logo.png + logo-buble.png)
+- Criado `.node-version` (22) para Nixpacks
+- Criado `nixpacks.toml` com nodejs_22
+- Atualizado engines no root package.json para >=22.12.0
+- Adicionado `--include=optional` no install:all (garante @rolldown/binding-linux-x64-gnu)
+- Repo GitHub: https://github.com/Leonmala/super-agentes-b2c
+- Deploy automático: Railway (conectado ao repo)
 
 ## Próximo Passo Exato
 
-1. **Leon testar o frontend** → `cd web && npm run dev` (porta 5173 com proxy para :3001)
-2. **Fase 2.5** → Workshop PROFESSOR_IA (sessão colaborativa)
-3. **Fase 4** → CRON, Qdrant, Limites
-4. **Cleanup** → deletar `dist` e `dist2` quando possível (ficaram locked por permissão)
+1. **Push fix via Claude Code CLI** → Leon roda prompt no terminal local
+2. **Railway redeploy automático** → verificar se build passa
+3. **Se OK:** testar app em produção (URL Railway)
+4. **Fase 2.5** → Workshop PROFESSOR_IA
+5. **Fase 4** → CRON, Qdrant, Limites
 
 ## Contexto Crítico Para Boot
 
