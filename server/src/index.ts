@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 
 import authRouter from './routes/auth.js'
 import messageRouter from './routes/message.js'
+import { registrarCronSemanal } from './core/cron.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -44,6 +45,9 @@ app.get('*', (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Super Agentes B2C V1 — porta ${PORT}\n`)
+
+  // Registrar CRON semanal (flush → Qdrant → cleanup)
+  registrarCronSemanal()
 })
 
 export default app

@@ -11,10 +11,13 @@
     "test": "tsx --test tests/**/*.test.ts",
     "gate:1": "tsx --test tests/gate1-backend.test.ts",
     "gate:2": "tsx --test tests/gate2-agentes.test.ts",
+    "gate:3": "tsx --test tests/gate3-frontend.test.ts",
+    "gate:4": "tsx --test tests/gate4-infraestrutura.test.ts",
     "gate:all": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@qdrant/js-client-rest": "^1.12.0",
     "@supabase/supabase-js": "^2.39.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -83,16 +83,27 @@ export interface UsoDiario {
   aluno_id: string
   data: string
   interacoes: number
-  turnos: number
+  turnos_completos: number
   created_at: string
   updated_at: string
 }
 
 export interface DispositivoAtivo {
   id: string
-  sessao_id: string
-  user_agent: string
-  ip_address: string | null
-  ultimo_heartbeat: string
+  familia_id: string
+  perfil_id: string
+  tipo_perfil: string
+  device_token: string
+  ultimo_ping: string
+  created_at: string
+}
+
+export interface QdrantRef {
+  id: string
+  aluno_id: string
+  namespace: string
+  semana_ref: string
+  ponto_ids: string[] | null
+  resumo_semantico: string | null
   created_at: string
 }

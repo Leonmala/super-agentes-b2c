@@ -49,7 +49,7 @@ export async function incrementarUso(alunoId: string): Promise<UsoDiario> {
         aluno_id: alunoId,
         data: hoje,
         interacoes: 1,
-        turnos: 0
+        turnos_completos: 0
       })
       .select()
       .single()
@@ -97,7 +97,7 @@ export async function verificarLimiteAtingido(
 ): Promise<{
   atingido: boolean
   interacoes: number
-  turnos: number
+  turnos_completos: number
   mensagem?: string
 }> {
   const uso = await buscarUsoDiario(alunoId)
@@ -106,35 +106,66 @@ export async function verificarLimiteAtingido(
     return {
       atingido: false,
       interacoes: 0,
-      turnos: 0
+      turnos_completos: 0
     }
   }
 
   const interacoes = uso.interacoes || 0
-  const turnos = uso.turnos || 0
+  const turnos_completos = uso.turnos_completos || 0
 
-  const atingido = interacoes >= LIMITE_INTERACOES || turnos >= LIMITE_TURNOS
+  const atingido = interacoes >= LIMITE_INTERACOES || turnos_completos >= LIMITE_TURNOS
 
   const resultado = {
     atingido,
     interacoes,
-    turnos
+    turnos_completos
   } as {
     atingido: boolean
     interacoes: number
-    turnos: number
+    turnos_completos: number
     mensagem?: string
   }
 
   if (atingido) {
-    if (interacoes >= LIMITE_INTERACOES && turnos >= LIMITE_TURNOS) {
+    if (interacoes >= LIMITE_INTERACOES && turnos_completos >= LIMITE_TURNOS) {
       resultado.mensagem = `Você atingiu o limite diário de ${LIMITE_INTERACOES} interações e ${LIMITE_TURNOS} turnos. Volte amanhã para continuar aprendendo!`
     } else if (interacoes >= LIMITE_INTERACOES) {
       resultado.mensagem = `Você atingiu o limite diário de ${LIMITE_INTERACOES} interações. Volte amanhã para continuar aprendendo!`
-    } else if (turnos >= LIMITE_TURNOS) {
+    } else if (turnos_completos >= LIMITE_TURNOS) {
       resultado.mensagem = `Você atingiu o limite diário de ${LIMITE_TURNOS} turnos. Volte amanhã para continuar aprendendo!`
     }
   }
 
   return resultado
+}
+
+// ============================================================
+// INCREMENTAR TURNO COMPLETO
+// ============================================================
+
+export async function incrementarTurnoCompleto(alunoId: string): Promise<void> {
+  const hoje = new Date().toISOString().split('T')[0]
+
+  // Buscar registro existente (já deve existir pois incrementarUso foi chamado antes)
+  const { data: usoExistente } = await supabase
+    .from('b2c_uso_diario')
+    .select('*')
+    .eq('aluno_id', alunoId)
+    .eq('data', hoje)
+    .single()
+
+  if (usoExistente) {
+    const { error } = await supabase
+      .from('b2c_uso_diario')
+      .update({
+        turnos_completos: (usoExistente.turnos_completos || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', usoExistente.id)
+
+    if (error) {
+      console.error('Erro ao incrementar turno completo:', error.message)
+    }
+  }
+  // Se não existe registro do dia, não incrementa (não deveria acontecer)
 }

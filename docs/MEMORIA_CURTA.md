@@ -1,49 +1,49 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-13 (sessão deploy + visual polish)
+> **Última atualização:** 2026-03-13 (Fase 4 completa)
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Entre Fase 3 e Fase 4 — Deploy Railway FUNCIONANDO ✅
-**Status:** App rodando em produção no Railway. Interface visual aprovada pelo Leon.
-**Fase 2.5:** ADIADA — Workshop PROFESSOR_IA será com Leon descansado.
-**Próximo:** Fase 4 (CRON, Qdrant, Limites)
+**Fase atual:** Fase 4 COMPLETA ✅ → Próximo: Fase 5 (SaaS)
+**Status:** Gate 4 PASSED (12/12 testes). CRON, Qdrant, Dispositivos, Limites implementados.
+**Fase 2.5:** ADIADA — Workshop PROFESSOR_IA será por último (após Fases 4→5→6).
+**Próximo:** Fase 5 (Landing page, Checkout Mercado Pago, Onboarding)
 
 ## Último Slice Completado
 
-**Slice:** Deploy Railway + Visual Polish
+**Slice:** Fase 4 — Infraestrutura completa
 **O que foi feito:**
-- Fix deploy Railway: downgrade Vite 8→6.3.5 (eliminou rolldown + Node version issue)
-- Variáveis de ambiente configuradas no Railway
-- App rodando em produção ✅
-- Visual polish aprovado pelo Leon:
-  - Sistema de cores por perfil: pai=azul (#2563EB), filhos=paleta vibrante (amarelo/vermelho/verde/laranja/roxo/ciano)
-  - Header e SlideMenu com fundo colorido do perfil ativo
-  - Logo retangular (logo.png) no header (h-16) e menu (h-12)
-  - Menu items em cards brancos arredondados
-  - ChatBubble do agente com tint da cor do herói (15% opacidade)
-  - ProfileModal com cores casando (FILHO_COLORS por índice)
-  - Bug fix: Professor IA só visível para ensino médio e pai (antes aparecia para todos)
-- Repo GitHub: https://github.com/Leonmala/super-agentes-b2c
-- Deploy automático: Railway (conectado ao repo)
+- Bug fix BLOQUEADOR: interfaces TypeScript corrigidas (UsoDiario.turnos→turnos_completos, DispositivoAtivo campos errados)
+- Bug fix: usage-queries.ts INSERT e SELECT agora usam coluna correta `turnos_completos`
+- Nova função `incrementarTurnoCompleto()` — incrementa após resposta do herói
+- Qdrant Cloud integration: `server/src/db/qdrant.ts` (inicializar, embedding, search, upsert)
+- CRON semanal: `server/src/core/cron.ts` (flush turnos → resumo LLM → embedding → backup → delete → encerrar sessões)
+- CRON registrado no boot do Express (`index.ts`)
+- Controle de dispositivos: `server/src/core/dispositivos.ts` (registro, verificação limite=3, cleanup)
+- Device check wired em `routes/message.ts` (após JWT decode, antes do processamento)
+- Frontend: `X-Device-Token` header em todas as requisições (localStorage UUID)
+- Dependência `@qdrant/js-client-rest` instalada
+- Gate 4: 12/12 testes passando
+- QdrantRef interface adicionada em supabase.ts
 
 ## Próximo Passo Exato
 
-1. **Push visual polish** → Claude Code CLI (ProfileModal + ChatHeader + SlideMenu + constants + AuthContext + docs)
-2. **Fase 2.5** → Workshop PROFESSOR_IA (sessão colaborativa com Leon)
-3. **Fase 4** → CRON semanal, Qdrant embeddings, Limites, Dispositivos simultâneos
+1. **Push Fase 4** → Claude Code CLI (escape hatch para Leon)
+2. **Fase 5** → Landing page + Checkout Mercado Pago + Onboarding
+3. **Fase 6** → Deploy final + E2E
+4. **Fase 2.5** → Workshop PROFESSOR_IA (último)
 
 ## Contexto Crítico Para Boot
 
 - Supabase: ahopvaekwejpsxzzrvux (9 tabelas b2c_ criadas ✅)
 - MCP: usar `mcp__0150fe87` para Supabase (não `mcp__supabase`)
 - Server backend: porta 3001, TypeScript strict, ESM modules
-- Frontend: Vite 6.3.5 + React 18 + Tailwind (downgraded de Vite 8 para fix Railway)
-- Testes: Gate 1 (21/21) ✅, Gate 2 (13/13) ✅, Gate 3 smoke (6/6) ✅
-- Deploy: Railway FUNCIONANDO ✅ (variáveis de ambiente configuradas)
-- CLAUDE.md contém Ralph Loop + Escape Hatch Claude Code CLI
-- Sistema de cores: constants.ts → FILHO_COLORS[], PAI_COLOR, getProfileColor()
-- AuthContext: perfilAtivo agora tem `filhoIndex` e `cor`
+- Frontend: Vite 6.3.5 + React 18 + Tailwind
+- Testes: Gate 1 (21/21) ✅, Gate 2 (13/13) ✅, Gate 3 smoke (6/6) ✅, Gate 4 (12/12) ✅
+- Deploy: Railway FUNCIONANDO ✅
+- Novas env vars necessárias: QDRANT_URL, QDRANT_API_KEY, EMBEDDING_PROVIDER=gemini, TZ=America/Sao_Paulo
+- Novos arquivos: server/src/db/qdrant.ts, server/src/core/cron.ts, server/src/core/dispositivos.ts
+- Repo GitHub: https://github.com/Leonmala/super-agentes-b2c

@@ -21,8 +21,9 @@ import {
   persistirTurno,
   atualizarSessao
 } from '../db/persistence.js'
-import { incrementarUso, verificarLimiteAtingido } from '../db/usage-queries.js'
+import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
+import { registrarDispositivo, verificarLimiteDispositivos } from '../core/dispositivos.js'
 
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'super-agentes-dev-secret'
@@ -115,6 +116,23 @@ router.post('/message', async (req: Request, res: Response) => {
     // Buscar sessão
     const tipoUsuario = (tipo_usuario as 'filho' | 'pai') || 'filho'
     const sessao = await buscarOuCriarSessao(aluno_id, tipoUsuario)
+
+    // Verificar dispositivo simultâneo
+    const deviceToken = req.headers['x-device-token'] as string
+    if (deviceToken) {
+      const tipoPerfil = (tipo_usuario as string) || 'filho'
+      await registrarDispositivo(familia_id, aluno_id, tipoPerfil, deviceToken)
+      const deviceCheck = await verificarLimiteDispositivos(familia_id)
+
+      if (!deviceCheck.permitido) {
+        enviarEvento('error', {
+          erro: 'Limite de dispositivos simultâneos atingido',
+          mensagem: `Sua família tem ${deviceCheck.ativos} dispositivos ativos (limite: ${deviceCheck.limite}). Feche a sessão em outro dispositivo.`
+        })
+        res.end()
+        return
+      }
+    }
 
     // Verificar limite ANTES de processar
     const limiteInfo = await verificarLimiteAtingido(aluno_id)
@@ -357,11 +375,15 @@ router.post('/message', async (req: Request, res: Response) => {
     ])
       .then(() => {
         console.log(`[${aluno_id}] Persistência concluída (turno ${novoTurno})`)
-        // Incrementar uso após sucesso
         return incrementarUso(aluno_id)
       })
       .then(() => {
         console.log(`[${aluno_id}] Uso incrementado`)
+        // Incrementar turno completo (herói respondeu com sucesso)
+        return incrementarTurnoCompleto(aluno_id)
+      })
+      .then(() => {
+        console.log(`[${aluno_id}] Turno completo incrementado`)
       })
       .catch(erro => {
         console.error(`[${aluno_id}] Erro na persistência/uso:`, erro)

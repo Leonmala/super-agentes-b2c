@@ -102,12 +102,12 @@
 
 ## FASE 4: Infraestrutura — CRON, Qdrant, Limites
 
-- [ ] **4.1** CRON semanal (flush turnos → Qdrant → cleanup)
-- [ ] **4.2** Integração Qdrant (embeddings semanais)
-- [ ] **4.3** Controle de dispositivos simultâneos
-- [ ] **4.4** Limite suave completo (25 interações OU 5 turnos)
-- [ ] **4.T** Scripts de teste Gate 4
-- [ ] **GATE 4** — Todos os testes passando ✅
+- [x] **4.1** CRON semanal (flush turnos → Qdrant → cleanup)
+- [x] **4.2** Integração Qdrant (embeddings semanais)
+- [x] **4.3** Controle de dispositivos simultâneos
+- [x] **4.4** Limite suave completo (25 interações OU 5 turnos) + bug fix turnos_completos
+- [x] **4.T** Scripts de teste Gate 4 (12 testes)
+- [x] **GATE 4** — Todos os testes passando ✅ (12/12 — 2026-03-13)
 
 ---
 

@@ -7,8 +7,8 @@
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** Deploy + Visual Polish (COMPLETA ✅) → Próximo: Fase 4
-**Próximo passo:** Fase 2.5 Workshop PROFESSOR_IA (com Leon) → Fase 4 Infra
+**Fase:** Fase 4 COMPLETA ✅ → Próximo: Fase 5 (SaaS)
+**Próximo passo:** Fase 5 (Landing + Checkout + Onboarding)
 **Bloqueios:** Nenhum
 
 ### Progresso por Fase
@@ -17,11 +17,11 @@
 |------|--------|------|
 | Fase 1: Backend | 100% ✅ | PASSED (21/21) 2026-03-12 |
 | Fase 2: Agentes | 100% ✅ | PASSED (13/13) 2026-03-12 |
-| Fase 2.5: Workshop PROFESSOR_IA | 0% | Adiada — sessão colaborativa com Leon |
+| Fase 2.5: Workshop PROFESSOR_IA | 0% | Adiada — será por último (após Fases 4→5→6) |
 | Fase 3: Frontend | 100% ✅ | PASSED (6/6) 2026-03-12 |
 | Deploy Railway | 100% ✅ | App rodando em produção 2026-03-13 |
 | Visual Polish | 100% ✅ | Leon aprovou interface 2026-03-13 |
-| Fase 4: Infra | 0% | - |
+| Fase 4: Infra | 100% ✅ | PASSED (12/12) 2026-03-13 |
 | Fase 5: SaaS | 0% | - |
 | Fase 6: Deploy Final | 0% | - |
 
@@ -60,6 +60,12 @@
 | 27 | Professor IA só para médio + pai | Bug fix: antes era always:true. Fundamental não tem acesso ao Professor IA. | 2026-03-13 |
 | 28 | Logo retangular no header (h-16) | logo-buble.png substituído por logo.png no header e menu. h-8→h-16 para legibilidade. | 2026-03-13 |
 | 29 | Balão agente com cor do herói | ChatBubble: fundo `${corHeroi}15` (15% opacidade), borda `${corHeroi}40`. Balão user usa cor do perfil. | 2026-03-13 |
+| 30 | PROFESSOR_IA por último | Leon decidiu: toda estrutura primeiro (Fases 4→5→6), workshop PROFESSOR_IA por último. | 2026-03-13 |
+| 31 | Qdrant Cloud free tier | Não self-hosted no Railway. Free tier 1GB suficiente para V1. | 2026-03-13 |
+| 32 | EMBEDDING_PROVIDER abstração | Gemini text-embedding-004 (768d) na V1. Kimi futuro. Se dimensão mudar, recriar collection. | 2026-03-13 |
+| 33 | Device check inline (não middleware global) | JWT decode acontece dentro do handler, então device check é inline após JWT, não middleware Express separado. | 2026-03-13 |
+| 34 | Reset diário automático (sem CRON meia-noite) | Primeiro request do dia cria registro em b2c_uso_diario. Sem midnight CRON. | 2026-03-13 |
+| 35 | Estratégia comercial documentada | Planos mensal + anual com desconto. 3 dias de teste + garantia devolução. Gateway: Mercado Pago (Pix). | 2026-03-13 |
 
 ---
 
@@ -178,6 +184,10 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 | 2026-03-13 ~sessão2 | Visual polish — Round 1 | Cores por perfil, cards brancos, logo retangular, fix Professor IA |
 | 2026-03-13 ~sessão2 | Visual polish — Round 2 | ProfileModal cores casando + logo header dobrado (h-16) |
 | 2026-03-13 ~sessão2 | Interface aprovada pelo Leon | "está incrível...perfeito" → seguir para próxima fase |
+| 2026-03-13 ~sessão3 | Brainstorm + Spec Fase 4 | Design de CRON, Qdrant, Dispositivos, Limites. Leon aprovou. |
+| 2026-03-13 ~sessão3 | Plano Fase 4 escrito | 12 tasks em 6 chunks. Review passou. |
+| 2026-03-13 ~sessão3 | Fase 4 implementada | Bug fixes + Qdrant + CRON + Dispositivos + Frontend token. Subagent-driven. |
+| 2026-03-13 ~sessão3 | Gate 4 PASSED | 12/12 testes passando ✅ |
 
 ---
 

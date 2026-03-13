@@ -1,5 +1,14 @@
 const BASE_URL = '/api'
 
+function getDeviceToken(): string {
+  let token = localStorage.getItem('sa_device_token')
+  if (!token) {
+    token = crypto.randomUUID()
+    localStorage.setItem('sa_device_token', token)
+  }
+  return token
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message)
@@ -21,6 +30,9 @@ export async function apiFetch<T>(
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
+
+  // Device token para controle de dispositivos simultâneos
+  headers['X-Device-Token'] = getDeviceToken()
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
