@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import type { ReactNode } from 'react'
 import type { Familia, Filho, Responsavel, TipoInterface, TipoUsuario } from '../types'
 import * as authApi from '../api/auth'
+import { getProfileColor } from '../constants'
 
 interface PerfilAtivo {
   alunoId?: string
@@ -10,6 +11,8 @@ interface PerfilAtivo {
   tipoUsuario: TipoUsuario
   tipoInterface: TipoInterface
   nome: string
+  filhoIndex: number
+  cor: string
 }
 
 interface AuthState {
@@ -84,7 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const selectFilho = useCallback(async (filhoId: string) => {
-    const filho = state.filhos.find(f => f.id === filhoId)
+    const filhoIndex = state.filhos.findIndex(f => f.id === filhoId)
+    const filho = state.filhos[filhoIndex]
     if (!filho) throw new Error('Filho não encontrado')
 
     const res = await authApi.selectProfile(filhoId, 'filho')
@@ -95,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipoUsuario: 'filho',
         tipoInterface: res.tipo_interface,
         nome: filho.nome,
+        filhoIndex,
+        cor: getProfileColor('filho', filhoIndex),
       },
     }))
   }, [state.filhos])
@@ -112,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipoUsuario: 'pai',
         tipoInterface: 'pai',
         nome: state.responsavel!.nome,
+        filhoIndex: -1,
+        cor: getProfileColor('pai', -1),
       },
     }))
   }, [state.responsavel, state.filhos])

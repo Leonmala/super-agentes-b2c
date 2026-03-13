@@ -96,3 +96,22 @@ export const INTERFACE_COLORS = {
   medio: '#7C3AED',
   pai: '#059669',
 } as const
+
+// Paleta vibrante saturada para filhos — sem gênero, atribuída por índice
+export const FILHO_COLORS = [
+  '#EAB308', // amarelo
+  '#DC2626', // vermelho
+  '#16A34A', // verde
+  '#EA580C', // laranja
+  '#7C3AED', // roxo
+  '#0891B2', // ciano
+] as const
+
+// Azul institucional — responsável e botão enviar
+export const PAI_COLOR = '#2563EB'
+
+// Retorna a cor do perfil ativo: pai = azul, filho = paleta por índice
+export function getProfileColor(tipoUsuario: 'filho' | 'pai', filhoIndex: number): string {
+  if (tipoUsuario === 'pai') return PAI_COLOR
+  return FILHO_COLORS[filhoIndex % FILHO_COLORS.length]
+}
