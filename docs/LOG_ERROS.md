@@ -33,6 +33,17 @@
 | 9 | 2026-03-13 | Deploy | Railway Node.js 22.11.0 < 22.12 (req Vite 8) + rolldown binding missing | Vite 8 usa rolldown (nativo), Railway usa Docker com Node 22.11, nixpacks.toml ignorado | **Downgrade Vite 8→6.3.5** (usa esbuild, funciona com Node 18+). Também: plugin-react 6→4.3.4, vitest 4→3.2.1, TS 5.9→5.8.3 | ✅ Fix aplicado |
 | 10 | 2026-03-13 | Deploy | Tentativa 1: nixpacks.toml + .node-version (não funcionou) | Railway usa Dockerfile, não Nixpacks | Removidos nixpacks.toml e .node-version. Solução real: downgrade Vite | ✅ Resolvido |
 
+## Erros Resolvidos (Gate 5 E2E)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 11 | 2026-03-13 | Gate 5 | gemini-2.0-flash deprecated → 503/404 nos heróis | LLM default em llm.ts era modelo descontinuado | Atualizar default para gemini-2.5-flash | ✅ Resolvido |
+| 12 | 2026-03-13 | Gate 5 | b2c_uso_diario sem updated_at → schema cache error | Coluna não existia na tabela | Migração SQL adicionando updated_at e created_at | ✅ Resolvido |
+| 13 | 2026-03-13 | Gate 5 | Session state pollution entre testes cascata | Testes compartilhavam aluno sem limpar sessões | limparSessoesAluno() deleta sessions+turnos+uso_diario | ✅ Resolvido |
+| 14 | 2026-03-13 | Gate 5 | PSICO alucinava heroi_escolhido (ALKA→FLEX, VERBETA typo) | LLM nem sempre retorna hero correto no JSON | Override por keyword em message.ts (personaPorTema > PSICO) | ✅ Resolvido |
+| 15 | 2026-03-13 | Gate 5 | "revolução" matchava "evolução" (substring) → NEURON | KEYWORDS_CIENCIAS tinha "evolução", ciencias checada antes de historia | 1) Reordenar historia antes de ciencias; 2) "evolução" → "teoria da evolução" | ✅ Resolvido |
+| 16 | 2026-03-13 | Gate 5 | "me conta sobre" matchava "conta" (math) → CALCULUS | KEYWORDS_MATEMATICA tinha "conta" genérico | Trocar por "conta de matematica"/"fazer conta"/"fazer contas" | ✅ Resolvido |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -44,8 +55,8 @@
 
 | # | Descrição | Impacto | Prioridade |
 |---|-----------|---------|------------|
-| B1 | Keyword "conta" (verbo contar) match com "conta" (math) | Falso positivo no router — roteamento errado para CALCULUS | Baixa — refinar keywords com word boundaries na Fase 2 |
-| B2 | "revolução" contém substring "evolução" (ciências) | Falso positivo no router — ciências detectada antes de história | Baixa — reordenar checagem ou usar regex com word boundaries |
+| ~~B1~~ | ~~Keyword "conta"~~ | ~~Resolvido (erro #16)~~ | ✅ |
+| ~~B2~~ | ~~"revolução" substring~~ | ~~Resolvido (erro #15)~~ | ✅ |
 
 ---
 

@@ -9,7 +9,7 @@ if (!GOOGLE_API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY)
-const MODELO = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+const MODELO = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 const MODELO_PSICO = process.env.GEMINI_MODEL_PSICO || 'gemini-2.5-flash'
 const LLM_TIMEOUT_MS = parseInt(process.env.LLM_TIMEOUT_MS || '60000', 10)
 

@@ -108,6 +108,13 @@
 - [x] **4.4** Limite suave completo (25 interações OU 5 turnos) + bug fix turnos_completos
 - [x] **4.T** Scripts de teste Gate 4 (12 testes)
 - [x] **GATE 4** — Todos os testes passando ✅ (12/12 — 2026-03-13)
+- [x] **4.5** Gate 5 E2E — Validação dos 8 agentes com LLM-as-judge (14/14, média 9.3/10)
+  - [x] Bug fix: "revolução"→"evolução" substring (reordenar historia antes de ciencias)
+  - [x] Bug fix: "me conta"→"conta" (refinar keywords matematica)
+  - [x] Bug fix: gemini-2.0-flash deprecated → gemini-2.5-flash
+  - [x] Bug fix: PSICO heroi_escolhido hallucination → keyword override
+  - [x] Bug fix: session state pollution → limparSessoesAluno()
+  - [x] **GATE 5 E2E** — 14/14 testes passando ✅ (2026-03-13)
 
 ---
 

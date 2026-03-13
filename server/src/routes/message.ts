@@ -11,7 +11,8 @@ import {
   determinarStatus,
   detectarTema,
   classificarTemaInteligente,
-  detectarContinuidade
+  detectarContinuidade,
+  personaPorTema
 } from '../core/router.js'
 import { montarContexto } from '../core/context.js'
 import {
@@ -241,7 +242,16 @@ router.post('/message', async (req: Request, res: Response) => {
       const respostaJSON = respostaLLM.jsonData
 
       if (respostaJSON?.acao === 'ENCAMINHAR_PARA_HEROI') {
-        const heroiEscolhido = respostaJSON.heroi_escolhido
+        // Se temos tema detectado por keywords, usar personaPorTema como override
+        // (PSICO pode alucinar o heroi_escolhido, keywords são confiáveis)
+        let heroiEscolhido = respostaJSON.heroi_escolhido
+        if (temaDetectado) {
+          const heroiPorTema = personaPorTema(temaDetectado)
+          if (heroiPorTema !== 'PSICOPEDAGOGICO' && heroiPorTema !== heroiEscolhido) {
+            console.log(`[${aluno_id}] Override: PSICO escolheu ${heroiEscolhido}, keywords indicam ${heroiPorTema}. Usando keywords.`)
+            heroiEscolhido = heroiPorTema
+          }
+        }
 
         if (heroiEscolhido && HEROIS_VALIDOS.includes(heroiEscolhido)) {
           console.log(`[${aluno_id}] PSICO gerou plano. Chamando ${heroiEscolhido} em stream...`)

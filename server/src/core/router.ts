@@ -9,7 +9,8 @@ const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY || '')
 
 // Keywords por tema — conservadores para evitar falsos positivos
 const KEYWORDS_MATEMATICA = [
-  'matemática', 'matematica', 'conta', 'contas',
+  'matemática', 'matematica', 'conta de matematica', 'conta de matemática',
+  'fazer conta', 'fazer contas', 'contas de',
   'fração', 'fracao', 'fracoes', 'frações',
   'número', 'numero', 'números', 'numeros',
   'somar', 'soma', 'dividir', 'divisão', 'divisao',
@@ -36,7 +37,13 @@ const KEYWORDS_PORTUGUES = [
   'interpretação', 'interpretacao',
   'parágrafo', 'paragrafo',
   'acentuação', 'acentuacao',
-  'verbo', 'substantivo', 'adjetivo', 'pronome'
+  'verbo', 'substantivo', 'adjetivo', 'pronome',
+  'metáfora', 'metafora', 'comparação', 'comparacao',
+  'figura de linguagem', 'figuras de linguagem',
+  'sinônimo', 'sinonimo', 'antônimo', 'antonimo',
+  'coesão', 'coesao', 'coerência', 'coerencia',
+  'oração', 'oracao', 'sujeito', 'predicado',
+  'conjunção', 'conjuncao', 'preposição', 'preposicao'
 ]
 
 const KEYWORDS_CIENCIAS = [
@@ -44,17 +51,24 @@ const KEYWORDS_CIENCIAS = [
   'célula', 'celula', 'ecossistema', 'fotossíntese', 'fotossintese',
   'animal', 'planta', 'saúde', 'saude', 'doença', 'doenca',
   'órgão', 'orgao', 'sistema digestivo', 'sistema respiratório', 'sistema respiratorio',
-  'evolução', 'evolucao', 'dna', 'genética', 'genetica',
+  'teoria da evolução', 'teoria da evolucao', 'evolução das espécies', 'evolucao das especies',
+  'dna', 'genética', 'genetica',
   'vírus', 'virus', 'bactéria', 'bacteria', 'microscópio', 'microscopio'
 ]
 
 const KEYWORDS_HISTORIA = [
   'história', 'historia', 'guerra', 'revolução', 'revolucao',
+  'revolução francesa', 'revolucao francesa',
   'brasil colônia', 'brasil colonia', 'império', 'imperio',
   'república', 'republica', 'medieval', 'renascimento',
   'segunda guerra', 'primeira guerra', 'independência', 'independencia',
   'ditadura', 'democracia', 'egito', 'roma', 'grécia', 'grecia',
-  'escravidão', 'escravidao', 'abolição', 'abolicao'
+  'escravidão', 'escravidao', 'abolição', 'abolicao',
+  'descobrimento', 'colonização', 'colonizacao',
+  'monarquia', 'feudalismo', 'iluminismo',
+  'civilização', 'civilizacao', 'idade média', 'idade media',
+  'revolução industrial', 'revolucao industrial',
+  'era vargas', 'proclamação', 'proclamacao'
 ]
 
 const KEYWORDS_GEOGRAFIA = [
@@ -62,7 +76,14 @@ const KEYWORDS_GEOGRAFIA = [
   'continente', 'país', 'pais', 'capital', 'rio', 'montanha',
   'oceano', 'floresta', 'amazônia', 'amazonia',
   'população', 'populacao', 'urbanização', 'urbanizacao',
-  'latitude', 'longitude', 'fuso horário', 'fuso horario'
+  'latitude', 'longitude', 'fuso horário', 'fuso horario',
+  'aquecimento global', 'efeito estufa', 'desmatamento',
+  'poluição', 'poluicao', 'sustentabilidade',
+  'região', 'regiao', 'território', 'territorio',
+  'fronteira', 'migração', 'migracao', 'globalização', 'globalizacao',
+  'cartografia', 'escala', 'rosa dos ventos', 'hemisferio', 'hemisfério',
+  'planalto', 'planície', 'planicie', 'litoral', 'sertão', 'sertao',
+  'cerrado', 'caatinga', 'pampa', 'pantanal', 'mata atlântica', 'mata atlantica'
 ]
 
 const KEYWORDS_FISICA = [
@@ -70,7 +91,12 @@ const KEYWORDS_FISICA = [
   'aceleração', 'aceleracao', 'energia', 'newton', 'gravidade',
   'eletricidade', 'magnetismo', 'onda', 'calor', 'temperatura',
   'pressão', 'pressao', 'movimento', 'inércia', 'inercia',
-  'potência', 'potencia'
+  'potência', 'potencia',
+  'leis de newton', 'lei de newton', 'atrito', 'trabalho',
+  'impulso', 'momento', 'torque', 'campo elétrico', 'campo eletrico',
+  'circuito', 'resistência', 'resistencia', 'corrente elétrica', 'corrente eletrica',
+  'frequência', 'frequencia', 'comprimento de onda',
+  'termodinâmica', 'termodinamica', 'entropia'
 ]
 
 const KEYWORDS_QUIMICA = [
@@ -86,7 +112,14 @@ const KEYWORDS_INGLES = [
   'past tense', 'future', 'vocabulary', 'grammar', 'reading',
   'writing english', 'tradução inglês', 'traducao ingles',
   'traduzir para inglês', 'como fala em inglês', 'como se diz em inglês',
-  'what is', 'how to say'
+  'what is', 'how to say',
+  'present perfect', 'past perfect', 'simple past', 'simple present',
+  'present continuous', 'past continuous', 'future perfect',
+  'conditional', 'modal verb', 'phrasal verb',
+  'preposition', 'adjective', 'adverb',
+  'singular', 'plural', 'countable', 'uncountable',
+  'do you', 'did you', 'will you', 'can you',
+  'in english', 'em inglês', 'em ingles'
 ]
 
 const KEYWORDS_ESPANHOL = [
@@ -106,18 +139,29 @@ const KEYWORDS_CONTINUIDADE = [
   'repita', 'de novo'
 ]
 
+// Normaliza removendo acentos para comparação robusta
+function removerAcentos(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 export function detectarTema(mensagem: string): string | null {
   const msg = mensagem.toLowerCase()
+  const msgSemAcento = removerAcentos(msg)
 
-  if (KEYWORDS_MATEMATICA.some(k => msg.includes(k))) return 'matematica'
-  if (KEYWORDS_PORTUGUES.some(k => msg.includes(k))) return 'portugues'
-  if (KEYWORDS_CIENCIAS.some(k => msg.includes(k))) return 'ciencias'
-  if (KEYWORDS_HISTORIA.some(k => msg.includes(k))) return 'historia'
-  if (KEYWORDS_GEOGRAFIA.some(k => msg.includes(k))) return 'geografia'
-  if (KEYWORDS_FISICA.some(k => msg.includes(k))) return 'fisica'
-  if (KEYWORDS_QUIMICA.some(k => msg.includes(k))) return 'quimica'
-  if (KEYWORDS_ESPANHOL.some(k => msg.includes(k))) return 'espanhol'
-  if (KEYWORDS_INGLES.some(k => msg.includes(k))) return 'ingles'
+  // Checar com e sem acentos para robustez de encoding
+  const matchKeyword = (keywords: string[]) =>
+    keywords.some(k => msg.includes(k) || msgSemAcento.includes(removerAcentos(k)))
+
+  // ORDEM IMPORTA: historia antes de ciencias (evita "revolução" → "evolução" falso positivo)
+  if (matchKeyword(KEYWORDS_MATEMATICA)) return 'matematica'
+  if (matchKeyword(KEYWORDS_PORTUGUES)) return 'portugues'
+  if (matchKeyword(KEYWORDS_HISTORIA)) return 'historia'
+  if (matchKeyword(KEYWORDS_CIENCIAS)) return 'ciencias'
+  if (matchKeyword(KEYWORDS_GEOGRAFIA)) return 'geografia'
+  if (matchKeyword(KEYWORDS_FISICA)) return 'fisica'
+  if (matchKeyword(KEYWORDS_QUIMICA)) return 'quimica'
+  if (matchKeyword(KEYWORDS_ESPANHOL)) return 'espanhol'
+  if (matchKeyword(KEYWORDS_INGLES)) return 'ingles'
 
   return null
 }

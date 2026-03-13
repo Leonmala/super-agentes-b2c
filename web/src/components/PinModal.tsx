@@ -81,9 +81,9 @@ export function PinModal({ onCancel }: PinModalProps) {
 
         <button
           onClick={onCancel}
-          className="w-full mt-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="w-full mt-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2"
         >
-          Cancelar
+          <span>←</span> Voltar
         </button>
       </div>
     </div>

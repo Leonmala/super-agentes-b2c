@@ -7,8 +7,8 @@
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** Fase 4 COMPLETA ✅ → Próximo: Fase 5 (SaaS)
-**Próximo passo:** Fase 5 (Landing + Checkout + Onboarding)
+**Fase:** Gate 5 E2E PASSED ✅ (14/14 testes, média 9.3/10) → Próximo: Push + Fase 5 (SaaS)
+**Próximo passo:** Push para GitHub + Fase 5 (Landing + Checkout + Onboarding)
 **Bloqueios:** Nenhum
 
 ### Progresso por Fase
@@ -22,6 +22,7 @@
 | Deploy Railway | 100% ✅ | App rodando em produção 2026-03-13 |
 | Visual Polish | 100% ✅ | Leon aprovou interface 2026-03-13 |
 | Fase 4: Infra | 100% ✅ | PASSED (12/12) 2026-03-13 |
+| Gate 5 E2E: 8 Agentes | 100% ✅ | PASSED (14/14, média 9.3/10) 2026-03-13 |
 | Fase 5: SaaS | 0% | - |
 | Fase 6: Deploy Final | 0% | - |
 
@@ -56,6 +57,11 @@
 | 23 | Downgrade Vite 8→6.3.5 para Railway | Railway usa Docker com Node 22.11, Vite 8 precisa 22.12+ e rolldown (nativo C). Vite 6 usa esbuild (JS puro). | 2026-03-13 |
 | 24 | Escape Hatch Claude Code CLI | Quando Cowork VM não pode executar (git push, permissões), montar prompt para Leon rodar no Claude Code CLI | 2026-03-13 |
 | 25 | Sistema de cores por perfil | Pai=azul (#2563EB), Filhos=paleta vibrante por índice (FILHO_COLORS). Cor propagada via AuthContext (filhoIndex + cor). | 2026-03-13 |
+| 26 | Keyword override > PSICO heroi_escolhido | PSICO LLM pode alucinar hero errado; keywords são determinísticas e confiáveis. Override em message.ts | 2026-03-13 |
+| 27 | Ordem de checagem historia > ciencias | "revolução" contém "evolução" como substring. Historia deve ser checada antes de ciencias no router | 2026-03-13 |
+| 28 | Keywords math refinadas (sem "conta" genérico) | "conta" (aritmética) conflita com "me conta" (verbo narrar). Usar "fazer conta"/"conta de matematica" | 2026-03-13 |
+| 29 | LLM-as-judge para E2E (Gemini avaliador) | Teste E2E avalia resposta em 4 dimensões (construtivismo, série, persona, qualidade), threshold ≥5/10 | 2026-03-13 |
+| 30 | limparSessoesAluno() para isolamento de testes | Deletar sessions+turnos+uso_diario entre testes evita state pollution | 2026-03-13 |
 | 26 | Cards brancos no SlideMenu | Itens de menu em bg-white/90 rounded-xl sobre fundo colorido — alivia peso visual | 2026-03-13 |
 | 27 | Professor IA só para médio + pai | Bug fix: antes era always:true. Fundamental não tem acesso ao Professor IA. | 2026-03-13 |
 | 28 | Logo retangular no header (h-16) | logo-buble.png substituído por logo.png no header e menu. h-8→h-16 para legibilidade. | 2026-03-13 |
