@@ -13,6 +13,8 @@ interface ChatContextValue {
   isRevealing: boolean
   erro: string | null
   limiteMsg: string | null
+  agenteMenu: string
+  setAgenteMenu: (agente: string) => void
   enviar: (texto: string, agenteOverride?: string) => Promise<void>
   limpar: () => void
   dismissErro: () => void
@@ -28,6 +30,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [streaming, setStreaming] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [limiteMsg, setLimiteMsg] = useState<string | null>(null)
+  const [agenteMenu, setAgenteMenu] = useState<string>('super_agentes')
   const fullTextRef = useRef('')
 
   const typing = useTypingEffect()
@@ -114,7 +117,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       mensagens, heroiAtivo, streaming,
       streamingText: typing.displayText,
       isRevealing: typing.isRevealing,
-      erro, limiteMsg, enviar, limpar, dismissErro, dismissLimite,
+      erro, limiteMsg, agenteMenu, setAgenteMenu,
+      enviar, limpar, dismissErro, dismissLimite,
     }}>
       {children}
     </ChatContext.Provider>

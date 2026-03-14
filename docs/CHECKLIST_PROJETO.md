@@ -130,6 +130,30 @@
 - [x] **UX2** CSS chat-bubble-content (formatação visual completa)
 - [x] **UX3** Typing effect (useTypingEffect: revelação gradual com pausa entre parágrafos)
 
+### Polimento Pré-Venda — Bloco A: Bugs Críticos (2026-03-14)
+
+- [x] **PA1** Fix JSON leaking no stream dos heróis (buffer completo + extract no final)
+- [x] **PA2** Sistema de anti-keywords no router (blocklist por tema — ideia Leon)
+- [x] **PA3** Logo herói no header h-12 → h-16 (igualar buble)
+
+### Polimento Pré-Venda — Bloco B: UX de Chat (2026-03-14)
+
+- [x] **PB1** Sentence-per-bubble (splitSentences no ChatBubble, avatar só no 1º balão)
+- [x] **PB2** Typing effect mais lento (CHARS 3→2, TICK 25→35ms, PAUSE 400→800ms, FLUSH 15→8)
+- [x] **PB3** Nome do usuário no topo do SlideMenu (nome + tipo perfil)
+- [x] **PB4** EmptyState dinâmico por agente (agenteMenu no ChatContext, textos pai/filho)
+
+### Polimento Pré-Venda — Bloco C: Refinamento de Prompts (2026-03-14)
+
+- [x] **PC1** NEURON: permissão para educação sexual científica (seção SEGURANÇA)
+- [x] **PC2** PSICOPEDAGOGICO: antever temas sexuais por idade no plano (7º+ / 6º- / risco)
+- [x] **PC3** Demais heróis: proibição centralizada em construirEnvelopeGestor (llm.ts)
+
+### Polimento Pré-Venda — Bloco D: Brainstorm Super Prova/Estudo
+
+- [ ] **PD1** Sessão de brainstorm com Leon (MCP + NotebookLM)
+- [ ] **PD2** Análise de viabilidade (V1 vs V1.1)
+
 ---
 
 ## FASE 5: Site SaaS — Landing, Checkout, Onboarding

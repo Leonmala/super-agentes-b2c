@@ -79,6 +79,11 @@
 | 38 | Turno completo = troca de matéria | Não incrementar por mensagem. Turno só conta quando `temaDetectado !== sessao.tema_atual`. | 2026-03-13 |
 | 39 | remark-gfm para markdown rico | Tabelas, strikethrough, etc. Sem isso, prompts especializados perdem diferenciação do ChatGPT. | 2026-03-13 |
 | 40 | useTypingEffect hook | Revelação gradual: 3 chars/25ms, pausa 400ms entre parágrafos, flush 15 chars/25ms. Sensação "viva". | 2026-03-13 |
+| 41 | Pivot: Polimento antes de Fase 5 | Leon decidiu NÃO iniciar Fase 5 (SaaS). Prioridade: polir produto até ficar vendável. 4 blocos: A(Bugs) B(UX) C(Prompts) D(Brainstorm). | 2026-03-14 |
+| 42 | Buffer completo no stream (anti-JSON-leak) | `chamarLLMStream` acumula resposta inteira → extrai texto limpo → envia de uma vez. `useTypingEffect` cuida da animação. Elimina 100% de JSON leaking. | 2026-03-14 |
+| 43 | Sistema de anti-keywords (blocklist) no router | Ideia do Leon: termos proibidos complementam ativadores. Se mensagem contém keyword + anti-keyword → match cancelado. Extensível. Primeiro uso: "trabalho" em física. | 2026-03-14 |
+| 44 | Educação sexual (duas partes) | Leon definiu: (a) NEURON recebe linha simples para tratar cientificamente; (b) PSICO antevê tema por idade e orienta herói no plano. Demais heróis proibidos. | 2026-03-14 |
+| 45 | Design visual como bloco próprio | Leon percebeu feedback externo "UI parece feita por IA". Quer polish com skill de design após bugs/UX. Usabilidade aprovada — só visual. | 2026-03-14 |
 
 ---
 
@@ -209,6 +214,14 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 | 2026-03-13 ~sessão5 | HF3: Cascata PSICO→Herói falha | Extração robusta herói + normalizarNomeHeroi() fuzzy match |
 | 2026-03-13 ~sessão5 | HF4: Limite 5 turnos = 5 msgs | Turno só incrementa em troca de matéria |
 | 2026-03-13 ~sessão5 | App testada em produção | Leon e filhas testaram no celular. Funcionando. |
+| 2026-03-14 ~sessão6 | Pivot: polimento antes Fase 5 | Leon analisou teste Layla e decidiu polir antes de vender |
+| 2026-03-14 ~sessão6 | Bloco A: Fix JSON stream | Buffer completo + extrairJSONouTexto no final |
+| 2026-03-14 ~sessão6 | Bloco A: Sistema anti-keywords | Blocklist por tema no router (ideia Leon). 13 anti-keywords para física. |
+| 2026-03-14 ~sessão6 | Bloco A: Logo herói h-12→h-16 | Igualar altura do buble no header |
+| 2026-03-14 ~sessão6 | Bloco B: UX de chat | Sentence-per-bubble, typing lento, nome no menu, EmptyState dinâmico |
+| 2026-03-14 ~sessão7 | Bloco C: NEURON sex ed | Seção "EDUCAÇÃO SEXUAL — ABORDAGEM CIENTÍFICA" no bloco SEGURANÇA |
+| 2026-03-14 ~sessão7 | Bloco C: PSICO antecipação | Seção com regras por série (7º+, 6º-, risco) no plano pedagógico |
+| 2026-03-14 ~sessão7 | Bloco C: Proibição outros heróis | Instrução condicional em construirEnvelopeGestor() para todos exceto NEURON/PSICO/SUPERVISOR |
 
 ---
 

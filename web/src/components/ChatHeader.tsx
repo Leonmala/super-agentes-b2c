@@ -38,7 +38,7 @@ export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
             <img
               src={hero.logo}
               alt={`${hero.nome} — ${hero.materia}`}
-              className="h-12 object-contain shrink-0"
+              className="h-16 object-contain shrink-0"
             />
           ) : (
             <div className="min-w-0">

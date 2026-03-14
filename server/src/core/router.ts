@@ -99,6 +99,36 @@ const KEYWORDS_FISICA = [
   'termodinâmica', 'termodinamica', 'entropia'
 ]
 
+// ─── Anti-Keywords (Blocklist) ──────────────────────────────────────────────
+// Se a mensagem contém uma keyword que ativa um tema, MAS TAMBÉM contém
+// uma anti-keyword desse tema, o match é CANCELADO.
+// Extensível: conforme testes reais revelam colisões, basta adicionar aqui.
+// ────────────────────────────────────────────────────────────────────────────
+
+const ANTI_KEYWORDS_MATEMATICA: string[] = []
+const ANTI_KEYWORDS_PORTUGUES: string[] = []
+const ANTI_KEYWORDS_HISTORIA: string[] = []
+const ANTI_KEYWORDS_CIENCIAS: string[] = []
+const ANTI_KEYWORDS_GEOGRAFIA: string[] = []
+
+const ANTI_KEYWORDS_FISICA = [
+  // "trabalho" em contexto escolar = lição de casa, não conceito físico
+  'trabalho de ciências', 'trabalho de ciencias',
+  'trabalho de história', 'trabalho de historia',
+  'trabalho de português', 'trabalho de portugues',
+  'trabalho de geografia',
+  'trabalho de química', 'trabalho de quimica',
+  'trabalho de inglês', 'trabalho de ingles',
+  'trabalho de espanhol',
+  'trabalho de biologia',
+  'trabalho de casa', 'trabalho escolar', 'trabalho da escola',
+  'trabalho de matemática', 'trabalho de matematica',
+]
+
+const ANTI_KEYWORDS_QUIMICA: string[] = []
+const ANTI_KEYWORDS_INGLES: string[] = []
+const ANTI_KEYWORDS_ESPANHOL: string[] = []
+
 const KEYWORDS_QUIMICA = [
   'química', 'quimica', 'átomo', 'atomo', 'molécula', 'molecula',
   'elemento', 'tabela periódica', 'tabela periodica',
@@ -149,19 +179,27 @@ export function detectarTema(mensagem: string): string | null {
   const msgSemAcento = removerAcentos(msg)
 
   // Checar com e sem acentos para robustez de encoding
-  const matchKeyword = (keywords: string[]) =>
+  const temKeyword = (keywords: string[]) =>
     keywords.some(k => msg.includes(k) || msgSemAcento.includes(removerAcentos(k)))
 
+  // Match com bloqueio: keyword ativa o tema, anti-keyword cancela
+  const matchKeyword = (keywords: string[], antiKeywords: string[]) => {
+    if (!temKeyword(keywords)) return false
+    // Se há anti-keywords presentes, o match é cancelado
+    if (antiKeywords.length > 0 && temKeyword(antiKeywords)) return false
+    return true
+  }
+
   // ORDEM IMPORTA: historia antes de ciencias (evita "revolução" → "evolução" falso positivo)
-  if (matchKeyword(KEYWORDS_MATEMATICA)) return 'matematica'
-  if (matchKeyword(KEYWORDS_PORTUGUES)) return 'portugues'
-  if (matchKeyword(KEYWORDS_HISTORIA)) return 'historia'
-  if (matchKeyword(KEYWORDS_CIENCIAS)) return 'ciencias'
-  if (matchKeyword(KEYWORDS_GEOGRAFIA)) return 'geografia'
-  if (matchKeyword(KEYWORDS_FISICA)) return 'fisica'
-  if (matchKeyword(KEYWORDS_QUIMICA)) return 'quimica'
-  if (matchKeyword(KEYWORDS_ESPANHOL)) return 'espanhol'
-  if (matchKeyword(KEYWORDS_INGLES)) return 'ingles'
+  if (matchKeyword(KEYWORDS_MATEMATICA, ANTI_KEYWORDS_MATEMATICA)) return 'matematica'
+  if (matchKeyword(KEYWORDS_PORTUGUES, ANTI_KEYWORDS_PORTUGUES)) return 'portugues'
+  if (matchKeyword(KEYWORDS_HISTORIA, ANTI_KEYWORDS_HISTORIA)) return 'historia'
+  if (matchKeyword(KEYWORDS_CIENCIAS, ANTI_KEYWORDS_CIENCIAS)) return 'ciencias'
+  if (matchKeyword(KEYWORDS_GEOGRAFIA, ANTI_KEYWORDS_GEOGRAFIA)) return 'geografia'
+  if (matchKeyword(KEYWORDS_FISICA, ANTI_KEYWORDS_FISICA)) return 'fisica'
+  if (matchKeyword(KEYWORDS_QUIMICA, ANTI_KEYWORDS_QUIMICA)) return 'quimica'
+  if (matchKeyword(KEYWORDS_ESPANHOL, ANTI_KEYWORDS_ESPANHOL)) return 'espanhol'
+  if (matchKeyword(KEYWORDS_INGLES, ANTI_KEYWORDS_INGLES)) return 'ingles'
 
   return null
 }

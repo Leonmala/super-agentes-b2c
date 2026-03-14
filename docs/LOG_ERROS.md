@@ -53,6 +53,14 @@
 | 19 | 2026-03-13 | Produção | Cascata PSICO→Herói falha (herói inválido) | LLM usou `agente_destino: "VERBETA"` em vez de `heroi_escolhido: "VERBETTA"` | Extração robusta (4 campos) + `normalizarNomeHeroi()` fuzzy match + plano/instrucoes robustos | ✅ Resolvido |
 | 20 | 2026-03-13 | Produção | Limite 5 turnos atingido após 5 mensagens | `incrementarTurnoCompleto()` chamado em TODA mensagem | Turno completo só incrementa em troca de matéria (tema novo ≠ anterior) | ✅ Resolvido |
 
+## Erros Resolvidos (Polimento Pré-Venda — 2026-03-14)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 21 | 2026-03-14 | Polimento | JSON vazando no stream dos heróis (6+ ocorrências no teste Layla) | `chamarLLMStream` fazia detecção frágil (só checava se começa com `{`). Falhava com whitespace, JSON mid-stream | Buffer completo: acumula resposta inteira → `extrairJSONouTexto()` → envia texto limpo de uma vez. `useTypingEffect` cuida da animação. | ✅ Resolvido |
+| 22 | 2026-03-14 | Polimento | Vector invadindo conversa de ciências ("trabalho de ciências" → VECTOR) | Keyword "trabalho" em KEYWORDS_FISICA é ambígua — em contexto escolar = lição de casa | Sistema de anti-keywords (blocklist): se mensagem contém keyword + anti-keyword → match cancelado. 13 expressões bloqueadoras para física. Extensível. | ✅ Resolvido |
+| 23 | 2026-03-14 | Polimento | Logo do herói ilegível no header (diminuto) | Logo `h-12` (48px) vs buble `h-16` (64px) — desproporcional | `h-12` → `h-16` igualando altura do buble | ✅ Resolvido |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -76,6 +84,8 @@ _(Atualizar conforme erros se repetem)_
 - **Supabase:** MCP padrão (mcp__supabase) vê projeto errado. Usar mcp__0150fe87 para Super Agentes.
 - **LLM/Gemini:** PSICOPEDAGOGICO nem sempre retorna JSON correto para cascata. Mitigado com seed de turnos.
 - **LLM/Gemini (PRODUÇÃO):** LLM varia nomes de campos JSON e comete typos em nomes de heróis. Mitigado com extração robusta multi-campo + fuzzy match.
+- **LLM/Gemini (STREAM):** Heróis podem retornar JSON em vez de texto puro no stream. Mitigado com buffer completo + extrairJSONouTexto no final.
+- **Router (Keywords):** Termos ambíguos causam colisão entre matérias. Mitigado com sistema de anti-keywords (blocklist por tema).
 - **Build:** `tsc` NÃO copia arquivos não-TypeScript (.md, .json). Sempre copiar manualmente no script build.
 - **Dev vs Prod:** `tsx` (dev) roda direto do `src/`, `node` (prod) roda do `dist/`. Paths relativos divergem.
 - **TypeScript:** Nenhum até agora

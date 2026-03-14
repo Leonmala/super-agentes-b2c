@@ -13,10 +13,10 @@ import { useState, useRef, useCallback, useEffect } from 'react'
  * - Flush final: quando done=true, acelera para revelar o restante
  */
 
-const CHARS_PER_TICK = 3
-const TICK_INTERVAL_MS = 25
-const PARAGRAPH_PAUSE_MS = 400
-const FLUSH_CHARS_PER_TICK = 15
+const CHARS_PER_TICK = 2
+const TICK_INTERVAL_MS = 35
+const PARAGRAPH_PAUSE_MS = 800
+const FLUSH_CHARS_PER_TICK = 8
 
 interface UseTypingEffectReturn {
   displayText: string

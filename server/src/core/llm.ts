@@ -118,35 +118,22 @@ export async function chamarLLMStream(
       { signal: controller.signal as any }
     )
 
+    // Buffer completo — acumula toda a resposta e extrai texto limpo no final.
+    // O useTypingEffect no frontend cria a animação gradual, então enviar
+    // o texto inteiro de uma vez não prejudica a UX.
+    // Isso elimina 100% dos casos de JSON leaking para o aluno.
     let rawAcumulado = ''
-    let jsonDetectado = false
-    let bufferJSON = ''
 
     for await (const chunk of result.stream) {
       const texto = chunk.text()
       if (!texto) continue
-
       rawAcumulado += texto
-
-      if (!jsonDetectado && (rawAcumulado.trimStart().startsWith('{') || rawAcumulado.trimStart().startsWith('```'))) {
-        jsonDetectado = true
-        bufferJSON += texto
-        continue
-      }
-
-      if (jsonDetectado) {
-        bufferJSON += texto
-        continue
-      }
-
-      onChunk(texto)
     }
 
-    if (jsonDetectado && bufferJSON) {
-      const parsed = extrairJSONouTexto(bufferJSON, persona)
-      if (parsed.texto) {
-        onChunk(parsed.texto)
-      }
+    // Extrair texto limpo — funciona tanto para JSON quanto para texto puro
+    const parsed = extrairJSONouTexto(rawAcumulado, persona)
+    if (parsed.texto) {
+      onChunk(parsed.texto)
     }
 
     const tempo_ms = Date.now() - inicioChamada
@@ -492,6 +479,13 @@ NOTA: Este agente é EXCLUSIVO para responsáveis (MODO PAI). Linguagem sempre a
   const instrucaoFormato = instrucaoFormatoPorPersona[persona] || `
 ⚠️ INSTRUÇÃO DE FORMATO: Retorne JSON válido conforme especificado na persona.`
 
+  // Proibição de educação sexual para todos os heróis exceto NEURON e PSICOPEDAGOGICO
+  const personasPermitidas = ['NEURON', 'PSICOPEDAGOGICO', 'SUPERVISOR_EDUCACIONAL']
+  const proibicaoSexual = !personasPermitidas.includes(persona)
+    ? `\n\n⚠️ RESTRIÇÃO ABSOLUTA — EDUCAÇÃO SEXUAL:
+Se o aluno fizer perguntas sobre reprodução humana, puberdade, sistema reprodutor, educação sexual ou sexualidade, NÃO responda sobre o tema. Diga de forma natural que essa é uma pergunta de ciências/biologia e que ele pode perguntar sobre isso na área de ciências. Ative sinal_psicopedagogico = true com motivo "tema_educacao_sexual_fora_escopo". Você NÃO é autorizado a tratar esses temas.`
+    : ''
+
   return `═══════════════════════════════════════════════════════════════
 🎭 RITUAL DE ATIVAÇÃO — GESTOR 🎭
 ═══════════════════════════════════════════════════════════════
@@ -544,7 +538,7 @@ O aluno está numa conversa normal com ${persona}.
 - NUNCA diga "como ${persona}" ou "o sistema"
 - Responda naturalmente, como ${persona} responderia na vida real
 
-${instrucaoFormato}
+${instrucaoFormato}${proibicaoSexual}
 
 ═══════════════════════════════════════════════════════════════
 

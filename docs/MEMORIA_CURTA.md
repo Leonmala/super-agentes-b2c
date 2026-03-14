@@ -1,56 +1,55 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-13 (Teste em produção — bugs críticos corrigidos)
+> **Última atualização:** 2026-03-14 (Bloco A + B completos)
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** App testada em produção (Railway) por Leon e filhas. 4 bugs de produção corrigidos.
-**Status:** App FUNCIONANDO em produção. Meninas testando no celular.
-**Próximo:** Fase 5 (Landing page, Checkout Mercado Pago, Onboarding) + Fase 2.5 (PROFESSOR_IA)
+**Fase atual:** Polimento pré-venda. Leon decidiu NÃO iniciar Fase 5 — prioridade é polir o produto.
+**Status:** Bloco A COMPLETO + Bloco B COMPLETO + Bloco C COMPLETO. Design visual é o próximo.
+**Próximo:** Design visual (skill de design) → Bloco D (Brainstorm Super Prova)
 
 ## Último Slice Completado
 
-**Slice:** Bugs de produção descobertos no teste real com usuários (Leon + Layla + Maria Paz)
+**Slice:** Bloco A — Bugs Críticos (Polimento Pré-Venda)
 
-**O que foi feito nesta sessão:**
-1. **Criação de usuário real no Supabase:**
-   - Família Malatesta (plano familiar, 3 filhos, 3 dispositivos)
-   - Leon (pai): leon@pense-ai.com, senha: 3282, PIN: 3282
-   - Layla Estefan Malatesta: 12 anos, 7ª série (ID: 0fb1c38f-7d34-45b1-8ff2-3e5c4ccff71e)
-   - Maria Paz Estefan Malatesta: 7 anos, 3ª série (ID: 6fa15ba4-38e8-4628-9b51-e0a3076d631a)
-   - Família ID: 36b55aa5-3da9-4d28-b560-d0f4b59678d3
+**O que foi feito nesta sessão (2026-03-14):**
 
-2. **Bug fix: Personas não encontradas em produção (CRÍTICO)**
-   - Causa: `tsc` não copia `.md` para `dist/`. `carregarPersona()` usava `__dirname` relativo.
-   - Fix: `build:server` agora faz `tsc && cp -r src/personas dist/personas`
+1. **Fix: JSON vazando no stream dos heróis (CRÍTICO)**
+   - Causa: `chamarLLMStream` fazia detecção frágil de JSON (checava se começa com `{`). Falhava com whitespace, JSON mid-stream, ou falha na extração.
+   - Fix: Buffer completo — acumula toda a resposta, extrai texto limpo no final com `extrairJSONouTexto()`, envia de uma vez. `useTypingEffect` no frontend cria a animação gradual.
+   - Arquivo: `server/src/core/llm.ts` (linhas 121-150 reescritas)
 
-3. **Bug fix: JSON bruto na tela do aluno (CRÍTICO)**
-   - Causa: LLM retornava `mensagem_ao_aluno` em vez de `resposta_para_aluno`. Extrator não conhecia o campo.
-   - Fix: `extrairTextoDoJSON()` com 9 campos possíveis em ordem de prioridade.
+2. **Fix: Vector invadindo conversa de ciências (CRÍTICO)**
+   - Causa: Keyword "trabalho" em KEYWORDS_FISICA colide com uso escolar ("trabalho de ciências").
+   - Fix: Sistema de anti-keywords (blocklist) — se mensagem contém keyword + anti-keyword, match é cancelado. ANTI_KEYWORDS_FISICA com 13 expressões bloqueadoras. Extensível para todos os temas.
+   - Arquivo: `server/src/core/router.ts` (nova estrutura + detectarTema refatorado)
+   - **Ideia do Leon:** Lógica do contrário — termos proibidos complementam termos ativadores.
 
-4. **Bug fix: Cascata PSICO→Herói falhava (CRÍTICO)**
-   - Causa: LLM usava `agente_destino: "VERBETA"` em vez de `heroi_escolhido: "VERBETTA"`.
-   - Fix: Extração robusta de herói (4 campos), fuzzy match de nomes (`normalizarNomeHeroi()`),
-     extração robusta de plano (3 campos) e instruções (3 campos + string/objeto).
+3. **Fix: Logo do herói ilegível no header**
+   - Causa: Logo `h-12` (48px) vs buble `h-16` (64px). Logo diminuto.
+   - Fix: `h-12` → `h-16` igualando altura do buble.
+   - Arquivo: `web/src/components/ChatHeader.tsx` (linha 41)
 
-5. **Bug fix: Limite de 5 turnos atingido após 5 mensagens**
-   - Causa: `incrementarTurnoCompleto()` chamado em toda mensagem.
-   - Fix: Turno completo só incrementa em troca de matéria.
+## Bloco B — Concluído (2026-03-14)
 
-6. **UX melhorias implementadas (sessão anterior):**
-   - Markdown rico (remark-gfm: tabelas, strikethrough, etc.)
-   - CSS para `.chat-bubble-content` (tabelas, código, blockquotes, listas, headings)
-   - Typing effect (`useTypingEffect` hook: 3 chars/25ms, pausa 400ms entre parágrafos)
-   - Logo login aumentado (h-16 → h-32)
+1. **Sentence-per-bubble:** splitSentences() no ChatBubble — cada frase em balão visual separado, avatar só no primeiro
+2. **Typing mais lento:** CHARS_PER_TICK 3→2, TICK_INTERVAL_MS 25→35, PARAGRAPH_PAUSE_MS 400→800, FLUSH 15→8
+3. **Nome no SlideMenu:** Nome + tipo de perfil (Responsável / Aluno) exibido no topo do menu
+4. **EmptyState dinâmico:** Textos diferentes por agente (super_agentes/professor_ia/supervisor) + MODO PAI/FILHO. agenteMenu no ChatContext.
+
+## Bloco C — Concluído (2026-03-14)
+
+1. **NEURON:** Seção "EDUCAÇÃO SEXUAL — ABORDAGEM CIENTÍFICA" adicionada ao bloco SEGURANÇA
+2. **PSICOPEDAGOGICO:** Seção "EDUCAÇÃO SEXUAL — ANTECIPAÇÃO POR IDADE" com regras por série (7º+, 6º e abaixo, risco)
+3. **Demais heróis:** Proibição centralizada em `construirEnvelopeGestor()` — instrução condicional para todos exceto NEURON/PSICO/SUPERVISOR
 
 ## Próximo Passo Exato
 
-1. **Fase 5** → Landing page + Checkout Mercado Pago + Onboarding
-2. **Fase 6** → Deploy final + E2E
-3. **Fase 2.5** → Workshop PROFESSOR_IA (último)
+**Design Visual:** Usar skill de design para avaliar e aprimorar o layout sem alterar usabilidade ou backend.
+**Bloco D:** Brainstorm Super Prova/Estudo com Leon (MCP + NotebookLM)
 
 ## Contexto Crítico Para Boot
 

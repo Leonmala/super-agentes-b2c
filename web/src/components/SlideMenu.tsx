@@ -11,7 +11,7 @@ interface SlideMenuProps {
 
 export function SlideMenu({ open, onClose }: SlideMenuProps) {
   const { perfilAtivo, filhos, trocarPerfil, selectFilhoPai, logout } = useAuth()
-  const { limpar } = useChat()
+  const { limpar, agenteMenu, setAgenteMenu } = useChat()
   const tipoInterface: TipoInterface = perfilAtivo?.tipoInterface || 'fundamental'
   const isPai = tipoInterface === 'pai'
   const profileColor = perfilAtivo?.cor || '#2563EB'
@@ -32,9 +32,9 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
   const showProfessorIA = tipoInterface === 'medio' || tipoInterface === 'pai'
 
   const menuItems = [
-    { label: 'Super Agentes', icon: BookOpen, visible: true },
-    { label: 'Professor de IA', icon: Bot, visible: showProfessorIA },
-    { label: 'Supervisor', icon: Eye, visible: isPai },
+    { label: 'Super Agentes', icon: BookOpen, visible: true, agente: 'super_agentes' },
+    { label: 'Professor de IA', icon: Bot, visible: showProfessorIA, agente: 'professor_ia' },
+    { label: 'Supervisor', icon: Eye, visible: isPai, agente: 'supervisor' },
   ].filter(item => item.visible)
 
   return (
@@ -66,18 +66,40 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
             </button>
           </div>
 
+          {/* Nome do perfil ativo */}
+          {perfilAtivo && (
+            <div className="px-4 pb-3">
+              <div className="bg-white/20 rounded-xl px-4 py-2.5">
+                <p className="text-white font-semibold text-sm">{perfilAtivo.nome}</p>
+                <p className="text-white/70 text-xs">
+                  {isPai ? 'Responsável' : `Aluno${perfilAtivo.tipoInterface === 'medio' ? ' — Ensino Médio' : ''}`}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Menu items em cards brancos */}
           <nav className="flex-1 px-3 py-2 space-y-2">
-            {menuItems.map(item => (
-              <button
-                key={item.label}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors bg-white/90 hover:bg-white shadow-sm"
-                style={{ color: profileColor }}
-              >
-                <item.icon size={18} />
-                {item.label}
-              </button>
-            ))}
+            {menuItems.map(item => {
+              const isActive = agenteMenu === item.agente
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    limpar()
+                    setAgenteMenu(item.agente)
+                    onClose()
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm ${
+                    isActive ? 'bg-white ring-2' : 'bg-white/90 hover:bg-white'
+                  }`}
+                  style={{ color: profileColor, ...(isActive ? { ringColor: profileColor } : {}) }}
+                >
+                  <item.icon size={18} />
+                  {item.label}
+                </button>
+              )
+            })}
           </nav>
 
           {/* Seletor de filho ativo (modo pai) */}
