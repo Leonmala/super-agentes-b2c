@@ -47,11 +47,19 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
   const profileColor = perfilAtivo?.cor || '#2563EB'
 
   if (isUser) {
+    const gradientFrom = hero?.gradientFrom || profileColor
+    const gradientTo = hero?.gradientTo || profileColor
+    const userGradient = `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
+
     return (
       <div className="flex justify-end mb-3">
         <div
-          className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-white text-sm"
-          style={{ backgroundColor: profileColor }}
+          className="max-w-[80%] px-4 py-3 text-sm text-white chat-bubble-content"
+          style={{
+            background: userGradient,
+            borderRadius: '22px 6px 22px 22px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+          }}
         >
           {message.content}
         </div>
@@ -60,10 +68,8 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
   }
 
   const content = isStreaming ? (streamingText || '') : message.content
-
-  // Cor do heroi com opacidade para fundo do balao
-  const bubbleBg = hero ? `${corHeroi}15` : '#F9FAFB'
-  const bubbleBorder = hero ? `${corHeroi}40` : '#E5E7EB'
+  const accentColor = hero?.accent || corHeroi
+  const agentGradient = `linear-gradient(135deg, ${accentColor}0F, ${accentColor}1A)`
 
   // Durante streaming: balao unico. Apos: split por frases.
   const sentences = isStreaming ? [content] : splitSentences(content)
@@ -71,22 +77,38 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
   return (
     <div className="mb-3">
       {sentences.map((frase, i) => (
-        <div key={i} className={`flex gap-2 items-start ${i > 0 ? 'mt-1.5 ml-10' : ''}`}>
+        <div key={i} className={`flex gap-2.5 items-start ${i > 0 ? 'mt-1' : ''}`}>
           {i === 0 && (
             hero ? (
               <img
                 src={hero.avatar}
                 alt={hero.nome}
-                className="w-8 h-8 rounded-full object-cover shrink-0"
+                className="w-8 h-8 object-cover shrink-0"
+                style={{
+                  borderRadius: '12px',
+                  backgroundColor: `${accentColor}15`,
+                }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             ) : (
-              <img src="/logo-buble.png" alt="Super Agentes" className="w-8 h-8 rounded-full object-cover shrink-0" />
+              <img
+                src="/logo-buble.png"
+                alt="Super Agentes"
+                className="w-8 h-8 object-cover shrink-0"
+                style={{
+                  borderRadius: '12px',
+                  backgroundColor: `${accentColor}15`,
+                }}
+              />
             )
           )}
           <div
-            className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-gray-800 shadow-sm chat-bubble-content"
-            style={{ backgroundColor: bubbleBg, borderWidth: '1px', borderColor: bubbleBorder }}
+            className={`max-w-[80%] px-4 py-3 text-sm text-[var(--text-primary)] chat-bubble-content ${i > 0 ? 'ml-11' : ''}`}
+            style={{
+              background: agentGradient,
+              borderRadius: i === 0 ? '22px 22px 22px 6px' : '16px 22px 22px 16px',
+              boxShadow: 'var(--shadow-soft)',
+            }}
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

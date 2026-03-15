@@ -1,5 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
+import { HEROES } from '../constants'
+import type { HeroId } from '../types'
 
 interface EmptyContent {
   titulo: string
@@ -40,31 +42,91 @@ const EMPTY_PAI: Record<string, EmptyContent> = {
   },
 }
 
+const MATERIAS = [
+  'Matemática',
+  'Português',
+  'Ciências',
+  'História',
+  'Geografia',
+  'Física',
+  'Química',
+  'Idiomas',
+]
+
 export function EmptyState() {
   const { perfilAtivo } = useAuth()
-  const { agenteMenu } = useChat()
+  const { agenteMenu, heroiAtivo } = useChat()
   const nome = perfilAtivo?.nome || 'aluno'
   const isPai = perfilAtivo?.tipoUsuario === 'pai'
 
   const conteudos = isPai ? EMPTY_PAI : EMPTY_FILHO
   const content = conteudos[agenteMenu] || conteudos['super_agentes']
 
+  // Get hero data if active
+  const heroData = heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
+  const avatarSrc = heroData?.avatar || '/logo-buble.png'
+  const accentColor = heroData?.accent || '#3B6BA8'
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-      <img
-        src="/logo-buble.png"
-        alt="Super Agentes Pense-AI"
-        className="w-24 h-24 mb-4"
-      />
-      <h2 className="text-xl font-bold text-gray-900 mb-2">
+      {/* Avatar container with glow background */}
+      <div className="relative mb-5">
+        {/* Subtle radial accent glow */}
+        <div
+          className="absolute w-24 h-24 rounded-full opacity-15 blur-2xl"
+          style={{
+            backgroundColor: accentColor,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+
+        {/* Avatar background tint */}
+        <div
+          className="absolute inset-0 rounded-[26px]"
+          style={{ backgroundColor: `${accentColor}20` }}
+        />
+
+        {/* Avatar image */}
+        <img
+          src={avatarSrc}
+          alt="Avatar"
+          className="relative w-[88px] h-[88px] rounded-[26px] object-cover shadow-lg"
+        />
+      </div>
+
+      {/* Greeting */}
+      <h2 className="text-2xl font-extrabold text-[var(--text-primary)] mb-2">
         {content.titulo.replace('{nome}', nome)}
       </h2>
-      <p className="text-gray-600 text-sm max-w-xs mb-1">
+
+      {/* Description */}
+      <p className="text-[14.5px] text-[var(--text-secondary)] max-w-[280px] mb-1">
         {content.subtitulo}
       </p>
-      <p className="text-gray-400 text-xs max-w-xs italic">
+
+      {/* CTA */}
+      <p className="text-xs text-[var(--text-muted)] max-w-[280px] italic mb-6">
         {content.cta}
       </p>
+
+      {/* Subject pills - only show when agenteMenu === 'super_agentes' */}
+      {agenteMenu === 'super_agentes' && (
+        <div className="flex flex-wrap justify-center gap-2 max-w-[320px]">
+          {MATERIAS.map((materia) => (
+            <div
+              key={materia}
+              className="px-4 py-2 rounded-full bg-white text-[var(--text-secondary)] text-xs font-semibold border border-black/[0.04] transition-all hover:-translate-y-0.5"
+              style={{
+                boxShadow: 'var(--shadow-soft)',
+              }}
+            >
+              {materia}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

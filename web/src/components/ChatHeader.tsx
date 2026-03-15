@@ -12,52 +12,69 @@ export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
   const { heroiAtivo } = useChat()
   const { perfilAtivo } = useAuth()
   const hero = heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
-  const profileColor = perfilAtivo?.cor || '#2563EB'
+
+  const gradientFrom = hero?.gradientFrom || '#2563EB'
+  const gradientTo = hero?.gradientTo || '#1E3A8A'
+  const bgImage = hero?.bgImage || null
+  const avatar = hero?.avatar || '/logo.png'
+  const nome = hero?.nome || 'Super Agentes'
+  const materia = hero?.materia || ''
 
   return (
-    <header
-      className="px-4 py-3 flex items-center gap-3 shrink-0 shadow-sm"
-      style={{ backgroundColor: profileColor }}
-    >
-      <button
-        onClick={onMenuToggle}
-        className="p-1 rounded-lg hover:bg-white/20 transition-colors"
-        aria-label="Menu"
-      >
-        <Menu size={22} className="text-white" />
-      </button>
+    <header className="relative overflow-hidden shrink-0">
+      {/* Layer 1: Hero gradient */}
+      <div
+        style={{ background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` }}
+        className="absolute inset-0"
+      />
 
-      {hero ? (
-        <>
-          <img
-            src={hero.avatar}
-            alt={hero.nome}
-            className="w-16 h-16 rounded-full object-cover border-2 border-white/40 transition-all duration-300"
-          />
-          {hero.logo ? (
-            <img
-              src={hero.logo}
-              alt={`${hero.nome} — ${hero.materia}`}
-              className="h-16 object-contain shrink-0"
-            />
-          ) : (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{hero.nome}</p>
-              <p className="text-xs text-white/70 truncate">{hero.materia}</p>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <img src="/logo.png" alt="Super Agentes" className="h-16 object-contain shrink-0" />
-        </>
+      {/* Layer 2: bg-chat image overlay */}
+      {bgImage && (
+        <div
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          className="absolute inset-0 opacity-25"
+        />
       )}
 
-      {perfilAtivo?.tipoUsuario === 'pai' && (
-        <span className="ml-auto text-xs font-semibold text-white bg-white/20 px-2 py-1 rounded-full">
-          MODO PAI
-        </span>
-      )}
+      {/* Layer 3: Vignette */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/10" />
+
+      {/* Layer 4: Content */}
+      <div className="relative z-10 flex items-center gap-3.5 px-5 pt-4 pb-10">
+        <button
+          onClick={onMenuToggle}
+          className="w-10 h-10 flex items-center justify-center bg-white/15 backdrop-blur-sm border border-white/12 rounded-[12px] hover:bg-white/25 transition-colors"
+          aria-label="Menu"
+        >
+          <Menu size={20} className="text-white" />
+        </button>
+
+        <img
+          src={avatar}
+          alt={nome}
+          className="w-[46px] h-[46px] rounded-[16px] border-2 border-white/25 object-cover shadow-lg"
+        />
+
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-white font-bold text-base truncate"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+          >
+            {nome}
+          </p>
+          <p className="text-white/70 text-xs truncate">{materia}</p>
+        </div>
+
+        {perfilAtivo?.tipoUsuario === 'pai' && (
+          <span className="text-xs font-semibold text-white bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+            MODO PAI
+          </span>
+        )}
+      </div>
     </header>
   )
 }

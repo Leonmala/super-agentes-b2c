@@ -37,48 +37,73 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
     { label: 'Supervisor', icon: Eye, visible: isPai, agente: 'supervisor' },
   ].filter(item => item.visible)
 
+  // Calcular cor mais escura para o gradiente
+  const getDarkerColor = (hex: string): string => {
+    if (isPai) return '#172554'
+    // Reduzir brilho de filhos (usar profileColor com opacity no gradient)
+    return hex
+  }
+
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 transition-opacity"
+          className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[4px] transition-opacity"
           onClick={onClose}
         />
       )}
 
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 shadow-xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 overflow-hidden transform transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ backgroundColor: profileColor }}
+        style={{
+          background: `linear-gradient(160deg, ${profileColor}, ${getDarkerColor(profileColor)})`,
+        }}
       >
-        <div className="flex flex-col h-full">
-          {/* Header do menu */}
+        {/* Organic blobs */}
+        <div className="absolute top-10 right-12 w-80 h-80 rounded-full blur-[50px] opacity-25 pointer-events-none"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }} />
+        <div className="absolute bottom-20 -left-32 w-96 h-96 rounded-full blur-[50px] opacity-25 pointer-events-none"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }} />
+
+        <div className="relative flex flex-col h-full">
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-4">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Super Agentes" className="h-12 object-contain" />
-            </div>
+            <span className="text-white font-bold text-lg">Super Agentes</span>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+              className="w-9 h-9 flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/10 rounded-[12px] hover:bg-white/20 transition-colors"
             >
               <X size={20} className="text-white" />
             </button>
           </div>
 
-          {/* Nome do perfil ativo */}
+          {/* User card */}
           {perfilAtivo && (
             <div className="px-4 pb-3">
-              <div className="bg-white/20 rounded-xl px-4 py-2.5">
-                <p className="text-white font-semibold text-sm">{perfilAtivo.nome}</p>
-                <p className="text-white/70 text-xs">
-                  {isPai ? 'Responsável' : `Aluno${perfilAtivo.tipoInterface === 'medio' ? ' — Ensino Médio' : ''}`}
-                </p>
+              <div className="bg-white/10 backdrop-blur-[16px] border border-white/12 rounded-[22px] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold bg-white/20">
+                    {perfilAtivo.nome.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">{perfilAtivo.nome}</p>
+                    <p className="text-white/60 text-xs">
+                      {isPai ? 'Responsável' : `Aluno${perfilAtivo.tipoInterface === 'medio' ? ' — Ensino Médio' : ''}`}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Menu items em cards brancos */}
+          {/* Navigation section */}
+          <div className="px-4 mt-1 mb-2">
+            <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold px-1">Navegação</p>
+          </div>
+
+          {/* Menu items */}
           <nav className="flex-1 px-3 py-2 space-y-2">
             {menuItems.map(item => {
               const isActive = agenteMenu === item.agente
@@ -90,46 +115,46 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
                     setAgenteMenu(item.agente)
                     onClose()
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm ${
-                    isActive ? 'bg-white ring-2' : 'bg-white/90 hover:bg-white'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm transition-colors border ${
+                    isActive
+                      ? 'bg-white/15 border-white/15 text-white font-semibold shadow-lg'
+                      : 'bg-white/6 border-white/6 text-white/70 hover:bg-white/10'
                   }`}
-                  style={{ color: profileColor, ...(isActive ? { ringColor: profileColor } : {}) }}
                 >
-                  <item.icon size={18} />
+                  <div className="w-8 h-8 rounded-[10px] bg-white/10 flex items-center justify-center">
+                    <item.icon size={18} />
+                  </div>
                   {item.label}
                 </button>
               )
             })}
           </nav>
 
-          {/* Seletor de filho ativo (modo pai) */}
+          {/* Filho selector (pai mode) */}
           {isPai && filhos.length > 0 && (
             <div className="px-3 py-3">
-              <div className="bg-white/90 rounded-xl p-3 shadow-sm">
-                <p className="text-xs font-semibold uppercase mb-2 opacity-60" style={{ color: profileColor }}>
-                  Filho ativo
-                </p>
+              <div className="bg-white/8 border border-white/8 rounded-[16px] p-3">
+                <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-2">Filho ativo</p>
                 <div className="space-y-1">
                   {filhos.map((filho, idx) => {
                     const isActive = perfilAtivo?.selectedFilhoId === filho.id
-                    const filhoColor = FILHO_COLORS[idx % FILHO_COLORS.length]
                     return (
                       <button
                         key={filho.id}
                         onClick={() => { selectFilhoPai(filho.id); onClose() }}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg transition-colors ${
-                          isActive ? 'bg-gray-100' : 'hover:bg-gray-50'
+                        className={`w-full flex items-center gap-2 rounded-[12px] p-2 transition-colors ${
+                          isActive ? 'bg-white/8' : 'hover:bg-white/8'
                         }`}
                       >
                         <div
                           className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                          style={{ backgroundColor: filhoColor }}
+                          style={{ backgroundColor: FILHO_COLORS[idx % FILHO_COLORS.length] }}
                         >
                           {filho.nome.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm text-gray-700">{filho.nome}</span>
+                        <span className="text-white/80 text-sm">{filho.nome}</span>
                         {isActive && (
-                          <span className="ml-auto text-xs font-bold" style={{ color: filhoColor }}>●</span>
+                          <span className="ml-auto text-white text-xs font-bold">●</span>
                         )}
                       </button>
                     )
@@ -139,23 +164,30 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
             </div>
           )}
 
-          {/* Ações de rodapé em cards brancos */}
-          <div className="px-3 py-3 space-y-2">
+          {/* Footer actions */}
+          <div className="px-3 py-3 space-y-2 border-t border-white/10">
             <button
               onClick={handleTrocarPerfil}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-white/90 hover:bg-white shadow-sm transition-colors"
-              style={{ color: profileColor }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm bg-white/8 border border-white/8 text-white/70 hover:bg-white/12 transition-colors"
             >
               <ArrowLeftRight size={18} />
               Trocar perfil
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm bg-white/6 text-white/40 hover:bg-white/10 hover:text-white/60 transition-colors"
             >
               <X size={18} />
               Sair
             </button>
+            {/* Pense-AI logo */}
+            <div className="flex justify-end pt-2">
+              <img
+                src="/logo-penseai.png"
+                alt="Pense-AI"
+                className="h-4 opacity-30 brightness-0 invert"
+              />
+            </div>
           </div>
         </div>
       </div>

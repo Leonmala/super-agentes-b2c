@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useState } from 'react'
 import { PinModal } from './PinModal'
-import { FILHO_COLORS, PAI_COLOR } from '../constants'
+import { FILHO_COLORS } from '../constants'
 
 export function ProfileModal() {
   const { filhos, responsavel, selectFilho, perfilAtivo } = useAuth()
@@ -25,58 +25,126 @@ export function ProfileModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm animate-fade-in">
-        <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Quem está estudando?</h2>
-        <p className="text-sm text-gray-500 text-center mb-6">Selecione o perfil</p>
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#172554]">
+      {/* Organic blob */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl opacity-30 pointer-events-none" />
 
-        <div className="space-y-3">
-          {filhos.map((filho, idx) => {
-            const filhoColor = FILHO_COLORS[idx % FILHO_COLORS.length]
-            return (
-              <button
-                key={filho.id}
-                onClick={() => handleFilho(filho.id)}
-                disabled={loading}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors disabled:opacity-50"
-                style={{ backgroundColor: `${filhoColor}10` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                  style={{ backgroundColor: filhoColor }}
+      {/* Container centrado */}
+      <div className="relative h-full flex flex-col items-center justify-center px-6">
+        {/* Conteúdo */}
+        <div className="w-full max-w-sm">
+          {/* Títulos */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Quem vai estudar?</h1>
+            <p className="text-sm text-white/60">Selecione o perfil para começar</p>
+          </div>
+
+          {/* Cards dos filhos */}
+          <div className="space-y-3 mb-6">
+            {filhos.map((filho, idx) => {
+              const filhoColor = FILHO_COLORS[idx % FILHO_COLORS.length]
+              return (
+                <button
+                  key={filho.id}
+                  onClick={() => handleFilho(filho.id)}
+                  disabled={loading}
+                  className="w-full flex items-center justify-between gap-4 px-4 py-3 rounded-[22px] bg-white/12 backdrop-blur-[30px] border border-white/16 transition-all duration-200 hover:bg-white/18 hover:transform hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  {filho.nome.charAt(0).toUpperCase()}
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900 text-sm">{filho.nome}</p>
-                  <p className="text-xs text-gray-500">{filho.serie}</p>
-                </div>
-              </button>
-            )
-          })}
+                  <div className="flex items-center gap-3">
+                    {/* Avatar com gradiente */}
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                      style={{
+                        background: `linear-gradient(135deg, ${filhoColor}, ${filhoColor}cc)`,
+                      }}
+                    >
+                      {filho.nome.charAt(0).toUpperCase()}
+                    </div>
+                    {/* Nome e série */}
+                    <div className="text-left">
+                      <p className="font-semibold text-white text-sm">{filho.nome}</p>
+                      <p className="text-xs text-white/60">{filho.serie}</p>
+                    </div>
+                  </div>
+                  {/* Chevron */}
+                  <svg
+                    className="w-5 h-5 text-white/30 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              )
+            })}
+          </div>
 
+          {/* Separator com rótulo */}
           {responsavel && (
-            <>
-              <div className="border-t border-gray-200 my-2" />
-              <button
-                onClick={() => setShowPin(true)}
-                disabled={loading}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors disabled:opacity-50"
-                style={{ backgroundColor: `${PAI_COLOR}10` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                  style={{ backgroundColor: PAI_COLOR }}
-                >
-                  {responsavel.nome.charAt(0).toUpperCase()}
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900 text-sm">{responsavel.nome}</p>
-                  <p className="text-xs text-gray-500">Responsável</p>
-                </div>
-              </button>
-            </>
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 border-t border-white/15" />
+              <span className="text-white/40 text-xs font-semibold uppercase tracking-wider">
+                Responsável
+              </span>
+              <div className="flex-1 border-t border-white/15" />
+            </div>
           )}
+
+          {/* Card do responsável */}
+          {responsavel && (
+            <button
+              onClick={() => setShowPin(true)}
+              disabled={loading}
+              className="w-full flex items-center justify-between gap-4 px-4 py-3 rounded-[22px] bg-white/12 backdrop-blur-[30px] border border-white/16 transition-all duration-200 hover:bg-white/18 hover:transform hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              <div className="flex items-center gap-3">
+                {/* Avatar com ícone de escudo/cadeado */}
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0 bg-gradient-to-br from-blue-400 to-blue-600">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                  </svg>
+                </div>
+                {/* Nome e role */}
+                <div className="text-left">
+                  <p className="font-semibold text-white text-sm">{responsavel.nome}</p>
+                  <p className="text-xs text-white/60">Responsável</p>
+                </div>
+              </div>
+              {/* Chevron */}
+              <svg
+                className="w-5 h-5 text-white/30 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Pense-AI signature */}
+        <div className="absolute bottom-5 right-5">
+          <img
+            src="/logo-penseai.png"
+            alt="Pense-AI"
+            className="h-4 opacity-35 brightness-0 invert"
+          />
         </div>
       </div>
     </div>

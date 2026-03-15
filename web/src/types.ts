@@ -55,7 +55,10 @@ export interface HeroMeta {
   nome: string
   materia: string
   cor: string
-  corGradient: string
+  gradientFrom: string
+  gradientTo: string
+  accent: string
+  bgImage: string
   avatar: string
   card: string
   logo: string | null
