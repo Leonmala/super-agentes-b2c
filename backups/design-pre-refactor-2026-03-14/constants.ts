@@ -1,0 +1,117 @@
+import type { HeroMeta, HeroId } from './types'
+
+export const HEROES: Record<HeroId, HeroMeta> = {
+  CALCULUS: {
+    id: 'CALCULUS',
+    nome: 'Calculus',
+    materia: 'Matemática',
+    cor: '#2563EB',
+    corGradient: 'from-orange-500 to-red-500',
+    avatar: '/heroes/calculus_buble.png',
+    card: '/heroes/calculus-card.png',
+    logo: '/heroes/calculus-logo.png',
+    limpo: '/heroes/calculus-limpo.png',
+  },
+  VERBETTA: {
+    id: 'VERBETTA',
+    nome: 'Verbetta',
+    materia: 'Português',
+    cor: '#7C3AED',
+    corGradient: 'from-purple-500 to-violet-500',
+    avatar: '/heroes/verbetta_buble.png',
+    card: '/heroes/verbetta-card.png',
+    logo: '/heroes/verbetta-logo.png',
+    limpo: '/heroes/verbetta-limpo.png',
+  },
+  NEURON: {
+    id: 'NEURON',
+    nome: 'Neuron',
+    materia: 'Ciências / Biologia',
+    cor: '#059669',
+    corGradient: 'from-emerald-500 to-green-500',
+    avatar: '/heroes/neuron_buble.png',
+    card: '/heroes/neuron-card.png',
+    logo: '/heroes/neuron-logo.png',
+    limpo: '/heroes/neuron-limpo.png',
+  },
+  TEMPUS: {
+    id: 'TEMPUS',
+    nome: 'Tempus',
+    materia: 'História',
+    cor: '#d97706',
+    corGradient: 'from-amber-500 to-yellow-600',
+    avatar: '/heroes/tempus_buble.png',
+    card: '/heroes/tempus-card.png',
+    logo: '/heroes/tempus-logo.png',
+    limpo: '/heroes/tempus-limpo.png',
+  },
+  GAIA: {
+    id: 'GAIA',
+    nome: 'Gaia',
+    materia: 'Geografia',
+    cor: '#0d9488',
+    corGradient: 'from-teal-500 to-cyan-500',
+    avatar: '/heroes/gaia_buble.png',
+    card: '/heroes/gaia-card.png',
+    logo: '/heroes/gaia-logo.png',
+    limpo: '/heroes/gaia-limpo.png',
+  },
+  VECTOR: {
+    id: 'VECTOR',
+    nome: 'Vector',
+    materia: 'Física',
+    cor: '#2563EB',
+    corGradient: 'from-cyan-500 to-blue-500',
+    avatar: '/heroes/vector_buble.png',
+    card: '/heroes/vector-card.png',
+    logo: '/heroes/vector-logo.png',
+    limpo: '/heroes/vector-limpo.png',
+  },
+  ALKA: {
+    id: 'ALKA',
+    nome: 'Alka',
+    materia: 'Química',
+    cor: '#dc2626',
+    corGradient: 'from-red-500 to-pink-500',
+    avatar: '/heroes/alka_buble.png',
+    card: '/heroes/alka-card.png',
+    logo: '/heroes/alka-logo.png',
+    limpo: '/heroes/alka-limpo.png',
+  },
+  FLEX: {
+    id: 'FLEX',
+    nome: 'Flexy',
+    materia: 'Inglês e Espanhol',
+    cor: '#7c3aed',
+    corGradient: 'from-indigo-500 to-purple-500',
+    avatar: '/heroes/flexy_buble.png',
+    card: '/heroes/flexy-card.png',
+    logo: '/heroes/flexy-logo.png',
+    limpo: '/heroes/flexy-limpo.png',
+  },
+}
+
+export const INTERFACE_COLORS = {
+  fundamental: '#2563EB',
+  medio: '#7C3AED',
+  pai: '#059669',
+} as const
+
+// Paleta vibrante saturada para filhos — sem gênero, atribuída por índice
+export const FILHO_COLORS = [
+  '#EAB308', // amarelo
+  '#DC2626', // vermelho
+  '#16A34A', // verde
+  '#EA580C', // laranja
+  '#7C3AED', // roxo
+  '#0891B2', // ciano
+] as const
+
+// Azul institucional — responsável e botão enviar
+export const PAI_COLOR = '#2563EB'
+
+// Retorna a cor do perfil ativo: pai = azul, filho = paleta por índice
+export function getProfileColor(tipoUsuario: 'filho' | 'pai', filhoIndex: number): string {
+  if (tipoUsuario === 'pai') return PAI_COLOR
+  return FILHO_COLORS[filhoIndex % FILHO_COLORS.length]
+}
