@@ -41,11 +41,14 @@ export function PinModal({ onCancel }: PinModalProps) {
       {/* Lock Avatar */}
       <div className="mb-8 w-[72px] h-[72px] rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg">
         <svg
-          className="w-10 h-10 text-white"
-          fill="currentColor"
+          className="w-8 h-8 text-white"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
           viewBox="0 0 24 24"
         >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
       </div>
 
@@ -75,7 +78,7 @@ export function PinModal({ onCancel }: PinModalProps) {
       )}
 
       {/* Numpad Grid */}
-      <div className="grid grid-cols-3 gap-3.5 max-w-[260px] mb-8">
+      <div className="grid grid-cols-3 gap-[14px] w-full max-w-[280px] mb-8 px-2">
         {numpad.map((key, i) => (
           <button
             key={i}
@@ -84,27 +87,27 @@ export function PinModal({ onCancel }: PinModalProps) {
               else if (key !== '') addDigit(key)
             }}
             disabled={loading || key === ''}
-            className={`transition-all duration-150 ${
+            className={`transition-all duration-150 w-full aspect-[1.3] ${
               key === ''
-                ? 'invisible'
+                ? 'bg-transparent border-transparent cursor-default pointer-events-none'
                 : key === '⌫'
-                  ? 'h-[62px] bg-white/10 backdrop-blur-[16px] border border-white/12 rounded-[22px] text-white text-2xl font-bold hover:bg-white/18 hover:scale-[1.04] active:bg-white/25 active:scale-[0.97] flex items-center justify-center'
-                  : 'h-[62px] bg-white/10 backdrop-blur-[16px] border border-white/12 rounded-[22px] text-white text-2xl font-bold hover:bg-white/18 hover:scale-[1.04] active:bg-white/25 active:scale-[0.97] flex items-center justify-center'
+                  ? 'bg-white/6 backdrop-blur-[16px] border border-white/12 rounded-[22px] text-white/60 text-base font-bold hover:bg-white/12 hover:text-white hover:scale-[1.04] active:bg-white/25 active:scale-[0.97] flex items-center justify-center'
+                  : 'bg-white/10 backdrop-blur-[16px] border border-white/12 rounded-[22px] text-white text-2xl font-bold hover:bg-white/18 hover:scale-[1.04] active:bg-white/25 active:scale-[0.97] flex items-center justify-center'
             } ${loading && key !== '' ? 'opacity-50' : ''}`}
           >
             {key === '⌫' ? (
               <svg
-                className="w-6 h-6 text-white"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
+                strokeWidth={2}
+                strokeLinecap="round"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
+                <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
+                <line x1="18" y1="9" x2="12" y2="15" />
+                <line x1="12" y1="9" x2="18" y2="15" />
               </svg>
             ) : (
               key
@@ -131,9 +134,9 @@ export function PinModal({ onCancel }: PinModalProps) {
       {/* Pense-AI Signature */}
       <div className="absolute bottom-5 right-5">
         <img
-          src="/logo-penseai.png"
+          src="/LogoPenseAI.png"
           alt="Pense-AI"
-          className="h-4 opacity-35 brightness-0 invert"
+          className="h-8 opacity-50 brightness-0 invert"
         />
       </div>
     </div>

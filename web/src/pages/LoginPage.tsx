@@ -41,9 +41,9 @@ export function LoginPage() {
         <div className="text-center mb-12">
           <h1 className="text-white font-extrabold text-3xl mb-4">Super Agentes</h1>
           <img
-            src="/logo-penseai.png"
+            src="/LogoPenseAI.png"
             alt="Pense-AI"
-            className="h-7 mx-auto opacity-60 brightness-0 invert"
+            className="h-10 mx-auto opacity-70 brightness-0 invert"
           />
         </div>
 

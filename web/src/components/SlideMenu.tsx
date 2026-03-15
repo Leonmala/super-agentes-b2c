@@ -183,9 +183,9 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
             {/* Pense-AI logo */}
             <div className="flex justify-end pt-2">
               <img
-                src="/logo-penseai.png"
+                src="/LogoPenseAI.png"
                 alt="Pense-AI"
-                className="h-4 opacity-30 brightness-0 invert"
+                className="h-8 opacity-40 brightness-0 invert"
               />
             </div>
           </div>

@@ -141,9 +141,9 @@ export function ProfileModal() {
         {/* Pense-AI signature */}
         <div className="absolute bottom-5 right-5">
           <img
-            src="/logo-penseai.png"
+            src="/LogoPenseAI.png"
             alt="Pense-AI"
-            className="h-4 opacity-35 brightness-0 invert"
+            className="h-8 opacity-50 brightness-0 invert"
           />
         </div>
       </div>
