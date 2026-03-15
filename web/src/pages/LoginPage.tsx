@@ -26,51 +26,67 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-[#2563EB] via-[#3B82F6] to-[#172554] flex items-center justify-center p-4 overflow-hidden">
-      {/* Organic blob 1 */}
-      <div className="absolute top-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl opacity-40"></div>
+    <div className="relative min-h-screen bg-gradient-to-b from-[#1E40AF] via-[#1E3A8A] to-[#0F172A] flex items-center justify-center p-4 overflow-hidden">
+      {/* Organic blob 1 — sutil */}
+      <div
+        className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{
+          top: '5%',
+          left: '-5%',
+          filter: 'blur(80px)',
+          background: 'radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%)',
+        }}
+      />
 
       {/* Organic blob 2 */}
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300 rounded-full blur-3xl opacity-40"></div>
-
-      {/* Organic blob 3 */}
-      <div className="absolute top-1/2 right-32 w-80 h-80 bg-indigo-300 rounded-full blur-3xl opacity-40"></div>
+      <div
+        className="absolute w-[350px] h-[350px] rounded-full pointer-events-none"
+        style={{
+          bottom: '10%',
+          right: '-8%',
+          filter: 'blur(80px)',
+          background: 'radial-gradient(circle, rgba(30,64,175,0.3), transparent 70%)',
+        }}
+      />
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Brand section */}
-        <div className="text-center mb-12">
-          <h1 className="text-white font-extrabold text-3xl mb-4">Super Agentes</h1>
+        <div className="text-center mb-10">
+          <h1 className="text-white font-extrabold text-3xl mb-4 tracking-tight">Super Agentes</h1>
           <img
             src="/LogoPenseAI.png"
             alt="Pense-AI"
-            className="h-10 mx-auto opacity-70 brightness-0 invert"
+            className="h-12 mx-auto"
           />
         </div>
 
         {/* Glassmorphism card */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white/12 backdrop-blur-[40px] border border-white/[0.18] rounded-[28px] p-8 space-y-5"
+          className="bg-white/10 backdrop-blur-[40px] border border-white/[0.15] rounded-[28px] p-8 space-y-5"
         >
+          {/* Card title */}
+          <h2 className="text-white font-bold text-xl text-center mb-2">Entrar</h2>
+
           <div>
-            <label className="block text-xs font-medium text-white/70 mb-2 uppercase tracking-wide">Email</label>
+            <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wider">E-mail</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-white/8 border-[1.5px] border-white/12 rounded-[16px] text-white placeholder:text-white/28 focus:outline-none focus:border-white/30 focus:bg-white/12 transition-all"
+              className="w-full px-4 py-3 bg-white/8 border-[1.5px] border-white/10 rounded-[16px] text-white placeholder:text-white/25 focus:outline-none focus:border-white/30 focus:bg-white/12 transition-all"
               placeholder="seu@email.com"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/70 mb-2 uppercase tracking-wide">Senha</label>
+            <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wider">Senha</label>
             <input
               type="password"
               value={senha}
               onChange={e => setSenha(e.target.value)}
-              className="w-full px-4 py-3 bg-white/8 border-[1.5px] border-white/12 rounded-[16px] text-white placeholder:text-white/28 focus:outline-none focus:border-white/30 focus:bg-white/12 transition-all"
+              className="w-full px-4 py-3 bg-white/8 border-[1.5px] border-white/10 rounded-[16px] text-white placeholder:text-white/25 focus:outline-none focus:border-white/30 focus:bg-white/12 transition-all"
               placeholder="••••••••"
               required
             />
@@ -85,7 +101,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-white text-blue-700 rounded-full font-bold hover:bg-white/95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+            className="w-full py-3.5 bg-white text-[#1E3A8A] rounded-full font-bold text-base hover:bg-white/95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
@@ -93,8 +109,11 @@ export function LoginPage() {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-white/50 text-sm">
-            Ainda não tem conta? <a href="#" className="text-white/80 hover:text-white transition-colors underline">Cadastre-se</a>
+          <p className="text-white/45 text-sm">
+            Ainda não tem conta?{' '}
+            <a href="#" className="text-white/75 hover:text-white transition-colors font-semibold">
+              Cadastre-se
+            </a>
           </p>
         </div>
       </div>

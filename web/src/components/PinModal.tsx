@@ -65,7 +65,7 @@ export function PinModal({ onCancel }: PinModalProps) {
             key={i}
             className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
               i < digits.length
-                ? 'bg-white border-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
+                ? 'bg-emerald-400 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)]'
                 : 'border-white/30'
             }`}
           />
@@ -136,7 +136,7 @@ export function PinModal({ onCancel }: PinModalProps) {
         <img
           src="/LogoPenseAI.png"
           alt="Pense-AI"
-          className="h-8 opacity-50 brightness-0 invert"
+          className="h-10 opacity-80"
         />
       </div>
     </div>

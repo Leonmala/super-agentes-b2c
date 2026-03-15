@@ -104,14 +104,17 @@ export function ProfileModal() {
               className="w-full flex items-center justify-between gap-4 px-4 py-3 rounded-[22px] bg-white/12 backdrop-blur-[30px] border border-white/16 transition-all duration-200 hover:bg-white/18 hover:transform hover:-translate-y-0.5 disabled:opacity-50"
             >
               <div className="flex items-center gap-3">
-                {/* Avatar com ícone de escudo/cadeado */}
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0 bg-gradient-to-br from-blue-400 to-blue-600">
+                {/* Avatar com ícone de cadeado */}
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-400 to-blue-600">
                   <svg
                     className="w-6 h-6 text-white"
-                    fill="currentColor"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
                     viewBox="0 0 24 24"
                   >
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </div>
                 {/* Nome e role */}
@@ -143,7 +146,7 @@ export function ProfileModal() {
           <img
             src="/LogoPenseAI.png"
             alt="Pense-AI"
-            className="h-8 opacity-50 brightness-0 invert"
+            className="h-10 opacity-80"
           />
         </div>
       </div>
