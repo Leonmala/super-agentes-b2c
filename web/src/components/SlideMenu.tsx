@@ -156,7 +156,7 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
             <span className="text-white font-extrabold text-[15px] tracking-[-0.3px]">Super Agentes</span>
             <button
               onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center bg-white/10 border border-white/8 rounded-[12px] hover:bg-white/20 transition-all"
+              className="w-9 h-9 flex items-center justify-center bg-white/10 border border-white/8 rounded-[12px] hover:bg-white/20 transition-all text-white"
             >
               <IconClose />
             </button>
@@ -267,12 +267,12 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
               Sair
             </button>
 
-            {/* Logo Pense-AI — colorido, sem filtro */}
-            <div className="flex justify-end pt-3">
+            {/* Logo Pense-AI — colorido, primeiro plano */}
+            <div className="flex justify-end pt-3 relative z-10">
               <img
                 src="/LogoPenseAI.png"
                 alt="Pense-AI"
-                className="h-6 opacity-60"
+                className="h-10"
               />
             </div>
           </div>
