@@ -5,7 +5,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'
 
-import { chamarLLM, chamarLLMStream, RespostaLLM } from '../core/llm.js'
+import { chamarLLM, chamarLLMStream, RespostaLLM, ResultadoStream } from '../core/llm.js'
+import type { SinaisPedagogicos } from '../core/response-processor.js'
 import {
   decidirPersona,
   determinarStatus,
@@ -201,6 +202,7 @@ router.post('/message', async (req: Request, res: Response) => {
     let agenteFinal: string = persona
     let respostaFinal: string = ''
     let plano: string | null = null
+    let sinaisHeroi: SinaisPedagogicos | null = null
 
     // ─── Fluxo de decisão ──────────────────────────────────────────────────
     // CASO A: Persona é PSICOPEDAGOGICO
@@ -226,22 +228,19 @@ router.post('/message', async (req: Request, res: Response) => {
         modelo: respostaLLM.modelo
       })
 
-      const respostaJSON = respostaLLM.jsonData
+      // Bloco H: usar pipeline processado em vez de jsonData raw
+      const cascata = respostaLLM.processed.cascata
+      const respostaJSON = respostaLLM.processed.jsonOriginal
 
-      // Detectar se PSICO quer encaminhar (LLM pode usar variações do campo "acao")
-      const acaoPsico = respostaJSON?.acao || respostaJSON?.action || ''
+      // Detectar se PSICO quer encaminhar
+      const acaoPsico = cascata?.acao || ''
       const querEncaminhar = acaoPsico === 'ENCAMINHAR_PARA_HEROI' ||
         acaoPsico === 'ENCAMINHAR' ||
-        respostaJSON?.agente_destino ||
-        respostaJSON?.heroi_escolhido
+        cascata?.heroi_escolhido
 
       if (querEncaminhar) {
-        // Extrair herói de vários campos possíveis (LLM varia os nomes)
-        let heroiEscolhido: string = respostaJSON.heroi_escolhido
-          || respostaJSON.agente_destino
-          || respostaJSON.heroi
-          || respostaJSON.agente
-          || ''
+        // Extrair herói do pipeline processado
+        let heroiEscolhido: string = cascata?.heroi_escolhido || ''
 
         // Normalizar nome do herói (LLM pode errar: VERBETA→VERBETTA, CALCULLUS→CALCULUS)
         heroiEscolhido = normalizarNomeHeroi(heroiEscolhido)
@@ -261,18 +260,20 @@ router.post('/message', async (req: Request, res: Response) => {
           houveCascata = true
           agenteFinal = heroiEscolhido
 
-          // Extrair plano (LLM varia: plano_atendimento, plano_pedagogico, plano)
-          const planoObj = respostaJSON.plano_atendimento
-            || respostaJSON.plano_pedagogico
-            || respostaJSON.plano
+          // Extrair plano do pipeline processado (com fallback para JSON original)
+          const planoObj = cascata?.plano_atendimento
+            || respostaJSON?.plano_atendimento
+            || respostaJSON?.plano_pedagogico
+            || respostaJSON?.plano
             || null
           if (planoObj) {
             plano = JSON.stringify(planoObj, null, 2)
           }
-          // Extrair instruções (LLM varia: instrucoes_para_heroi, instrucoes_para_agente)
-          const instrucoesRaw = respostaJSON.instrucoes_para_heroi
-            || respostaJSON.instrucoes_para_agente
-            || respostaJSON.instrucoes
+          // Extrair instruções do pipeline processado (com fallback para JSON original)
+          const instrucoesRaw = cascata?.instrucoes_para_heroi
+            || respostaJSON?.instrucoes_para_heroi
+            || respostaJSON?.instrucoes_para_agente
+            || respostaJSON?.instrucoes
             || ''
           // Pode ser string ou objeto — serializar se necessário
           const instrucoesHeroi = typeof instrucoesRaw === 'string'
@@ -295,7 +296,7 @@ router.post('/message', async (req: Request, res: Response) => {
 
           // Chamar herói em stream
           const systemPromptHeroi = carregarPersona(heroiEscolhido)
-          const metricasHeroi = await chamarLLMStream(
+          const resultadoHeroi: ResultadoStream = await chamarLLMStream(
             systemPromptHeroi,
             contextoHeroi,
             mensagem.trim(),
@@ -306,9 +307,19 @@ router.post('/message', async (req: Request, res: Response) => {
             }
           )
 
+          // Bloco H: capturar sinais pedagógicos do herói
+          sinaisHeroi = resultadoHeroi.processed.sinais
+          if (sinaisHeroi?.sinal_psicopedagogico) {
+            console.log(`[${aluno_id}] 🚨 SINAL PSICOPEDAGÓGICO de ${heroiEscolhido}: ${sinaisHeroi.motivo_sinal}`)
+          }
+
           chamadasMetricas.push({
             persona: heroiEscolhido,
-            ...metricasHeroi
+            tempo_ms: resultadoHeroi.tempo_ms,
+            tokens_input: resultadoHeroi.tokens_input,
+            tokens_output: resultadoHeroi.tokens_output,
+            tokens_total: resultadoHeroi.tokens_total,
+            modelo: resultadoHeroi.modelo
           })
 
           console.log(`[${aluno_id}] ${heroiEscolhido} stream concluído`)
@@ -331,7 +342,7 @@ router.post('/message', async (req: Request, res: Response) => {
       console.log(`[${aluno_id}] Chamando ${persona} em stream (continuidade)...`)
       enviarEvento('agente', { agente: persona })
 
-      const metricasHeroi = await chamarLLMStream(
+      const resultadoHeroi: ResultadoStream = await chamarLLMStream(
         systemPrompt,
         contexto,
         mensagem.trim(),
@@ -342,9 +353,19 @@ router.post('/message', async (req: Request, res: Response) => {
         }
       )
 
+      // Bloco H: capturar sinais pedagógicos do herói
+      sinaisHeroi = resultadoHeroi.processed.sinais
+      if (sinaisHeroi?.sinal_psicopedagogico) {
+        console.log(`[${aluno_id}] 🚨 SINAL PSICOPEDAGÓGICO de ${persona}: ${sinaisHeroi.motivo_sinal}`)
+      }
+
       chamadasMetricas.push({
         persona,
-        ...metricasHeroi
+        tempo_ms: resultadoHeroi.tempo_ms,
+        tokens_input: resultadoHeroi.tokens_input,
+        tokens_output: resultadoHeroi.tokens_output,
+        tokens_total: resultadoHeroi.tokens_total,
+        modelo: resultadoHeroi.modelo
       })
     }
 
@@ -387,7 +408,8 @@ router.post('/message', async (req: Request, res: Response) => {
         mensagem.trim(),
         respostaFinal,
         status,
-        plano
+        plano,
+        sinaisHeroi
       ),
       atualizarSessao(sessao.id, {
         turno_atual: novoTurno,

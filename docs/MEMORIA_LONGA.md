@@ -315,3 +315,37 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 **Para deletar (Leon via CLI):**
 - `web/src/hooks/useTypingEffect.ts`
 - `web/src/components/StreamingCursor.tsx`
+
+---
+
+### Bloco H — Disjuntores Arquiteturais (2026-03-17)
+
+**Motivação:** 3 bugs graves de protocolo JSON onde respostas LLM malformadas vazavam para o aluno:
+- Bug #37: PSICO JSON truncado por maxOutputTokens → cascata morria → JSON raw enviado ao aluno
+- Bug #38: Herói JSON com aspas malformadas → JSON.parse falha → JSON raw exposto
+- Bug #39: Backend ignorava sinal_psicopedagogico, motivo_sinal, observacoes_internas dos heróis
+
+**Decisão arquitetural:** Approach B — pipeline dedicado (response-processor.ts). Todas as respostas LLM passam por um processador central antes de chegar a qualquer destino. Leon escolheu isso sobre Approach A (patches cirúrgicos nos arquivos existentes).
+
+**Para sinais pedagógicos:** Opção A — persistir no banco + expor no SUPERVISOR (sem notificação imediata ao pai). Leon aprovou.
+
+**5 Disjuntores instalados:**
+1. **D1 — Extração robusta:** Pipeline de 4 camadas (JSON.parse → markdown block → regex fallback → texto puro). Nunca mais JSON.parse falha silenciosamente.
+2. **D2 — Sanitizador incondicional:** SEMPRE roda antes de enviar texto ao aluno. Remove blocos JSON, campos soltos, chaves órfãs, code blocks. Se não sobrar nada útil, usa fallback amigável da persona.
+3. **D3 — Cascata resiliente:** PSICO cascata usa `processed.cascata` tipada em vez de acessar jsonData raw. Fallback para jsonOriginal quando pipeline parcial.
+4. **D4 — Pipeline de sinais:** Herói → persistência → Supabase. Sinais ficam em b2c_turnos. SUPERVISOR pode buscar via `buscarSinaisAluno()`.
+5. **D5 — maxOutputTokens:** PSICO 3000→8000, heróis 3000→4000. Elimina truncamento.
+
+**Arquivos criados/modificados:**
+- `server/src/core/response-processor.ts` (NOVO — ~300 linhas)
+- `server/tests/response-processor.test.ts` (NOVO — 9 testes)
+- `server/src/core/llm.ts` (MODIFICADO — processador, interfaces, maxOutputTokens)
+- `server/src/routes/message.ts` (MODIFICADO — cascata via processed, sinais)
+- `server/src/db/supabase.ts` (MODIFICADO — 3 campos Turno)
+- `server/src/db/persistence.ts` (MODIFICADO — sinais + buscarSinaisAluno)
+
+**Migration Supabase:** 3 colunas + índice parcial em b2c_turnos
+
+**Incidente anterior:** Na primeira implementação (mesma data), todos os commits ficaram em /tmp/git-temp (workaround para lock files do git no mount). Quando a VM resetou, tudo foi perdido. Reimplementado direto no mount sem workarounds temporários.
+
+**Pendente:** Push + deploy + validação em produção

@@ -76,6 +76,9 @@ export interface Turno {
   status: 'CONTINUIDADE' | 'TROCA_TEMA' | 'ENCAMINHADO_PSICO' | 'PAUSA'
   plano: string | null
   observacao: string | null
+  sinal_psicopedagogico: boolean
+  motivo_sinal: string | null
+  observacoes_internas: string | null
   created_at: string
 }
 

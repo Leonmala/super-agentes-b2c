@@ -182,6 +182,19 @@
 - [x] **G12** QA script contínuo (qa-continuo.ts) — criado, pendente execução contra prod
 - [ ] **G13** Push + deploy Railway + validação final (URL prod retornando 404 — aguardando Leon)
 
+### Disjuntores Arquiteturais — Bloco H (2026-03-17)
+
+- [x] **H1** response-processor.ts: pipeline 4 camadas (JSON.parse → markdown → regex → texto puro)
+- [x] **H2** Sanitizador incondicional (remove resíduos JSON antes de enviar ao aluno)
+- [x] **H3** Fallback messages amigáveis por persona (10 + DEFAULT)
+- [x] **H4** Integrar response-processor em llm.ts (ProcessedResponse, ResultadoStream, maxOutputTokens)
+- [x] **H5** Integrar response-processor em message.ts (cascata via processed, sinais capturados)
+- [x] **H6** supabase.ts: 3 novos campos na interface Turno
+- [x] **H7** persistence.ts: persistir sinais + buscarSinaisAluno para SUPERVISOR
+- [x] **H8** Migration Supabase: 3 colunas + índice parcial em b2c_turnos
+- [x] **H9** Testes: 9/9 passando + TypeScript 0 erros
+- [ ] **H10** Push + deploy Railway + validação em produção
+
 ### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
 
 - [ ] **PF1** Sessão de brainstorm com Leon (MCP + NotebookLM)

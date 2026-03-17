@@ -3,6 +3,7 @@
 
 import { supabase } from './supabase.js'
 import type { Sessao, Turno } from './supabase.js'
+import type { SinaisPedagogicos } from '../core/response-processor.js'
 
 export async function persistirTurno(
   sessaoId: string,
@@ -11,7 +12,8 @@ export async function persistirTurno(
   entrada: string,
   resposta: string,
   status: Turno['status'],
-  plano: string | null
+  plano: string | null,
+  sinais?: SinaisPedagogicos | null
 ): Promise<void> {
   const { error } = await supabase.from('b2c_turnos').insert({
     sessao_id: sessaoId,
@@ -20,7 +22,10 @@ export async function persistirTurno(
     entrada,
     resposta,
     status,
-    plano
+    plano,
+    sinal_psicopedagogico: sinais?.sinal_psicopedagogico ?? false,
+    motivo_sinal: sinais?.motivo_sinal ?? null,
+    observacoes_internas: sinais?.observacoes_internas ?? null
   })
 
   if (error) {
@@ -227,6 +232,40 @@ export function verificarTransicaoPendente(sessao: Sessao): {
     agenteDestino: null,
     instrucoes: null
   }
+}
+
+/**
+ * Busca turnos com sinais pedagógicos do aluno (para SUPERVISOR)
+ * Retorna turnos onde sinal_psicopedagogico = true
+ */
+export async function buscarSinaisAluno(
+  alunoId: string,
+  limite: number = 20
+): Promise<Turno[]> {
+  // Buscar sessões do aluno
+  const { data: sessoes } = await supabase
+    .from('b2c_sessoes')
+    .select('id')
+    .eq('aluno_id', alunoId)
+
+  if (!sessoes || sessoes.length === 0) return []
+
+  const sessaoIds = sessoes.map(s => s.id)
+
+  const { data, error } = await supabase
+    .from('b2c_turnos')
+    .select('*')
+    .eq('sinal_psicopedagogico', true)
+    .in('sessao_id', sessaoIds)
+    .order('created_at', { ascending: false })
+    .limit(limite)
+
+  if (error) {
+    console.error('Erro ao buscar sinais do aluno:', error)
+    return []
+  }
+
+  return (data || []) as Turno[]
 }
 
 /**

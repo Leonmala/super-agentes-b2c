@@ -2,6 +2,7 @@
 // O LLM é SEMPRE o GESTOR que assume personas diferentes
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { processarRespostaLLM, ProcessedResponse } from './response-processor.js'
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY!
 if (!GOOGLE_API_KEY) {
@@ -16,13 +17,23 @@ const LLM_TIMEOUT_MS = parseInt(process.env.LLM_TIMEOUT_MS || '60000', 10)
 // Interface para resposta estruturada
 export interface RespostaLLM {
   textoParaAluno: string
-  jsonData?: any
+  processed: ProcessedResponse
   raw: string
   tempo_ms: number
   tokens_input: number
   tokens_output: number
   tokens_total: number
   modelo: string
+}
+
+// Interface para resultado de stream
+export interface ResultadoStream {
+  tokens_input: number
+  tokens_output: number
+  tokens_total: number
+  tempo_ms: number
+  modelo: string
+  processed: ProcessedResponse
 }
 
 export async function chamarLLM(
@@ -42,7 +53,7 @@ export async function chamarLLM(
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
-      maxOutputTokens: 3000,
+      maxOutputTokens: persona === 'PSICOPEDAGOGICO' ? 8000 : 4000,
     }
   })
 
@@ -60,7 +71,14 @@ export async function chamarLLM(
 
     const tempo_ms = Date.now() - inicioChamada
     const raw = result.response.text()
-    const parsed = extrairJSONouTexto(raw, persona)
+    const processed = processarRespostaLLM(raw, persona)
+
+    if (processed.metadados.sanitizado) {
+      console.warn(`[LLM] ⚠️ Sanitizador ativou para ${persona} (método: ${processed.metadados.metodo_extracao})`)
+    }
+    if (processed.metadados.usou_fallback) {
+      console.warn(`[LLM] ⚠️ Fallback ativou para ${persona} (método: ${processed.metadados.metodo_extracao})`)
+    }
 
     const usageMetadata = result.response.usageMetadata
     const tokens_input = usageMetadata?.promptTokenCount ?? 0
@@ -68,8 +86,8 @@ export async function chamarLLM(
     const tokens_total = usageMetadata?.totalTokenCount ?? (tokens_input + tokens_output)
 
     return {
-      textoParaAluno: parsed.texto,
-      jsonData: parsed.json,
+      textoParaAluno: processed.textoLimpo,
+      processed,
       raw: raw,
       tempo_ms,
       tokens_input,
@@ -78,8 +96,8 @@ export async function chamarLLM(
       modelo: MODELO
     }
 
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error(`LLM timeout após ${LLM_TIMEOUT_MS / 1000}s (persona: ${persona}, modelo: ${MODELO})`)
     }
     throw err
@@ -94,7 +112,7 @@ export async function chamarLLMStream(
   mensagemAluno: string,
   persona: string,
   onChunk: (texto: string) => void
-): Promise<{ tokens_input: number; tokens_output: number; tokens_total: number; tempo_ms: number; modelo: string }> {
+): Promise<ResultadoStream> {
 
   const gestorSystemPrompt = construirEnvelopeGestor(systemPrompt, contexto, persona, mensagemAluno)
 
@@ -104,7 +122,7 @@ export async function chamarLLMStream(
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
-      maxOutputTokens: 3000,
+      maxOutputTokens: 4000,
     }
   })
 
@@ -119,7 +137,7 @@ export async function chamarLLMStream(
     )
 
     // Buffer completo — acumula toda a resposta e extrai texto limpo no final.
-    // O useTypingEffect no frontend cria a animação gradual, então enviar
+    // O useBubbleReveal no frontend cria a animação gradual, então enviar
     // o texto inteiro de uma vez não prejudica a UX.
     // Isso elimina 100% dos casos de JSON leaking para o aluno.
     let rawAcumulado = ''
@@ -130,10 +148,18 @@ export async function chamarLLMStream(
       rawAcumulado += texto
     }
 
-    // Extrair texto limpo — funciona tanto para JSON quanto para texto puro
-    const parsed = extrairJSONouTexto(rawAcumulado, persona)
-    if (parsed.texto) {
-      onChunk(parsed.texto)
+    // Pipeline de processamento — 4 camadas de extração + sanitizador incondicional
+    const processed = processarRespostaLLM(rawAcumulado, persona)
+
+    if (processed.metadados.sanitizado) {
+      console.warn(`[LLM Stream] ⚠️ Sanitizador ativou para ${persona} (método: ${processed.metadados.metodo_extracao})`)
+    }
+    if (processed.metadados.usou_fallback) {
+      console.warn(`[LLM Stream] ⚠️ Fallback ativou para ${persona} (método: ${processed.metadados.metodo_extracao})`)
+    }
+
+    if (processed.textoLimpo) {
+      onChunk(processed.textoLimpo)
     }
 
     const tempo_ms = Date.now() - inicioChamada
@@ -143,10 +169,10 @@ export async function chamarLLMStream(
     const tokens_output = usageMetadata?.candidatesTokenCount ?? 0
     const tokens_total = usageMetadata?.totalTokenCount ?? (tokens_input + tokens_output)
 
-    return { tokens_input, tokens_output, tokens_total, tempo_ms, modelo: MODELO }
+    return { tokens_input, tokens_output, tokens_total, tempo_ms, modelo: MODELO, processed }
 
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error(`LLM stream timeout após ${LLM_TIMEOUT_MS / 1000}s (persona: ${persona})`)
     }
     throw err
@@ -549,44 +575,4 @@ MENSAGEM DO ALUNO PARA ${persona}:
 RESPONDA AGORA COMO ${persona}:`
 }
 
-function extrairTextoDoJSON(json: Record<string, unknown>): string | null {
-  // Campos conhecidos em ordem de prioridade
-  const campos = [
-    'resposta_para_aluno',
-    'reply_text',
-    'mensagem_ao_aluno',
-    'mensagem',
-    'texto',
-    'resumo_text',
-    'resposta',
-    'response',
-    'message',
-  ]
-  for (const campo of campos) {
-    if (typeof json[campo] === 'string' && json[campo]) {
-      return json[campo] as string
-    }
-  }
-  return null
-}
-
-function extrairJSONouTexto(raw: string, persona: string): { texto: string, json?: any } {
-  const markdownMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-  if (markdownMatch) {
-    try {
-      const json = JSON.parse(markdownMatch[1].trim())
-      const texto = extrairTextoDoJSON(json) || JSON.stringify(json)
-      return { texto, json }
-    } catch {
-      return { texto: markdownMatch[1].trim() }
-    }
-  }
-
-  try {
-    const json = JSON.parse(raw.trim())
-    const texto = extrairTextoDoJSON(json) || raw.trim()
-    return { texto, json }
-  } catch {
-    return { texto: raw.trim() }
-  }
-}
+// extrairTextoDoJSON e extrairJSONouTexto foram removidos — substituídos por response-processor.ts (Bloco H)
