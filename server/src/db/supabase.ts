@@ -63,6 +63,7 @@ export interface Sessao {
   transicao_pendente: boolean
   created_at: string
   updated_at: string
+  ultimo_turno_at: string
 }
 
 export interface Turno {

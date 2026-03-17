@@ -1,15 +1,15 @@
 # MEMÓRIA LONGA — Super Agentes V1.0
 
 > **Propósito:** Banco de memória persistente com TUDO que aconteceu no projeto. Lido no início de cada sessão nova para restaurar contexto completo.
-> **Última atualização:** 2026-03-13 00:30
+> **Última atualização:** 2026-03-15
 
 ---
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** Gate 5 E2E PASSED ✅ (14/14 testes, média 9.3/10) → Próximo: Push + Fase 5 (SaaS)
-**Próximo passo:** Push para GitHub + Fase 5 (Landing + Checkout + Onboarding)
-**Bloqueios:** Nenhum
+**Fase:** Visual Refactor V5 implementado + ajustes finos com Leon
+**Próximo passo:** (1) Botão "+" para fotos/câmera, (2) Brainstorm agente NotebookLM
+**Bloqueios:** Railway env vars precisam ser configuradas pelo Leon
 
 ### Progresso por Fase
 
@@ -20,7 +20,8 @@
 | Fase 2.5: Workshop PROFESSOR_IA | 0% | Adiada — será por último (após Fases 4→5→6) |
 | Fase 3: Frontend | 100% ✅ | PASSED (6/6) 2026-03-12 |
 | Deploy Railway | 100% ✅ | App rodando em produção 2026-03-13 |
-| Visual Polish | 100% ✅ | Leon aprovou interface 2026-03-13 |
+| Visual Polish (round 1) | 100% ✅ | Leon aprovou interface 2026-03-13 |
+| Visual Refactor V5 | 100% ✅ | 18 tasks + 6 rodadas ajustes finos 2026-03-15 |
 | Fase 4: Infra | 100% ✅ | PASSED (12/12) 2026-03-13 |
 | Gate 5 E2E: 8 Agentes | 100% ✅ | PASSED (14/14, média 9.3/10) 2026-03-13 |
 | Hotfixes Produção | 100% ✅ | 4 bugs corrigidos (personas, JSON, cascata, turnos) 2026-03-13 |
@@ -84,6 +85,17 @@
 | 43 | Sistema de anti-keywords (blocklist) no router | Ideia do Leon: termos proibidos complementam ativadores. Se mensagem contém keyword + anti-keyword → match cancelado. Extensível. Primeiro uso: "trabalho" em física. | 2026-03-14 |
 | 44 | Educação sexual (duas partes) | Leon definiu: (a) NEURON recebe linha simples para tratar cientificamente; (b) PSICO antevê tema por idade e orienta herói no plano. Demais heróis proibidos. | 2026-03-14 |
 | 45 | Design visual como bloco próprio | Leon percebeu feedback externo "UI parece feita por IA". Quer polish com skill de design após bugs/UX. Usabilidade aprovada — só visual. | 2026-03-14 |
+| 46 | Visual Refactor V5 (protótipo HTML) | Protótipo completo em `prototipo-visual-refactor.html` aprovado por Leon. 18 tasks de implementação. | 2026-03-14 |
+| 47 | Plus Jakarta Sans como fonte padrão | Google Fonts, weights 400-800. Substitui fonte default do Tailwind. | 2026-03-14 |
+| 48 | CSS Design Tokens (:root vars) | `--bg-base: #F5F7FB`, `--shadow-float`, `--radius-sm/md/lg`, etc. Em index.css. | 2026-03-14 |
+| 49 | 8 gradientes únicos por herói | Extraídos das bg-chat images oficiais. CALCULUS=#1E3F6B, VERBETTA=#5C2D90, etc. | 2026-03-14 |
+| 50 | Sheet-over-header pattern | Chat body com `rounded-t-[28px] -mt-6` sobrepõe o header. | 2026-03-14 |
+| 51 | Glassmorphism padrão | `bg-white/12 backdrop-blur-[40px] border border-white/[0.18]`. Aplicado em login, PIN, menu, perfis. | 2026-03-14 |
+| 52 | LogoPenseAI.png como logo correto | Cubo 3D "Pense AI!" — NÃO usar logo-penseai.png (era o logo institucional errado). Sem filtro brightness-0/invert. | 2026-03-15 |
+| 53 | PIN dots verdes (emerald-400) | Feedback do Leon: branco não dá feedback visual suficiente. Verde = confirmação. | 2026-03-15 |
+| 54 | Menu lateral w-[290px] com SVGs protótipo | Ícones: raio (Super Agentes), monitor (Professor IA), olho (Supervisor), user (Trocar), logout (Sair). Botões inferiores sem background. | 2026-03-15 |
+| 55 | Login gradiente profundo | `from-[#1E40AF] via-[#1E3A8A] to-[#0F172A]` — azul profundo→navy escuro. Blobs com radial-gradient + blur(80px). | 2026-03-15 |
+| 56 | Numpad PIN aspect-ratio 1.3 | Em vez de h fixo, usa aspect-ratio para teclas proporcionais em qualquer tela. Max-w 280px. | 2026-03-15 |
 
 ---
 
@@ -155,7 +167,7 @@ web/
 
 ### Dependências Principais (Frontend)
 
-React 18, react-router-dom, react-markdown, lucide-react, Tailwind CSS, Vite 6.3.5 (downgraded de 8 para Railway)
+React 19, react-router-dom, react-markdown, lucide-react, Tailwind 4, Vite 6.3.5 (downgraded de 8 para Railway), Plus Jakarta Sans (Google Fonts)
 
 ### Banco de Dados (Supabase)
 
@@ -222,6 +234,14 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 | 2026-03-14 ~sessão7 | Bloco C: NEURON sex ed | Seção "EDUCAÇÃO SEXUAL — ABORDAGEM CIENTÍFICA" no bloco SEGURANÇA |
 | 2026-03-14 ~sessão7 | Bloco C: PSICO antecipação | Seção com regras por série (7º+, 6º-, risco) no plano pedagógico |
 | 2026-03-14 ~sessão7 | Bloco C: Proibição outros heróis | Instrução condicional em construirEnvelopeGestor() para todos exceto NEURON/PSICO/SUPERVISOR |
+| 2026-03-14 ~sessão8 | Visual Refactor V5 — Protótipo HTML | Protótipo completo com Plus Jakarta Sans, glassmorphism, 8 gradientes, sheet pattern |
+| 2026-03-14 ~sessão8 | Visual Refactor V5 — 18 tasks implementadas | Subagent-driven, 5 chunks, todos os componentes reescritos |
+| 2026-03-15 ~sessão9 | Ajuste 1: PIN numpad proporcional | aspect-ratio 1.3, container 280px, ícone backspace correto |
+| 2026-03-15 ~sessão9 | Ajuste 2: Logo Pense-AI correto | LogoPenseAI.png (cubo 3D), sem filtro mono, h-10 em todas as telas |
+| 2026-03-15 ~sessão9 | Ajuste 3: Ícone responsável escudo→cadeado | ProfileModal SVG shield→lock |
+| 2026-03-15 ~sessão9 | Ajuste 4: PIN dots verdes | bg-emerald-400 + glow verde ao preencher |
+| 2026-03-15 ~sessão9 | Ajuste 5: Login profundo | Gradiente escuro, blobs sutis, botão azul composição, título "Entrar" no card |
+| 2026-03-15 ~sessão9 | Ajuste 6: Menu lateral protótipo completo | 290px, SVGs corretos, botões limpos, X branco, logo z-10 |
 
 ---
 
@@ -245,3 +265,53 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 - NÃO deletar tabelas t6_ existentes
 - NÃO usar `any` em TypeScript
 - NÃO avançar fase sem Gate passar
+
+---
+
+## Sessão 10 — 2026-03-17: Bloco G — Robustez + UX + Testes em Produção
+
+### Decisões (#57-65)
+
+- **#57** Router bug root cause: linhas 294-299 retornavam agente anterior quando keywords falhavam. Corrigido com decidirPersona async de 5 caminhos
+- **#58** Session timeout: 15min inatividade OU nova_sessao flag → reset agente_atual/tema_atual
+- **#59** Classificador LLM leve (classificarTema): Gemini Flash, temp=0, 10 tokens max, 500ms timeout com Promise.race. Substitui classificarTemaInteligente (que era 1500+ tokens)
+- **#60** UX de texto: useTypingEffect (caractere por caractere) substituído por useBubbleReveal (balão por balão com tempo de leitura)
+- **#61** TypingDots: 3 pontinhos animados com CSS bounce (substitui StreamingCursor cursor piscante)
+- **#62** pendingReveal pattern: ChatContext seta pendingReveal, ChatMessages controla revelação via useBubbleReveal, quando termina adiciona ao histórico
+- **#63** MCP Bridge auth: JWT + PIN do responsável via header X-Pin (pois JWT de login NÃO inclui tipo_usuario)
+- **#64** API_URL configurável: process.env.API_URL || localhost:3001 no TestClient
+- **#65** QA como processo Pense-AI: Leon definiu que no futuro testes nascem desde o momento 1 do app
+
+### Cronologia
+
+1. Leon reportou 4 problemas sistêmicos: (A) router travado em CALCULUS, (B) text dumping UX, (C) testar produção, (D) processo disciplinado
+2. Brainstorming completo (one-question-at-a-time) → spec aprovada
+3. Plano de implementação com 10 tasks em 3 chunks
+4. Implementação: Tasks 1-2 sequenciais (backend), Tasks 4-5+7+8 em paralelo (3 subagentes), Task 6 manual (complexa)
+5. Typecheck server + frontend: ambos 0 errors
+6. Build do Vite falha por permissão do mount (não é bug nosso — funciona no Railway)
+7. Git commit falha por .git/index.lock (permissão mount) — Leon faz push via Claude Code CLI
+
+### Arquivos Criados/Modificados
+
+**Criados:**
+- `web/src/components/TypingDots.tsx`
+- `web/src/hooks/useBubbleReveal.ts`
+- `server/src/routes/mcp.ts`
+
+**Modificados:**
+- `server/src/core/router.ts` (decidirPersona async + classificarTema + SESSION_TIMEOUT_MS)
+- `server/src/routes/message.ts` (nova_sessao + atualizarUltimoTurno + router async)
+- `server/src/db/persistence.ts` (atualizarUltimoTurno + resetarSessaoAgente)
+- `server/src/db/supabase.ts` (Sessao.ultimo_turno_at)
+- `server/src/index.ts` (registro rota MCP)
+- `server/tests/helpers/api-client.ts` (API_URL configurável)
+- `server/package.json` (scripts test:prod, gate:6)
+- `web/src/contexts/ChatContext.tsx` (pendingReveal, remove useTypingEffect)
+- `web/src/components/ChatMessages.tsx` (useBubbleReveal + TypingDots)
+- `web/src/components/ChatBubble.tsx` (export splitSentences, singleBubble)
+- `web/src/api/chat.ts` (novaSessao no body)
+
+**Para deletar (Leon via CLI):**
+- `web/src/hooks/useTypingEffect.ts`
+- `web/src/components/StreamingCursor.tsx`

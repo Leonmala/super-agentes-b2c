@@ -2,7 +2,7 @@
 
 > **Regra:** Toda vez que um teste falha ou um bug é encontrado, registrar aqui ANTES de corrigir.
 > Formato: Data | Fase | Descrição | Causa raiz | Correção | Status
-> **Última atualização:** 2026-03-12 22:15
+> **Última atualização:** 2026-03-15
 
 ---
 
@@ -61,10 +61,29 @@
 | 22 | 2026-03-14 | Polimento | Vector invadindo conversa de ciências ("trabalho de ciências" → VECTOR) | Keyword "trabalho" em KEYWORDS_FISICA é ambígua — em contexto escolar = lição de casa | Sistema de anti-keywords (blocklist): se mensagem contém keyword + anti-keyword → match cancelado. 13 expressões bloqueadoras para física. Extensível. | ✅ Resolvido |
 | 23 | 2026-03-14 | Polimento | Logo do herói ilegível no header (diminuto) | Logo `h-12` (48px) vs buble `h-16` (64px) — desproporcional | `h-12` → `h-16` igualando altura do buble | ✅ Resolvido |
 
+## Erros Resolvidos (Visual Refactor V5 — 2026-03-15)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 24 | 2026-03-15 | Visual | Logo Pense-AI errado (logo institucional em vez do cubo 3D) | Arquivo `logo-penseai.png` era o logo errado. Correto é `LogoPenseAI.png` | Copiado arquivo correto para web/public/, referências atualizadas em 4 arquivos | ✅ Resolvido |
+| 25 | 2026-03-15 | Visual | Logo monocromático (branco forçado) | CSS `brightness-0 invert` forçava todas as cores para branco | Removido filtro. Logo agora renderiza com cores naturais (texto branco + cubo preto) | ✅ Resolvido |
+| 26 | 2026-03-15 | Visual | Logo diminuto em todas as telas | `h-4` (16px) era invisível no celular | Aumentado para `h-10` (40px) em todas as telas. `h-12` no LoginPage | ✅ Resolvido |
+| 27 | 2026-03-15 | Visual | Logo atrás dos blobs (cor alterada) | Blobs decorativos com blur cobriam o logo no mesmo z-level | Adicionado `relative z-10` ao container do logo | ✅ Resolvido |
+| 28 | 2026-03-15 | Visual | Ícone responsável = escudo em vez de cadeado | SVG path era shield fill (`M12 1L3 5v6c0 5.55...`) | Trocado para lock outline (rect + path) igual ao PinModal | ✅ Resolvido |
+| 29 | 2026-03-15 | Visual | PIN dots brancos (sem feedback visual) | `bg-white border-white` não diferencia de estado vazio em tela azul | `bg-emerald-400 border-emerald-400` com glow verde | ✅ Resolvido |
+| 30 | 2026-03-15 | Visual | PIN numpad achatado/apertado | `h-[62px]` fixo sem largura proporcional. Container `260px` estreito | `aspect-[1.3]` para teclas proporcionais + container `280px` + gap `14px` | ✅ Resolvido |
+| 31 | 2026-03-15 | Visual | Login com gradiente lavado/sem contraste | `from-[#2563EB] via-[#3B82F6]` — azul médio sem profundidade | `from-[#1E40AF] via-[#1E3A8A] to-[#0F172A]` — azul profundo→navy | ✅ Resolvido |
+| 32 | 2026-03-15 | Visual | Botão "Entrar" com azul genérico | `text-blue-700` (#1d4ed8) não corresponde à composição | `text-[#1E3A8A]` — o azul do gradiente da página | ✅ Resolvido |
+| 33 | 2026-03-15 | Visual | Menu lateral com ícones errados (lucide genéricos) | BookOpen, Bot, Eye, ArrowLeftRight, X — não correspondem ao protótipo | SVGs inline: raio, monitor, olho, user, logout — extraídos do protótipo | ✅ Resolvido |
+| 34 | 2026-03-15 | Visual | Menu: botões inferiores com background desnecessário | `bg-white/8 border border-white/8` criava cards pesados | Botões limpos sem background, só texto `text-white/45` + hover sutil | ✅ Resolvido |
+| 35 | 2026-03-15 | Visual | X de fechar menu estava preto | SVG usava `stroke="currentColor"` mas botão não definia `text-white` | Adicionado `text-white` à classe do botão | ✅ Resolvido |
+| 36 | 2026-03-15 | Visual | TypeError: fetch failed no Railway (login não funciona) | `.env` é gitignored, Railway não tinha variáveis de ambiente configuradas | Leon precisa configurar env vars manualmente no Railway dashboard | ⏳ Pendente (Leon) |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
 |---|------|------|-----------|------------|-----------|--------|
+| 36 | 2026-03-15 | Deploy | Railway sem env vars → fetch failed no login | .env gitignored | Leon configura no dashboard Railway | ⏳ Pendente |
 
 ---
 
@@ -88,6 +107,8 @@ _(Atualizar conforme erros se repetem)_
 - **Router (Keywords):** Termos ambíguos causam colisão entre matérias. Mitigado com sistema de anti-keywords (blocklist por tema).
 - **Build:** `tsc` NÃO copia arquivos não-TypeScript (.md, .json). Sempre copiar manualmente no script build.
 - **Dev vs Prod:** `tsx` (dev) roda direto do `src/`, `node` (prod) roda do `dist/`. Paths relativos divergem.
+- **Logo Pense-AI:** Arquivo correto é `LogoPenseAI.png` (cubo 3D). NUNCA usar `logo-penseai.png`. NUNCA aplicar `brightness-0 invert`. Sempre com `relative z-10` para ficar na frente de blobs.
+- **SVG icons herdam cor:** SVGs com `stroke="currentColor"` precisam de `text-white` no elemento pai. Sem isso, herdam preto.
 - **TypeScript:** Nenhum até agora
 - **SSE:** Nenhum até agora
 - **Testes:** Isolamento de estado entre suites é crítico — usar alunos/sessões dedicados por suite

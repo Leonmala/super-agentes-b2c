@@ -56,6 +56,32 @@ export async function atualizarSessao(
   }
 }
 
+export async function atualizarUltimoTurno(sessaoId: string): Promise<void> {
+  const { error } = await supabase
+    .from('b2c_sessoes')
+    .update({ ultimo_turno_at: new Date().toISOString() })
+    .eq('id', sessaoId)
+
+  if (error) {
+    console.error('❌ Erro ao atualizar ultimo_turno_at:', error)
+  }
+}
+
+export async function resetarSessaoAgente(sessaoId: string): Promise<void> {
+  const { error } = await supabase
+    .from('b2c_sessoes')
+    .update({
+      agente_atual: 'PSICOPEDAGOGICO',
+      tema_atual: null,
+      ultimo_turno_at: new Date().toISOString(),
+    })
+    .eq('id', sessaoId)
+
+  if (error) {
+    console.error('❌ Erro ao resetar sessão agente:', error)
+  }
+}
+
 export async function buscarOuCriarSessao(
   alunoId: string,
   tipoUsuario: 'filho' | 'pai' = 'filho'

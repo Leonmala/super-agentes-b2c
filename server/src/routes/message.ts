@@ -10,7 +10,6 @@ import {
   decidirPersona,
   determinarStatus,
   detectarTema,
-  classificarTemaInteligente,
   detectarContinuidade,
   personaPorTema
 } from '../core/router.js'
@@ -20,7 +19,9 @@ import {
   buscarAluno,
   buscarUltimosTurnos,
   persistirTurno,
-  atualizarSessao
+  atualizarSessao,
+  atualizarUltimoTurno,
+  resetarSessaoAgente
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
@@ -71,7 +72,7 @@ const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL']
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/message', async (req: Request, res: Response) => {
   const inicio = Date.now()
-  const { aluno_id, mensagem, tipo_usuario, agente_override } = req.body
+  const { aluno_id, mensagem, tipo_usuario, agente_override, nova_sessao } = req.body
 
   // Validação básica de payload
   if (!aluno_id || typeof aluno_id !== 'string' || aluno_id.trim() === '') {
@@ -152,10 +153,17 @@ router.post('/message', async (req: Request, res: Response) => {
 
     console.log(`[${aluno_id}] Sessão: ${sessao.id}, Turno: ${sessao.turno_atual}, Agente: ${sessao.agente_atual}`)
 
-    // Router inteligente
+    // Router inteligente (async — inclui timeout + classificador LLM)
     const ultimosTurnos = await ultimosTurnosPromise
-    let persona = decidirPersona(mensagem, sessao, ultimosTurnos)
-    let temaDetectado = detectarTema(mensagem)
+
+    // Resetar sessão no banco se nova_sessao flag
+    if (nova_sessao === true) {
+      await resetarSessaoAgente(sessao.id)
+    }
+
+    let { persona, temaDetectado } = await decidirPersona(
+      mensagem, sessao, ultimosTurnos, nova_sessao === true
+    )
 
     // Se agente_override fornecido (para SUPERVISOR_EDUCACIONAL, PROFESSOR_IA, ou herói direto)
     if (agente_override) {
@@ -174,31 +182,10 @@ router.post('/message', async (req: Request, res: Response) => {
       console.log(`[${aluno_id}] Usando agente_override: ${agente_override}`)
     }
 
-    // Tentar classificador inteligente se PSICO inconclusivo
-    if (persona === 'PSICOPEDAGOGICO' && !temaDetectado) {
-      console.log(`[${aluno_id}] Router inconclusivo. Tentando classificador inteligente...`)
-      const classificacao = await classificarTemaInteligente(mensagem)
-      console.log(`[${aluno_id}] Classificação: ${classificacao.categoria} (${classificacao.confianca}%)`)
-
-      if (classificacao.confianca >= 70) {
-        const heroi = [
-          'matematica', 'portugues', 'ciencias', 'historia',
-          'geografia', 'fisica', 'quimica', 'ingles', 'espanhol'
-        ].includes(classificacao.categoria)
-          ? classificationToPersona(classificacao.categoria)
-          : null
-
-        if (heroi && HEROIS_VALIDOS.includes(heroi)) {
-          persona = heroi
-          temaDetectado = classificacao.categoria
-          console.log(`[${aluno_id}] Router inteligente: direto para ${heroi}`)
-        }
-      }
-    }
-
     // Fallback: detectar continuidade por keywords
     if (persona === 'PSICOPEDAGOGICO' && detectarContinuidade(mensagem) && sessao.agente_atual !== 'PSICOPEDAGOGICO') {
       persona = sessao.agente_atual
+      temaDetectado = sessao.tema_atual
       console.log(`[${aluno_id}] Continuidade detectada: mantendo ${persona}`)
     }
 
@@ -409,7 +396,8 @@ router.post('/message', async (req: Request, res: Response) => {
         plano_ativo: temaDetectado && temaDetectado !== sessao.tema_atual
           ? (plano || null)
           : (plano || sessao.plano_ativo)
-      })
+      }),
+      atualizarUltimoTurno(sessao.id)
     ])
       .then(() => {
         console.log(`[${aluno_id}] Persistência concluída (turno ${novoTurno})`)

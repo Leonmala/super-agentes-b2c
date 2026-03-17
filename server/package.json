@@ -14,7 +14,9 @@
     "gate:3": "tsx --test tests/gate3-frontend.test.ts",
     "gate:4": "tsx --test tests/gate4-infraestrutura.test.ts",
     "gate:5": "tsx --test tests/gate5-agentes-e2e.test.ts",
-    "gate:all": "tsx --test tests/**/*.test.ts"
+    "gate:all": "tsx --test tests/**/*.test.ts",
+    "test:prod": "API_URL=https://superagentes-b2c-v2-production.up.railway.app tsx --test tests/gate1-backend.test.ts tests/gate5-agentes-e2e.test.ts",
+    "gate:6": "tsx --test tests/gate6-router-timeout.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

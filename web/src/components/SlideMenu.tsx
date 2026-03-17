@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
 import { FILHO_COLORS } from '../constants'
@@ -172,7 +171,7 @@ export function SlideMenu({ open, onClose }: SlideMenuProps) {
                 <div>
                   <p className="text-white font-bold text-[15px]">{perfilAtivo.nome}</p>
                   <p className="text-white/50 text-xs mt-0.5">
-                    {isPai ? 'Responsável' : `Aluno${perfilAtivo.tipoInterface === 'medio' ? ' · Ensino Médio' : ` · ${perfilAtivo.serie || ''}`}`}
+                    {isPai ? 'Responsável' : `Aluno${perfilAtivo.tipoInterface === 'medio' ? ' · Ensino Médio' : ''}`}
                   </p>
                 </div>
               </div>

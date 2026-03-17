@@ -3,19 +3,19 @@ import type { ReactNode } from 'react'
 import type { ChatMessage, HeroId } from '../types'
 import { sendMessage } from '../api/chat'
 import { useAuth } from './AuthContext'
-import { useTypingEffect } from '../hooks/useTypingEffect'
 
 interface ChatContextValue {
   mensagens: ChatMessage[]
   heroiAtivo: HeroId | null
   streaming: boolean
-  streamingText: string
-  isRevealing: boolean
+  pendingReveal: ChatMessage | null
   erro: string | null
   limiteMsg: string | null
   agenteMenu: string
   setAgenteMenu: (agente: string) => void
   enviar: (texto: string, agenteOverride?: string) => Promise<void>
+  addMessage: (msg: ChatMessage) => void
+  clearPendingReveal: () => void
   limpar: () => void
   dismissErro: () => void
   dismissLimite: () => void
@@ -28,12 +28,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [mensagens, setMensagens] = useState<ChatMessage[]>([])
   const [heroiAtivo, setHeroiAtivo] = useState<HeroId | null>(null)
   const [streaming, setStreaming] = useState(false)
+  const [pendingReveal, setPendingReveal] = useState<ChatMessage | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [limiteMsg, setLimiteMsg] = useState<string | null>(null)
   const [agenteMenu, setAgenteMenu] = useState<string>('super_agentes')
   const fullTextRef = useRef('')
+  const isFirstMessageRef = useRef(true)
 
-  const typing = useTypingEffect()
+  const addMessage = useCallback((msg: ChatMessage) => {
+    setMensagens(prev => [...prev, msg])
+  }, [])
+
+  const clearPendingReveal = useCallback(() => {
+    setPendingReveal(null)
+  }, [])
 
   const enviar = useCallback(async (texto: string, agenteOverride?: string) => {
     if (!perfilAtivo) return
@@ -50,9 +58,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMensagens(prev => [...prev, userMsg])
 
     setStreaming(true)
-    typing.reset()
     fullTextRef.current = ''
     setErro(null)
+
+    const novaSessao = isFirstMessageRef.current
+    isFirstMessageRef.current = false
 
     const targetAlunoId = alunoId || perfilAtivo.selectedFilhoId || ''
 
@@ -61,53 +71,51 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       mensagem: texto,
       tipoUsuario: perfilAtivo.tipoUsuario,
       agenteOverride,
+      novaSessao,
       onAgente: (agente) => {
         setHeroiAtivo(agente as HeroId)
       },
       onChunk: (textoChunk) => {
+        // Servidor envia texto completo de uma vez (ou em chunks grandes)
+        // Apenas acumular — o useBubbleReveal no ChatMessages controla a revelação
         fullTextRef.current += textoChunk
-        typing.addChunk(textoChunk)
       },
       onDone: (data) => {
         const finalText = fullTextRef.current
         const agente = (data.agente as string) || undefined
 
-        // Flush acelera o reveal e chama callback quando terminar
-        typing.flush(() => {
-          const agentMsg: ChatMessage = {
-            id: `agent-${Date.now()}`,
-            role: 'agent',
-            content: finalText,
-            agente,
-            timestamp: Date.now(),
-          }
-          setMensagens(prev => [...prev, agentMsg])
-          setStreaming(false)
-          typing.reset()
-          fullTextRef.current = ''
-        })
+        // Criar mensagem e sinalizar para ChatMessages iniciar reveal
+        const agentMsg: ChatMessage = {
+          id: `agent-${Date.now()}`,
+          role: 'agent',
+          content: finalText,
+          agente,
+          timestamp: Date.now(),
+        }
+        setPendingReveal(agentMsg)
+        setStreaming(false)
+        fullTextRef.current = ''
       },
       onError: (erroMsg) => {
         setErro(erroMsg)
         setStreaming(false)
-        typing.reset()
         fullTextRef.current = ''
       },
       onLimite: (msg) => {
         setLimiteMsg(msg)
         setStreaming(false)
-        typing.reset()
         fullTextRef.current = ''
       },
     })
-  }, [perfilAtivo, streaming, typing])
+  }, [perfilAtivo, streaming])
 
   const limpar = useCallback(() => {
     setMensagens([])
     setHeroiAtivo(null)
-    typing.reset()
+    setPendingReveal(null)
     fullTextRef.current = ''
-  }, [typing])
+    isFirstMessageRef.current = true
+  }, [])
 
   const dismissErro = useCallback(() => setErro(null), [])
   const dismissLimite = useCallback(() => setLimiteMsg(null), [])
@@ -115,10 +123,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   return (
     <ChatContext.Provider value={{
       mensagens, heroiAtivo, streaming,
-      streamingText: typing.displayText,
-      isRevealing: typing.isRevealing,
+      pendingReveal,
       erro, limiteMsg, agenteMenu, setAgenteMenu,
-      enviar, limpar, dismissErro, dismissLimite,
+      enviar, addMessage, clearPendingReveal,
+      limpar, dismissErro, dismissLimite,
     }}>
       {children}
     </ChatContext.Provider>

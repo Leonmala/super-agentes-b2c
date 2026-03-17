@@ -3,7 +3,6 @@ import remarkGfm from 'remark-gfm'
 import type { ChatMessage, HeroId } from '../types'
 import { HEROES } from '../constants'
 import { useAuth } from '../contexts/AuthContext'
-import { StreamingCursor } from './StreamingCursor'
 
 // Elementos permitidos — inclui tabelas e spans para emojis
 const ALLOWED_ELEMENTS = [
@@ -14,7 +13,7 @@ const ALLOWED_ELEMENTS = [
 ]
 
 /** Separa texto em frases para renderizar como baloes individuais */
-function splitSentences(text: string): string[] {
+export function splitSentences(text: string): string[] {
   // Split por pontuacao final seguida de espaco
   const raw = text.split(/(?<=[.!?])\s+/)
   if (raw.length <= 1) return [text]
@@ -35,11 +34,13 @@ function splitSentences(text: string): string[] {
 
 interface ChatBubbleProps {
   message: ChatMessage
-  isStreaming?: boolean
-  streamingText?: string
+  /** Se true, renderiza como balão único (sem split por frases, sem avatar) */
+  singleBubble?: boolean
+  /** Índice do balão na revelação (0 = primeiro, com avatar) */
+  bubbleIndex?: number
 }
 
-export function ChatBubble({ message, isStreaming, streamingText }: ChatBubbleProps) {
+export function ChatBubble({ message, singleBubble, bubbleIndex }: ChatBubbleProps) {
   const isUser = message.role === 'user'
   const { perfilAtivo } = useAuth()
   const hero = message.agente ? HEROES[message.agente as HeroId] : null
@@ -67,12 +68,61 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
     )
   }
 
-  const content = isStreaming ? (streamingText || '') : message.content
   const accentColor = hero?.accent || corHeroi
   const agentGradient = `linear-gradient(135deg, ${accentColor}0F, ${accentColor}1A)`
 
-  // Durante streaming: balao unico. Apos: split por frases.
-  const sentences = isStreaming ? [content] : splitSentences(content)
+  // Modo singleBubble: renderiza como balão único durante reveal
+  if (singleBubble) {
+    const isFirst = bubbleIndex === 0
+    return (
+      <div className={`bubble-enter ${isFirst ? 'mb-1' : 'mb-1'}`}>
+        <div className={`flex gap-2.5 items-start`}>
+          {isFirst && (
+            hero ? (
+              <img
+                src={hero.avatar}
+                alt={hero.nome}
+                className="w-8 h-8 object-cover shrink-0"
+                style={{
+                  borderRadius: '12px',
+                  backgroundColor: `${accentColor}15`,
+                }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            ) : (
+              <img
+                src="/logo-buble.png"
+                alt="Super Agentes"
+                className="w-8 h-8 object-cover shrink-0"
+                style={{
+                  borderRadius: '12px',
+                  backgroundColor: `${accentColor}15`,
+                }}
+              />
+            )
+          )}
+          <div
+            className={`max-w-[80%] px-4 py-3 text-sm text-[var(--text-primary)] chat-bubble-content ${!isFirst ? 'ml-11' : ''}`}
+            style={{
+              background: agentGradient,
+              borderRadius: isFirst ? '22px 22px 22px 6px' : '16px 22px 22px 16px',
+              boxShadow: 'var(--shadow-soft)',
+            }}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              allowedElements={ALLOWED_ELEMENTS}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Modo normal: split em frases (mensagem finalizada)
+  const sentences = splitSentences(message.content)
 
   return (
     <div className="mb-3">
@@ -116,7 +166,6 @@ export function ChatBubble({ message, isStreaming, streamingText }: ChatBubblePr
             >
               {frase}
             </ReactMarkdown>
-            {isStreaming && i === sentences.length - 1 && <StreamingCursor color={corHeroi} />}
           </div>
         </div>
       ))}

@@ -7,6 +7,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY!
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY || '')
 
+const SESSION_TIMEOUT_MS = parseInt(process.env.SESSION_TIMEOUT_MS || '900000', 10) // 15min default
+
 // Keywords por tema — conservadores para evitar falsos positivos
 const KEYWORDS_MATEMATICA = [
   'matemática', 'matematica', 'conta de matematica', 'conta de matemática',
@@ -267,6 +269,57 @@ Categoria:`
   }
 }
 
+// Classificador LLM leve — Gemini Flash com temp=0, max 10 tokens.
+// Roda quando keywords falham. Timeout de 500ms → fallback null.
+const TEMAS_VALIDOS_CLASSIFIER = [
+  'matematica', 'portugues', 'ciencias', 'historia',
+  'geografia', 'fisica', 'quimica', 'ingles', 'espanhol',
+]
+
+export async function classificarTema(mensagem: string): Promise<string | null> {
+  if (!GOOGLE_API_KEY) {
+    return null
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { temperature: 0, maxOutputTokens: 10 },
+    })
+
+    const prompt = `Classifique a matéria escolar desta mensagem. Responda APENAS com uma palavra: matematica, portugues, ciencias, historia, geografia, fisica, quimica, ingles, espanhol, ou indefinido.\n\nMensagem: "${mensagem.substring(0, 200)}"`
+
+    // Promise.race com timeout de 500ms
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), 500)
+    })
+
+    const classifyPromise = model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    }).then(result => {
+      const resposta = result.response.text().trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+      if (TEMAS_VALIDOS_CLASSIFIER.includes(resposta)) {
+        console.log(`🔬 Classificador LLM: "${mensagem.substring(0, 40)}..." → ${resposta}`)
+        return resposta
+      }
+
+      if (resposta === 'indefinido') {
+        console.log(`🔬 Classificador LLM: indefinido para "${mensagem.substring(0, 40)}..."`)
+        return 'indefinido'
+      }
+
+      return null
+    })
+
+    return await Promise.race([classifyPromise, timeoutPromise])
+  } catch (err) {
+    console.error('⚠️ Classificador LLM falhou (timeout/erro):', (err as Error).message)
+    return null
+  }
+}
+
 export function personaPorTema(tema: string): string {
   const mapa: Record<string, string> = {
     'matematica': 'CALCULUS',
@@ -282,34 +335,84 @@ export function personaPorTema(tema: string): string {
   return mapa[tema] || 'PSICOPEDAGOGICO'
 }
 
-export function decidirPersona(
+/**
+ * Novo fluxo de decisão de persona (async):
+ * 1. Checar timeout/nova_sessao → resetar se necessário
+ * 2. Detectar tema por keywords
+ * 3. Se tema → fluxo normal (PSICO cascata ou herói direto)
+ * 4. Se sem tema → classificador LLM (SEMPRE)
+ *    4a. Matéria válida → tratar como tema detectado
+ *    4b. Indefinido + agente ativo → continuidade
+ *    4c. Indefinido + sem agente → PSICOPEDAGOGICO
+ *    4d. Erro → PSICOPEDAGOGICO
+ */
+export async function decidirPersona(
   mensagem: string,
   sessao: Sessao,
-  ultimosTurnos: Turno[]
-): string {
-  const temaDetectado = detectarTema(mensagem)
+  ultimosTurnos: Turno[],
+  novaSessao: boolean = false
+): Promise<{ persona: string; temaDetectado: string | null }> {
 
-  // Sem tema claro → verificar se já está numa conversa ativa com um herói
-  if (!temaDetectado) {
-    // Se já está com um herói ativo, manter o herói (continuidade)
-    if (sessao.agente_atual !== 'PSICOPEDAGOGICO' && sessao.tema_atual) {
-      return sessao.agente_atual
+  // 1. Checar timeout ou nova sessão
+  const agora = Date.now()
+  const ultimoTurno = sessao.ultimo_turno_at
+    ? new Date(sessao.ultimo_turno_at).getTime()
+    : 0
+  const inativo = ultimoTurno > 0 && (agora - ultimoTurno > SESSION_TIMEOUT_MS)
+
+  if (novaSessao || inativo) {
+    console.log(`🔄 Reset sessão: ${novaSessao ? 'nova_sessao flag' : `inativo ${Math.round((agora - ultimoTurno) / 60000)}min`}`)
+    sessao.agente_atual = 'PSICOPEDAGOGICO'
+    sessao.tema_atual = null
+  }
+
+  // 2. Detectar tema por keywords
+  const temaKeywords = detectarTema(mensagem)
+
+  if (temaKeywords) {
+    // 3. Tema detectado por keywords → fluxo normal
+    return decidirComTema(temaKeywords, sessao, ultimosTurnos)
+  }
+
+  // 4. Keywords falharam → classificador LLM (SEMPRE)
+  const temaLLM = await classificarTema(mensagem)
+
+  if (temaLLM && temaLLM !== 'indefinido') {
+    // 4a. Matéria válida detectada pelo classificador
+    return decidirComTema(temaLLM, sessao, ultimosTurnos)
+  }
+
+  if (temaLLM === 'indefinido') {
+    // 4b. Indefinido — continuidade se agente ativo
+    if (sessao.agente_atual && sessao.agente_atual !== 'PSICOPEDAGOGICO' && sessao.tema_atual) {
+      console.log(`➡️ Continuidade (classificador indefinido): ${sessao.agente_atual}`)
+      return { persona: sessao.agente_atual, temaDetectado: sessao.tema_atual }
     }
-    // Sem contexto → PSICOPEDAGOGICO qualifica
-    return 'PSICOPEDAGOGICO'
   }
 
-  // Troca de matéria → verificar histórico recente
-  if (temaDetectado !== sessao.tema_atual) {
-    const personaAlvo = personaPorTema(temaDetectado)
+  // 4c/4d. Sem agente ativo ou erro → PSICOPEDAGOGICO
+  return { persona: 'PSICOPEDAGOGICO', temaDetectado: null }
+}
+
+/**
+ * Helper: dado um tema detectado (por keyword ou LLM), decide a persona.
+ */
+function decidirComTema(
+  tema: string,
+  sessao: Sessao,
+  ultimosTurnos: Turno[]
+): { persona: string; temaDetectado: string } {
+  const personaAlvo = personaPorTema(tema)
+
+  // Troca de matéria?
+  if (tema !== sessao.tema_atual) {
     const jaAtendido = ultimosTurnos.some(t => t.agente === personaAlvo)
-
-    // Primeira vez nessa matéria → PSICOPEDAGOGICO qualifica
-    if (!jaAtendido) return 'PSICOPEDAGOGICO'
+    if (!jaAtendido) {
+      return { persona: 'PSICOPEDAGOGICO', temaDetectado: tema }
+    }
   }
 
-  // Matéria clara e já atendida (ou continuidade) → persona direta
-  return personaPorTema(temaDetectado)
+  return { persona: personaAlvo, temaDetectado: tema }
 }
 
 export function determinarStatus(

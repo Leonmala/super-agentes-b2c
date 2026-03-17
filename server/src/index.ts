@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 
 import authRouter from './routes/auth.js'
 import messageRouter from './routes/message.js'
+import mcpRouter from './routes/mcp.js'
 import { registrarCronSemanal } from './core/cron.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -20,6 +21,7 @@ app.use(express.json({ limit: '10mb' }))
 // Registrar rotas API
 app.use('/api/auth', authRouter)
 app.use('/api', messageRouter)
+app.use('/api/mcp', mcpRouter)
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -4,7 +4,7 @@ export class TestClient {
   private baseUrl: string
   private token: string | null = null
 
-  constructor(baseUrl: string = 'http://localhost:3001') {
+  constructor(baseUrl: string = process.env.API_URL || 'http://localhost:3001') {
     this.baseUrl = baseUrl
   }
 

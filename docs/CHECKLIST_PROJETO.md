@@ -1,7 +1,7 @@
 # CHECKLIST DO PROJETO — Super Agentes V1.0
 
 > **Regra:** A cada task concluída, marcar [x]. A cada fase concluída com Gate passando, marcar o Gate.
-> **Última atualização:** 2026-03-13 (deploy + visual polish)
+> **Última atualização:** 2026-03-15 (Visual Refactor V5 + ajustes finos)
 
 ---
 
@@ -149,10 +149,43 @@
 - [x] **PC2** PSICOPEDAGOGICO: antever temas sexuais por idade no plano (7º+ / 6º- / risco)
 - [x] **PC3** Demais heróis: proibição centralizada em construirEnvelopeGestor (llm.ts)
 
-### Polimento Pré-Venda — Bloco D: Brainstorm Super Prova/Estudo
+### Polimento Pré-Venda — Bloco D: Visual Refactor V5 (2026-03-14/15)
 
-- [ ] **PD1** Sessão de brainstorm com Leon (MCP + NotebookLM)
-- [ ] **PD2** Análise de viabilidade (V1 vs V1.1)
+- [x] **PD1** Protótipo HTML (prototipo-visual-refactor.html) — aprovado por Leon
+- [x] **PD2** Implementação 18 tasks (Plus Jakarta Sans, CSS tokens, gradientes, glassmorphism, sheet pattern, bubbles, header, input, empty state, menu, login, profile, PIN)
+- [x] **PD3** TypeScript zero errors + build verificado
+- [x] **PD4** Ajuste: PIN numpad proporcional (aspect-ratio 1.3, container 280px)
+- [x] **PD5** Ajuste: Logo LogoPenseAI.png correto (cubo 3D, sem filtro mono, h-10)
+- [x] **PD6** Ajuste: Ícone responsável escudo→cadeado
+- [x] **PD7** Ajuste: PIN dots verdes (emerald-400)
+- [x] **PD8** Ajuste: Login gradiente profundo + título "Entrar" no card
+- [x] **PD9** Ajuste: Menu lateral 290px, SVGs protótipo, botões limpos, X branco, logo z-10
+
+### Polimento Pré-Venda — Bloco E: Funcionalidades Pendentes
+
+- [ ] **PE1** Botão "+" (anexar imagem): fotos da galeria ou câmera (cel/computador)
+- [ ] **PE2** Brainstorm agente NotebookLM com Leon
+
+### Robustez + UX + Testes — Bloco G (2026-03-17)
+
+- [x] **G1** Migração SQL: `ultimo_turno_at` em b2c_sessoes + funções persistence
+- [x] **G2** Router refactor: timeout 15min + classificador LLM leve + decidirPersona async
+- [x] **G3** message.ts: nova_sessao flag + atualizarUltimoTurno + integração router async
+- [x] **G4** TypingDots component + CSS animations (bubbleIn, typingBounce)
+- [x] **G5** useBubbleReveal hook (revelação balão por balão com tempo de leitura)
+- [x] **G6** ChatContext refactor (remove useTypingEffect, adiciona pendingReveal)
+- [x] **G7** ChatMessages refactor (integra useBubbleReveal + TypingDots)
+- [x] **G8** ChatBubble refactor (export splitSentences, singleBubble prop, remove StreamingCursor)
+- [x] **G9** API_URL configurável + scripts test:prod, gate:6
+- [x] **G10** MCP Bridge endpoint (/api/mcp, 5 tools, JWT+PIN auth)
+- [ ] **G11** Gate 6 testes de router timeout (gate6-router-timeout.test.ts) — pendente execução
+- [ ] **G12** QA script contínuo (qa-continuo.ts) — pendente criação
+- [ ] **G13** Push + deploy Railway + validação final
+
+### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
+
+- [ ] **PF1** Sessão de brainstorm com Leon (MCP + NotebookLM)
+- [ ] **PF2** Análise de viabilidade (V1 vs V1.1)
 
 ---
 
