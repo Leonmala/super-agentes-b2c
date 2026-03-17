@@ -178,9 +178,9 @@
 - [x] **G8** ChatBubble refactor (export splitSentences, singleBubble prop, remove StreamingCursor)
 - [x] **G9** API_URL configurável + scripts test:prod, gate:6
 - [x] **G10** MCP Bridge endpoint (/api/mcp, 5 tools, JWT+PIN auth)
-- [ ] **G11** Gate 6 testes de router timeout (gate6-router-timeout.test.ts) — pendente execução
-- [ ] **G12** QA script contínuo (qa-continuo.ts) — pendente criação
-- [ ] **G13** Push + deploy Railway + validação final
+- [x] **G11** Gate 6 testes de router timeout (gate6-router-timeout.test.ts) — criado, pendente execução contra prod
+- [x] **G12** QA script contínuo (qa-continuo.ts) — criado, pendente execução contra prod
+- [ ] **G13** Push + deploy Railway + validação final (URL prod retornando 404 — aguardando Leon)
 
 ### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
 

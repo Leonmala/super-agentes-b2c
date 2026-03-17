@@ -7,9 +7,9 @@
 
 ## Estado Imediato
 
-**Fase atual:** Bloco G implementado (router + UX + infra testes)
-**Status:** 8 tasks implementadas, pendente: Gate 6 tests, QA script, deploy + push
-**Próximo:** (1) Push + deploy Railway, (2) Gate 6 + QA em produção, (3) Botão "+" para fotos/câmera, (4) Brainstorm agente NotebookLM
+**Fase atual:** Bloco G COMPLETO — Gate 6 rodou em produção (7/11 PASSED, 4 falharam por limite diário)
+**Status:** Router fix CONFIRMADO em produção. URL Railway: `https://independent-eagerness-production-7da9.up.railway.app`
+**Próximo:** (1) Push novos arquivos, (2) PE1: Botão "+" para fotos/câmera, (3) Brainstorm agente NotebookLM
 
 ## Último Slice Completado
 
@@ -48,10 +48,9 @@
 
 ## Próximo Passo Exato
 
-1. **Leon faz push** via Claude Code CLI (prompt abaixo no final da sessão)
-2. **Gate 6 + QA** rodar contra produção após deploy
-3. **PE1: Botão "+"** para fotos/câmera
-4. **PF1: Brainstorm NotebookLM** com Leon
+1. **Push** novos arquivos via Claude Code CLI (gate6 test, qa script, package.json com URL correta)
+2. **PE1: Botão "+"** para fotos/câmera
+3. **PF1: Brainstorm NotebookLM** com Leon
 
 ## Contexto Crítico Para Boot
 
@@ -59,8 +58,8 @@
 - MCP: usar `mcp__0150fe87` para Supabase (não `mcp__supabase`)
 - Server backend: porta 3001, TypeScript strict, ESM modules
 - Frontend: Vite 6.3.5 + React 19 + Tailwind 4 + Plus Jakarta Sans
-- Testes: Gate 1-5 ✅ passando, Gate 6 criado mas não executado
-- Deploy: Railway FUNCIONANDO ✅
+- Testes: Gate 1-5 ✅ passando, Gate 6 ✅ 7/11 em prod (4 falhas = limite diário)
+- Deploy: Railway FUNCIONANDO ✅ URL: `https://independent-eagerness-production-7da9.up.railway.app`
 - Repo GitHub: https://github.com/Leonmala/super-agentes-b2c
 - Família teste: leon@pense-ai.com / 3282 (Layla 7ª, Maria Paz 3ª)
 - **Logo correto:** `LogoPenseAI.png` (cubo 3D "Pense AI!") — NÃO usar `logo-penseai.png`
