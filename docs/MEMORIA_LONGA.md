@@ -348,4 +348,25 @@ Tabelas b2c_ (9): familias, responsaveis, alunos, sessoes, turnos, turnos_backup
 
 **Incidente anterior:** Na primeira implementação (mesma data), todos os commits ficaram em /tmp/git-temp (workaround para lock files do git no mount). Quando a VM resetou, tudo foi perdido. Reimplementado direto no mount sem workarounds temporários.
 
-**Pendente:** Push + deploy + validação em produção
+**Validação em produção (Gate Bloco H — 2026-03-17):**
+- 16/16 testes E2E: 8 heróis × MODO FILHO + 8 heróis × MODO PAI
+- ZERO JSON leaks em todas as 16 respostas (10 padrões regex verificados)
+- Todos os 16 turnos persistidos no Supabase (confirmado via SQL direto nas tabelas)
+- Nenhum herói ativou `sinal_psicopedagogico = true` nos testes (pipeline de sinais validado apenas em unitários)
+- Tempos: 7-20s (aceitável)
+- Scripts: `gate-bloco-h-prod.test.ts`, `gate-h-batch2.ts`, `gate-h-batch3.ts`, `gate-h-batch4.ts`
+
+**Limitações conhecidas dos testes (transparência):**
+- JSON malformado não foi provocado em produção — testado em unitários (T4, T5, T7, T8)
+- Qualidade pedagógica avaliada visualmente, sem LLM-as-judge
+- Pipeline de sinais (D4) não exercitado em produção — LLM não gerou sinal verdadeiro
+
+**Incidente das imagens (mesmo dia):**
+- Leon atualizou logos na pasta `Imagens/` mas o frontend serve de `web/public/` com nomes diferentes
+- Fix: copiar de `Imagens/` para `web/public/` com nomes corretos
+- Lição: SEMPRE copiar `Imagens/` → `web/public/` ao atualizar (nomes divergem)
+
+**Commits:**
+- `92d492e` feat(bloco-h): pipeline de disjuntores
+- `76511a2` chore: force redeploy
+- `64d0d0f` fix: atualizar logos

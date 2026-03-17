@@ -2,7 +2,7 @@
 
 > **Regra:** Toda vez que um teste falha ou um bug é encontrado, registrar aqui ANTES de corrigir.
 > Formato: Data | Fase | Descrição | Causa raiz | Correção | Status
-> **Última atualização:** 2026-03-15
+> **Última atualização:** 2026-03-17 (Bloco H — 4 erros resolvidos)
 
 ---
 
@@ -79,6 +79,15 @@
 | 35 | 2026-03-15 | Visual | X de fechar menu estava preto | SVG usava `stroke="currentColor"` mas botão não definia `text-white` | Adicionado `text-white` à classe do botão | ✅ Resolvido |
 | 36 | 2026-03-15 | Visual | TypeError: fetch failed no Railway (login não funciona) | `.env` é gitignored, Railway não tinha variáveis de ambiente configuradas | Leon precisa configurar env vars manualmente no Railway dashboard | ⏳ Pendente (Leon) |
 
+## Erros Resolvidos (Bloco H — Disjuntores Arquiteturais — 2026-03-17)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 37 | 2026-03-17 | Produção | PSICO JSON truncado por maxOutputTokens → cascata morria → JSON raw enviado ao aluno | maxOutputTokens=3000 insuficiente para resposta PSICO completa. JSON cortado no meio → JSON.parse falha → texto bruto enviado | **D5:** maxOutputTokens PSICO 3000→8000. **D1:** Pipeline 4 camadas (JSON.parse → markdown → regex → texto puro). **D3:** Cascata resiliente usa `processed.cascata` tipada | ✅ Resolvido |
+| 38 | 2026-03-17 | Produção | Herói JSON com aspas malformadas → JSON.parse falha → JSON raw exposto ao pai | LLM ocasionalmente gera JSON com aspas smart ou malformadas. Sem sanitização, texto bruto com JSON ia direto para o usuário | **D1:** Pipeline 4 camadas com fallback progressivo. **D2:** Sanitizador incondicional SEMPRE roda antes de enviar — remove resíduos JSON mesmo se parse falhar | ✅ Resolvido |
+| 39 | 2026-03-17 | Produção | Backend nunca processava `sinal_psicopedagogico`, `motivo_sinal`, `observacoes_internas` dos heróis | Campos existiam no prompt dos heróis mas message.ts ignorava completamente. Sinais pedagógicos se perdiam | **D4:** Pipeline de sinais completo: herói → extração via ProcessedResponse → persistência Supabase (3 colunas novas + índice parcial). **H8:** Migração SQL aplicada | ✅ Resolvido |
+| 40 | 2026-03-17 | Produção | Imagens atualizadas por Leon não apareciam no app em produção | Leon atualizava originais em `Imagens/` (nomes originais) mas frontend serve de `web/public/` com nomes diferentes. Mapeamento: `Logo_SuperAgentesPenseAI.png` → `LogoPenseAI.png`, `SuperAgentesPenseAi_buble.png` → `logo-buble.png` | Copiados arquivos com nomes corretos para `web/public/`. Documentado mapeamento na MEMORIA_CURTA | ✅ Resolvido |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -103,7 +112,10 @@ _(Atualizar conforme erros se repetem)_
 - **Supabase:** MCP padrão (mcp__supabase) vê projeto errado. Usar mcp__0150fe87 para Super Agentes.
 - **LLM/Gemini:** PSICOPEDAGOGICO nem sempre retorna JSON correto para cascata. Mitigado com seed de turnos.
 - **LLM/Gemini (PRODUÇÃO):** LLM varia nomes de campos JSON e comete typos em nomes de heróis. Mitigado com extração robusta multi-campo + fuzzy match.
-- **LLM/Gemini (STREAM):** Heróis podem retornar JSON em vez de texto puro no stream. Mitigado com buffer completo + extrairJSONouTexto no final.
+- **LLM/Gemini (STREAM):** Heróis podem retornar JSON em vez de texto puro no stream. Mitigado com buffer completo + response-processor pipeline 4 camadas (Bloco H).
+- **LLM/Gemini (TRUNCAMENTO):** maxOutputTokens baixo trunca JSON do PSICO, quebrando cascata. PSICO precisa de 8000 tokens, heróis 4000.
+- **Sanitização:** NUNCA enviar texto ao usuário sem passar pelo sanitizador incondicional (D2). Mesmo texto "limpo" pode ter resíduos JSON.
+- **Imagens (CRÍTICO):** Originais em `Imagens/` têm nomes DIFERENTES de `web/public/`. SEMPRE copiar com nome correto ao atualizar. Mapeamento: `Logo_SuperAgentesPenseAI.png`→`LogoPenseAI.png`, `SuperAgentesPenseAi_buble.png`→`logo-buble.png`.
 - **Router (Keywords):** Termos ambíguos causam colisão entre matérias. Mitigado com sistema de anti-keywords (blocklist por tema).
 - **Build:** `tsc` NÃO copia arquivos não-TypeScript (.md, .json). Sempre copiar manualmente no script build.
 - **Dev vs Prod:** `tsx` (dev) roda direto do `src/`, `node` (prod) roda do `dist/`. Paths relativos divergem.

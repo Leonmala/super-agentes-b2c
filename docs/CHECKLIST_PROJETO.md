@@ -1,7 +1,7 @@
 # CHECKLIST DO PROJETO — Super Agentes V1.0
 
 > **Regra:** A cada task concluída, marcar [x]. A cada fase concluída com Gate passando, marcar o Gate.
-> **Última atualização:** 2026-03-15 (Visual Refactor V5 + ajustes finos)
+> **Última atualização:** 2026-03-17 (Bloco H completo + validado em produção)
 
 ---
 
@@ -193,7 +193,7 @@
 - [x] **H7** persistence.ts: persistir sinais + buscarSinaisAluno para SUPERVISOR
 - [x] **H8** Migration Supabase: 3 colunas + índice parcial em b2c_turnos
 - [x] **H9** Testes: 9/9 passando + TypeScript 0 erros
-- [ ] **H10** Push + deploy Railway + validação em produção
+- [x] **H10** Push + deploy Railway + validação em produção ✅ (Gate Bloco H: 16/16 testes, ZERO JSON leaks — 2026-03-17)
 
 ### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
 

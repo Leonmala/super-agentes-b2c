@@ -1,68 +1,64 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-17 (Bloco H — Disjuntores Arquiteturais)
+> **Última atualização:** 2026-03-17 (Bloco H — VALIDADO EM PRODUÇÃO)
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Bloco H COMPLETO — 5 disjuntores instalados, 9/9 testes, TypeScript 0 erros, migration Supabase aplicada
-**Status:** Código no mount, PRECISA de push + deploy. URL Railway: `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo:** (1) Push via Claude Code CLI, (2) Deploy + validação prod, (3) PE1: Botão "+" para fotos/câmera
+**Fase atual:** Bloco H COMPLETO E VALIDADO — Gate Bloco H 16/16 em produção, ZERO JSON leaks
+**Status:** Deploy ativo no Railway. Commit `92d492e` (Bloco H) + `64d0d0f` (logos) pushed.
+**URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
+**Próximo:** (1) PE1: Botão "+" para fotos/câmera, (2) PF1: Brainstorm NotebookLM com Leon
 
 ## Último Slice Completado
 
-**Slice:** Bloco H — Disjuntores Arquiteturais (2026-03-17)
+**Slice:** Bloco H — Disjuntores Arquiteturais + Validação E2E (2026-03-17)
 
 **Bugs corrigidos:**
 - **Bug #37**: PSICO JSON truncado por maxOutputTokens → cascata morria → JSON raw enviado ao aluno
 - **Bug #38**: Herói JSON com aspas malformadas → JSON.parse falha → JSON raw exposto ao pai
 - **Bug #39**: Backend nunca processava `sinal_psicopedagogico`, `motivo_sinal`, `observacoes_internas` dos heróis
 
-**O que foi feito:**
+**5 Disjuntores instalados:**
+1. **D1 — Extração robusta:** Pipeline 4 camadas (JSON.parse → markdown → regex → texto puro)
+2. **D2 — Sanitizador incondicional:** SEMPRE roda antes de enviar texto ao aluno
+3. **D3 — Cascata resiliente:** PSICO cascata usa `processed.cascata` tipada
+4. **D4 — Pipeline de sinais:** Herói → persistência → Supabase (3 colunas + índice)
+5. **D5 — maxOutputTokens:** PSICO 3000→8000, heróis 3000→4000
 
-### response-processor.ts (NOVO — pipeline central)
-- Pipeline de 4 camadas: JSON.parse → markdown block → regex fallback → texto puro
-- Sanitizador INCONDICIONAL — SEMPRE remove resíduos JSON antes de enviar ao aluno
-- Fallback messages amigáveis por persona (10 personas + DEFAULT)
-- Interfaces: `ProcessedResponse`, `SinaisPedagogicos`, `IntencaoCascata`
-- 9/9 testes unitários passando
+**Validação em produção (Gate Bloco H):**
+- 16/16 testes passaram (8 heróis × 2 modos)
+- ZERO JSON leaks (verificado contra 10 padrões regex)
+- Todos os 16 turnos persistidos no Supabase (verificado via SQL direto)
+- MODO FILHO: respostas construtivistas, linguagem adaptada à idade
+- MODO PAI: respostas com estratégias práticas para ensinar em casa
+- Tempos médios: 7-20s (cascata PSICO+herói), 8-18s (herói direto)
 
-### llm.ts (MODIFICADO)
-- Import `processarRespostaLLM` do response-processor
-- `RespostaLLM` interface: `jsonData?: any` → `processed: ProcessedResponse`
-- Nova interface `ResultadoStream` com `processed`
-- maxOutputTokens: PSICO 3000→8000, heróis 3000→4000
-- `chamarLLM` e `chamarLLMStream` usam pipeline processado
-- Removidas `extrairTextoDoJSON()` e `extrairJSONouTexto()` (absorvidas pelo processor)
-- `err: any` → `err: unknown` (TypeScript strict)
+**Limitações conhecidas dos testes:**
+- Nenhum herói ativou `sinal_psicopedagogico = true` nos testes (pipeline de sinais testado apenas em unitários)
+- Qualidade pedagógica avaliada visualmente, sem LLM-as-judge
+- JSON malformado testado em unitários (T4, T5, T7, T8), não provocado em produção
 
-### message.ts (MODIFICADO)
-- Import `ResultadoStream` e `SinaisPedagogicos`
-- CASO A (PSICO cascata): usa `processed.cascata` em vez de `respostaJSON`
-- CASO B (herói direto): captura `sinaisHeroi` do resultado
-- Ambos caminhos logam SINAL PSICOPEDAGÓGICO quando detectado
-- Persistência passa `sinaisHeroi` para `persistirTurno()`
+### Arquivos criados/modificados no Bloco H
+- `server/src/core/response-processor.ts` (NOVO — ~300 linhas, pipeline central)
+- `server/tests/response-processor.test.ts` (NOVO — 9 testes unitários)
+- `server/tests/gate-bloco-h-*.ts` (NOVO — testes E2E de produção)
+- `server/src/core/llm.ts` (MODIFICADO — processador, interfaces, maxOutputTokens)
+- `server/src/routes/message.ts` (MODIFICADO — cascata via processed, sinais)
+- `server/src/db/supabase.ts` (MODIFICADO — 3 campos Turno)
+- `server/src/db/persistence.ts` (MODIFICADO — sinais + buscarSinaisAluno)
 
-### persistence.ts (MODIFICADO)
-- `persistirTurno` aceita `sinais?: SinaisPedagogicos | null`
-- Persiste: `sinal_psicopedagogico`, `motivo_sinal`, `observacoes_internas`
-- Nova função `buscarSinaisAluno()` para SUPERVISOR
-
-### supabase.ts (MODIFICADO)
-- Interface `Turno`: 3 novos campos
-
-### Migration Supabase
-- 3 colunas em `b2c_turnos`: `sinal_psicopedagogico` (BOOLEAN), `motivo_sinal` (TEXT), `observacoes_internas` (TEXT)
-- Índice parcial `idx_b2c_turnos_sinais` para consultas do SUPERVISOR
+### Fix de imagens (mesmo dia)
+- `Imagens/Logo_SuperAgentesPenseAI.png` → copiado para `web/public/LogoPenseAI.png`
+- `Imagens/SuperAgentesPenseAi_buble.png` → copiado para `web/public/logo-buble.png`
+- Problema: Leon atualizava originais em `Imagens/` mas app serve de `web/public/` com nomes diferentes
 
 ## Próximo Passo Exato
 
-1. **Push via Claude Code CLI** — tudo no mount, pronto para commit
-2. **Deploy Railway** — validar que disjuntores funcionam em prod
-3. **PE1: Botão "+"** para fotos/câmera
-4. **PF1: Brainstorm NotebookLM** com Leon
+1. **PE1: Botão "+"** para fotos/câmera
+2. **PF1: Brainstorm NotebookLM** com Leon
 
 ## Contexto Crítico Para Boot
 
@@ -70,8 +66,9 @@
 - MCP: usar `mcp__0150fe87` para Supabase (não `mcp__supabase`)
 - Server backend: porta 3001, TypeScript strict, ESM modules
 - Frontend: Vite 6.3.5 + React 19 + Tailwind 4 + Plus Jakarta Sans
-- Testes: Gate 1-5 ✅, Bloco H 9/9 ✅, TypeScript 0 erros ✅
-- Deploy: Railway — PRECISA push + deploy
+- Testes: Gate 1-5 ✅, Gate Bloco H 16/16 ✅, unitários 9/9 ✅, TypeScript 0 erros ✅
+- Deploy: Railway ATIVO ✅ — commit `92d492e` + `64d0d0f`
 - Repo GitHub: https://github.com/Leonmala/super-agentes-b2c
 - Família teste: leon@pense-ai.com / 3282 (Layla 7ª, Maria Paz 3ª)
-- **Logo correto:** `LogoPenseAI.png` (cubo 3D "Pense AI!") — NÃO usar `logo-penseai.png`
+- **Logo correto:** `LogoPenseAI.png` (cubo 3D "Pense AI!") — copiado de `Imagens/Logo_SuperAgentesPenseAI.png`
+- **Imagens:** Originais em `Imagens/`, servidas de `web/public/` com nomes diferentes. SEMPRE copiar ao atualizar.
