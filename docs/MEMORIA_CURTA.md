@@ -1,16 +1,16 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-17 (Bloco H — VALIDADO EM PRODUÇÃO)
+> **Última atualização:** 2026-03-18 (Fix logos 3 arquivos + ChatHeader + migração SUPER_AGENTES_B2C_02)
 
 ---
 
 ## Estado Imediato
 
 **Fase atual:** Bloco H COMPLETO E VALIDADO — Gate Bloco H 16/16 em produção, ZERO JSON leaks
-**Status:** Deploy ativo no Railway. Commit `92d492e` (Bloco H) + `64d0d0f` (logos) pushed.
+**Status:** Deploy ativo no Railway. Aguardando push do fix de logos (pendente Claude Code CLI).
 **URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo:** (1) PE1: Botão "+" para fotos/câmera, (2) PF1: Brainstorm NotebookLM com Leon
+**Próximo:** (1) Push logos via Claude Code CLI, (2) PE1: Botão "+" para fotos/câmera, (3) PF1: Brainstorm NotebookLM com Leon
 
 ## Último Slice Completado
 
@@ -50,15 +50,18 @@
 - `server/src/db/supabase.ts` (MODIFICADO — 3 campos Turno)
 - `server/src/db/persistence.ts` (MODIFICADO — sinais + buscarSinaisAluno)
 
-### Fix de imagens (mesmo dia)
-- `Imagens/Logo_SuperAgentesPenseAI.png` → copiado para `web/public/LogoPenseAI.png`
-- `Imagens/SuperAgentesPenseAi_buble.png` → copiado para `web/public/logo-buble.png`
-- Problema: Leon atualizava originais em `Imagens/` mas app serve de `web/public/` com nomes diferentes
+### Fix de imagens (2026-03-18) — MAPEAMENTO DEFINITIVO
+- `Imagens/LogoPenseAI.png` (92KB) → `web/public/LogoPenseAI.png` — rodapé/login/PIN/perfil
+- `Imagens/SuperAgentesPenseAi_buble.png` (202KB) → `web/public/logo-buble.png` — bubble principal
+- `Imagens/Logo_SuperAgentesPenseAI.png` (36KB) → `web/public/logo-super-agentes.png` — header sem herói
+- `ChatHeader.tsx` atualizado: fallback `'/logo.png'` → `'/logo-super-agentes.png'`
+- REGRA: Originais em `Imagens/` (nomes Leon) ≠ `web/public/` (nomes do sistema). Sempre copiar com nome correto.
 
 ## Próximo Passo Exato
 
-1. **PE1: Botão "+"** para fotos/câmera
-2. **PF1: Brainstorm NotebookLM** com Leon
+1. **PUSH via Claude Code CLI** — logos fix (LogoPenseAI.png, logo-super-agentes.png, ChatHeader.tsx) + docs atualizados
+2. **PE1: Botão "+"** para fotos/câmera
+3. **PF1: Brainstorm NotebookLM** com Leon
 
 ## Contexto Crítico Para Boot
 
