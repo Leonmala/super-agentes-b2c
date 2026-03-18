@@ -73,7 +73,12 @@ const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL']
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/message', async (req: Request, res: Response) => {
   const inicio = Date.now()
-  const { aluno_id, mensagem, tipo_usuario, agente_override, nova_sessao } = req.body
+  const { aluno_id, mensagem, tipo_usuario, agente_override, nova_sessao, imagem_base64 } = req.body
+  // Strip defensivo do prefixo data: (o frontend já faz isso, mas por segurança)
+  const rawBase64 = typeof imagem_base64 === 'string' && imagem_base64.length > 0
+    ? imagem_base64.replace(/^data:[^;]+;base64,/, '')
+    : undefined
+  const imagemBase64: string | undefined = rawBase64 && rawBase64.length > 0 ? rawBase64 : undefined
 
   // Validação básica de payload
   if (!aluno_id || typeof aluno_id !== 'string' || aluno_id.trim() === '') {
@@ -107,6 +112,17 @@ router.post('/message', async (req: Request, res: Response) => {
 
   const enviarEvento = (evento: string, dados: unknown) => {
     res.write(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`)
+  }
+
+  // Validação de tamanho de imagem: 700KB em base64 ≈ 525KB binário (base64 tem ~33% overhead)
+  if (imagemBase64 && imagemBase64.length / 1024 > 700) {
+    enviarEvento('error', {
+      erro: 'Imagem muito grande',
+      codigo: 'IMAGEM_EXCEDE_LIMITE',
+      mensagem: `Máximo 500KB. Tente compactar a imagem.`,
+    })
+    res.end()
+    return
   }
 
   try {
@@ -212,10 +228,15 @@ router.post('/message', async (req: Request, res: Response) => {
     if (persona === 'PSICOPEDAGOGICO') {
       // CASO A: PSICO primeiro (sem stream)
       console.log(`[${aluno_id}] Chamando PSICOPEDAGOGICO...`)
+      // PSICO não vê a imagem — recebe texto com indicação de que há foto
+      const mensagemParaPsico = imagemBase64
+        ? `[foto anexada] ${mensagem.trim()}`
+        : mensagem.trim()
+
       const respostaLLM: RespostaLLM = await chamarLLM(
         systemPrompt,
         contexto,
-        mensagem.trim(),
+        mensagemParaPsico,
         persona
       )
 
@@ -304,7 +325,8 @@ router.post('/message', async (req: Request, res: Response) => {
             (chunk) => {
               respostaFinal += chunk
               enviarEvento('chunk', { texto: chunk })
-            }
+            },
+            imagemBase64  // herói vê a imagem original (não o "[foto anexada]" do PSICO)
           )
 
           // Bloco H: capturar sinais pedagógicos do herói
@@ -350,7 +372,8 @@ router.post('/message', async (req: Request, res: Response) => {
         (chunk) => {
           respostaFinal += chunk
           enviarEvento('chunk', { texto: chunk })
-        }
+        },
+        imagemBase64
       )
 
       // Bloco H: capturar sinais pedagógicos do herói

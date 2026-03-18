@@ -36,11 +36,25 @@ export interface ResultadoStream {
   processed: ProcessedResponse
 }
 
+// Monta o array de parts para a mensagem do usuário.
+// Se imagemBase64 presente: multimodal (inlineData + text).
+// Caso contrário: apenas text (sem regressão).
+function montarPartsUsuario(mensagem: string, imagemBase64?: string) {
+  if (imagemBase64) {
+    return [
+      { inlineData: { mimeType: 'image/jpeg' as const, data: imagemBase64 } },
+      { text: mensagem },
+    ]
+  }
+  return [{ text: mensagem }]
+}
+
 export async function chamarLLM(
   systemPrompt: string,
   contexto: string,
   mensagemAluno: string,
-  persona: string
+  persona: string,
+  imagemBase64?: string
 ): Promise<RespostaLLM> {
 
   const gestorSystemPrompt = construirEnvelopeGestor(systemPrompt, contexto, persona, mensagemAluno)
@@ -64,7 +78,7 @@ export async function chamarLLM(
   try {
     const result = await model.generateContent(
       {
-        contents: [{ role: 'user', parts: [{ text: mensagemAluno }] }],
+        contents: [{ role: 'user', parts: montarPartsUsuario(mensagemAluno, imagemBase64) }],
       },
       { signal: controller.signal as any }
     )
@@ -111,7 +125,8 @@ export async function chamarLLMStream(
   contexto: string,
   mensagemAluno: string,
   persona: string,
-  onChunk: (texto: string) => void
+  onChunk: (texto: string) => void,
+  imagemBase64?: string
 ): Promise<ResultadoStream> {
 
   const gestorSystemPrompt = construirEnvelopeGestor(systemPrompt, contexto, persona, mensagemAluno)
@@ -132,7 +147,7 @@ export async function chamarLLMStream(
 
   try {
     const result = await model.generateContentStream(
-      { contents: [{ role: 'user', parts: [{ text: mensagemAluno }] }] },
+      { contents: [{ role: 'user', parts: montarPartsUsuario(mensagemAluno, imagemBase64) }] },
       { signal: controller.signal as any }
     )
 
