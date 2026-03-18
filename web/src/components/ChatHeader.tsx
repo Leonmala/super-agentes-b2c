@@ -16,7 +16,7 @@ export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
   const gradientFrom = hero?.gradientFrom || '#2563EB'
   const gradientTo = hero?.gradientTo || '#1E3A8A'
   const bgImage = hero?.bgImage || null
-  const avatar = hero?.avatar || '/logo.png'
+  const avatar = hero?.avatar || '/logo-super-agentes.png'
   const nome = hero?.nome || 'Super Agentes'
   const materia = hero?.materia || ''
 
