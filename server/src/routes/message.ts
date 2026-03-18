@@ -231,16 +231,19 @@ router.post('/message', async (req: Request, res: Response) => {
     if (persona === 'PSICOPEDAGOGICO') {
       // CASO A: PSICO primeiro (sem stream)
       console.log(`[${aluno_id}] Chamando PSICOPEDAGOGICO...`)
-      // PSICO não vê a imagem — recebe texto com indicação de que há foto
+      // PSICO VÊ a imagem para identificar o tema e rotear para o herói correto.
+      // O texto "[foto anexada]" ajuda o PSICO a verbalizar que recebeu uma imagem.
+      // Sem ver a imagem, PSICO pergunta "qual matéria?" mesmo quando a foto já responde.
       const mensagemParaPsico = imagemBase64
-        ? `[foto anexada] ${mensagem.trim()}`
+        ? `[foto anexada]${mensagem.trim() ? ' ' + mensagem.trim() : ''}`
         : mensagem.trim()
 
       const respostaLLM: RespostaLLM = await chamarLLM(
         systemPrompt,
         contexto,
         mensagemParaPsico,
-        persona
+        persona,
+        imagemBase64  // PSICO vê a imagem → identifica o tema → roteia para o herói certo
       )
 
       chamadasMetricas.push({
