@@ -120,8 +120,9 @@ export async function comprimirImagem(
 
 #### `server/src/routes/message.ts`
 - Extrair `imagem_base64?: string` do body (validar: se presente, deve ser string não vazia)
-- Na cascata PSICO: `mensagem` = `imagem_base64 ? "[foto anexada] " + mensagemOriginal : mensagemOriginal`
-- Na chamada do herói: passar `imagemBase64` para `chamarLLMStream()`
+- **Validação de tamanho:** `imagem_base64.length / 1024 > 700` → responder com evento SSE `error` (`IMAGEM_EXCEDE_LIMITE`) e encerrar. Razão: base64 é ~33% maior que binário, então 500KB binário ≈ 667KB base64; margem de segurança em 700KB
+- Na cascata PSICO: `mensagem` = `imagem_base64 ? "[foto anexada] " + mensagemOriginal : mensagemOriginal` (PSICO não recebe o array multimodal)
+- Na chamada do herói — **tanto em cascata quanto em continuidade**: passar `imagemBase64` para `chamarLLMStream()`. **Atenção à cascata:** após o PSICO decidir o herói, a chamada subsequente ao herói DEVE receber `imagem_base64` original — não o texto `"[foto anexada]"` que foi para o PSICO
 
 #### `server/src/core/llm.ts`
 - `chamarLLMStream(persona, mensagem, contexto, opts)` — `opts` ganha `imagemBase64?: string`
@@ -179,6 +180,7 @@ Fade-out ao fim do streaming via classe condicional `opacity-0 transition-opacit
 | Arquivo não é imagem | `accept="image/*"` filtra no browser; validação `file.type.startsWith('image/')` no handler |
 | Imagem > 500KB após compressão | Toast de aviso, `imagemPendente` não é setado |
 | Backend rejeita base64 malformado | `onError` do SSE → toast de erro existente |
+| Imagem > 700KB base64 no backend | Evento SSE `error` com código `IMAGEM_EXCEDE_LIMITE` antes de chamar LLM |
 | LLM não suporta visão (fallback) | Backend captura erro e responde sem imagem (texto puro); log de warning |
 
 ---
@@ -203,4 +205,6 @@ Fade-out ao fim do streaming via classe condicional `opacity-0 transition-opacit
 - [ ] Herói responde SOBRE o conteúdo da imagem (visão real)
 - [ ] Sem imagem: fluxo texto puro funciona exatamente como antes (zero regressão)
 - [ ] TypeScript 0 erros
-- [ ] Foto > 500KB após compressão: toast de aviso, sem crash
+- [ ] Foto > 500KB após compressão: toast de aviso no frontend, sem crash
+- [ ] Foto > 700KB base64 no backend: evento SSE de erro com código `IMAGEM_EXCEDE_LIMITE`
+- [ ] Na cascata (PSICO → Herói): herói recebe imagem original (não apenas "[foto anexada]")

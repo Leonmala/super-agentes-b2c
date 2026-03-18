@@ -180,7 +180,7 @@
 - [x] **G10** MCP Bridge endpoint (/api/mcp, 5 tools, JWT+PIN auth)
 - [x] **G11** Gate 6 testes de router timeout (gate6-router-timeout.test.ts) — criado, pendente execução contra prod
 - [x] **G12** QA script contínuo (qa-continuo.ts) — criado, pendente execução contra prod
-- [ ] **G13** Push + deploy Railway + validação final (URL prod retornando 404 — aguardando Leon)
+- [x] **G13** Push + deploy Railway + validação final ✅ (logos + ChatHeader pusados via CLI — 2026-03-18)
 
 ### Disjuntores Arquiteturais — Bloco H (2026-03-17)
 

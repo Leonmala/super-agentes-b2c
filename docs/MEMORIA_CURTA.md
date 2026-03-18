@@ -8,9 +8,9 @@
 ## Estado Imediato
 
 **Fase atual:** Bloco H COMPLETO E VALIDADO — Gate Bloco H 16/16 em produção, ZERO JSON leaks
-**Status:** Deploy ativo no Railway. Aguardando push do fix de logos (pendente Claude Code CLI).
+**Status:** Deploy ativo no Railway. G13 concluído (logos + ChatHeader pusados via CLI — 2026-03-18).
 **URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo:** (1) Push logos via Claude Code CLI, (2) PE1: Botão "+" para fotos/câmera, (3) PF1: Brainstorm NotebookLM com Leon
+**Próximo:** (1) PE1: Botão "+" para fotos/câmera, (2) PF1: Brainstorm NotebookLM com Leon
 
 ## Último Slice Completado
 
@@ -59,9 +59,8 @@
 
 ## Próximo Passo Exato
 
-1. **PUSH via Claude Code CLI** — logos fix (LogoPenseAI.png, logo-super-agentes.png, ChatHeader.tsx) + docs atualizados
-2. **PE1: Botão "+"** para fotos/câmera
-3. **PF1: Brainstorm NotebookLM** com Leon
+1. **PE1: Botão "+"** para fotos/câmera (próxima task [ ] no checklist)
+2. **PF1: Brainstorm NotebookLM / Super Prova** com Leon
 
 ## Contexto Crítico Para Boot
 
