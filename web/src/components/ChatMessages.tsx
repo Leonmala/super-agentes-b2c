@@ -45,11 +45,19 @@ export function ChatMessages() {
   const hero = heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
   const dotsColor = hero?.cor || '#6B7280'
 
+  // Índice da última mensagem do usuário (para isAnalysing)
+  const ultimoIndexUser = mensagens.reduce((last, m, i) => m.role === 'user' ? i : last, -1)
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       {/* Mensagens finalizadas */}
-      {mensagens.map(msg => (
-        <ChatBubble key={msg.id} message={msg} />
+      {mensagens.map((msg, i) => (
+        <ChatBubble
+          key={msg.id}
+          message={msg}
+          isAnalysing={streaming && !!msg.imageUrl && i === ultimoIndexUser}
+          nomeHeroi={heroiAtivo || undefined}
+        />
       ))}
 
       {/* Balões sendo revelados (bubble by bubble) */}

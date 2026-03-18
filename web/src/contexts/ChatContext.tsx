@@ -13,7 +13,7 @@ interface ChatContextValue {
   limiteMsg: string | null
   agenteMenu: string
   setAgenteMenu: (agente: string) => void
-  enviar: (texto: string, agenteOverride?: string) => Promise<void>
+  enviar: (texto: string, agenteOverride?: string, imagemBase64?: string) => Promise<void>
   addMessage: (msg: ChatMessage) => void
   clearPendingReveal: () => void
   limpar: () => void
@@ -43,7 +43,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setPendingReveal(null)
   }, [])
 
-  const enviar = useCallback(async (texto: string, agenteOverride?: string) => {
+  const enviar = useCallback(async (texto: string, agenteOverride?: string, imagemBase64?: string) => {
     if (!perfilAtivo) return
     if (streaming) return
 
@@ -54,6 +54,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       role: 'user',
       content: texto,
       timestamp: Date.now(),
+      imageUrl: imagemBase64 ? `data:image/jpeg;base64,${imagemBase64}` : undefined,
     }
     setMensagens(prev => [...prev, userMsg])
 
@@ -72,6 +73,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       tipoUsuario: perfilAtivo.tipoUsuario,
       agenteOverride,
       novaSessao,
+      imagemBase64,
       onAgente: (agente) => {
         setHeroiAtivo(agente as HeroId)
       },

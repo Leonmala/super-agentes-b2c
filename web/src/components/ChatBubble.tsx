@@ -38,9 +38,13 @@ interface ChatBubbleProps {
   singleBubble?: boolean
   /** Índice do balão na revelação (0 = primeiro, com avatar) */
   bubbleIndex?: number
+  /** Se true, exibe overlay shimmer de análise (última mensagem do user durante streaming) */
+  isAnalysing?: boolean
+  /** Nome do herói para badge (ex: "CALCULUS") */
+  nomeHeroi?: string
 }
 
-export function ChatBubble({ message, singleBubble, bubbleIndex }: ChatBubbleProps) {
+export function ChatBubble({ message, singleBubble, bubbleIndex, isAnalysing, nomeHeroi }: ChatBubbleProps) {
   const isUser = message.role === 'user'
   const { perfilAtivo } = useAuth()
   const hero = message.agente ? HEROES[message.agente as HeroId] : null
@@ -62,7 +66,37 @@ export function ChatBubble({ message, singleBubble, bubbleIndex }: ChatBubblePro
             boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
           }}
         >
-          {message.content}
+          {/* Thumbnail da imagem (se houver) */}
+          {message.imageUrl && (
+            <div className="relative mb-2 inline-block">
+              <img
+                src={message.imageUrl}
+                alt="Imagem enviada"
+                className="rounded-xl block"
+                style={{ maxWidth: '240px', maxHeight: '240px', objectFit: 'cover' }}
+              />
+              {/* Overlay shimmer enquanto herói analisa */}
+              {isAnalysing && (
+                <div
+                  className="absolute inset-0 rounded-xl image-analysing-shimmer"
+                  style={{ pointerEvents: 'none' }}
+                />
+              )}
+              {/* Badge pulsante */}
+              {isAnalysing && (
+                <div
+                  className="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 image-badge-pulse"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-white text-[10px] font-medium">
+                    {nomeHeroi ? `${nomeHeroi} analisando...` : 'Analisando...'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Texto (se houver) */}
+          {message.content && <div>{message.content}</div>}
         </div>
       </div>
     )

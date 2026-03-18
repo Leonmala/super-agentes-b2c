@@ -44,6 +44,7 @@ export interface ChatMessage {
   content: string
   agente?: string
   timestamp: number
+  imageUrl?: string  // data URL local para exibição (não persistido)
 }
 
 export type HeroId =

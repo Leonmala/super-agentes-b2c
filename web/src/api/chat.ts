@@ -4,6 +4,7 @@ export interface SendMessageOptions {
   tipoUsuario?: 'filho' | 'pai'
   agenteOverride?: string
   novaSessao?: boolean
+  imagemBase64?: string
   onAgente: (agente: string) => void
   onChunk: (texto: string) => void
   onDone: (data: Record<string, unknown>) => void
@@ -27,6 +28,7 @@ export async function sendMessage(opts: SendMessageOptions): Promise<void> {
       tipo_usuario: opts.tipoUsuario || 'filho',
       agente_override: opts.agenteOverride,
       nova_sessao: opts.novaSessao || false,
+      ...(opts.imagemBase64 ? { imagem_base64: opts.imagemBase64 } : {}),
     }),
   })
 
