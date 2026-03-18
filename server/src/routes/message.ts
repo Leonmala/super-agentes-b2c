@@ -73,19 +73,22 @@ const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL']
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/message', async (req: Request, res: Response) => {
   const inicio = Date.now()
-  const { aluno_id, mensagem, tipo_usuario, agente_override, nova_sessao, imagem_base64 } = req.body
+  const { aluno_id, mensagem: mensagemRaw, tipo_usuario, agente_override, nova_sessao, imagem_base64 } = req.body
   // Strip defensivo do prefixo data: (o frontend já faz isso, mas por segurança)
   const rawBase64 = typeof imagem_base64 === 'string' && imagem_base64.length > 0
     ? imagem_base64.replace(/^data:[^;]+;base64,/, '')
     : undefined
   const imagemBase64: string | undefined = rawBase64 && rawBase64.length > 0 ? rawBase64 : undefined
+  // mensagem normalizada — string garantida (vazia no máximo), segura para .trim() em todo o handler
+  const mensagem: string = typeof mensagemRaw === 'string' ? mensagemRaw : ''
 
   // Validação básica de payload
   if (!aluno_id || typeof aluno_id !== 'string' || aluno_id.trim() === '') {
     return res.status(400).json({ erro: 'aluno_id é obrigatório e deve ser uma string' })
   }
-  if (!mensagem || typeof mensagem !== 'string' || mensagem.trim() === '') {
-    return res.status(400).json({ erro: 'mensagem é obrigatória e deve ser uma string' })
+  // mensagem pode ser vazia quando há imagem (envio só-foto é permitido)
+  if (mensagem.trim() === '' && !imagemBase64) {
+    return res.status(400).json({ erro: 'mensagem é obrigatória quando não há imagem' })
   }
 
   // Extrair JWT
