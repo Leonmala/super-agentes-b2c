@@ -17,15 +17,26 @@ const KEYWORDS_MATEMATICA = [
   'número', 'numero', 'números', 'numeros',
   'somar', 'soma', 'dividir', 'divisão', 'divisao',
   'multiplicar', 'multiplicação', 'multiplicacao',
-  'vezes', 'subtração', 'subtracao', 'adição', 'adicao',
+  'subtração', 'subtracao', 'adição', 'adicao',
   'calculo', 'cálculo', 'equação', 'equacao',
   'porcentagem', 'geometria', 'tabuada',
   '/2', '/3', '/4', '/5', '/6', '/8', '/10',
   '1/2', '1/3', '1/4', '1/5', '1/6', '1/8',
   '2/3', '3/4', '2/5', '3/5', '4/5',
   'metade', 'terço', 'terco', 'quarto',
-  '+', '-', '=', 'x ', ' vezes ', ' mais ', ' menos ',
-  'soma', 'subtrai', 'divide', 'multiplica'
+  // Operadores aritméticos — úteis para "2+3=5" mas raramente em texto corrido
+  '+', '-', '=',
+  // 'vezes' mantido mas com anti-keyword para "às vezes"
+  'vezes',
+  // Verbos matemáticos específicos
+  'subtrai', 'divide', 'multiplica',
+  // Termos adicionais (potência/potencia NÃO inclusa — já está em FISICA e cria falso positivo em 'potencial')
+  'área', 'area', 'perímetro', 'perimetro', 'ângulo', 'angulo',
+  'triângulo', 'triangulo', 'quadrado', 'retângulo', 'retangulo',
+  'raiz quadrada', 'logaritmo',
+  'média', 'media', 'moda', 'mediana',
+  // REMOVIDOS (muitos falsos positivos em texto cotidiano):
+  // ' mais ', ' menos ', 'x '
 ]
 
 const KEYWORDS_PORTUGUES = [
@@ -38,14 +49,16 @@ const KEYWORDS_PORTUGUES = [
   'regencia', 'regência',
   'interpretação', 'interpretacao',
   'parágrafo', 'paragrafo',
-  'acentuação', 'acentuacao',
+  'acentuação', 'acentuacao', 'acento grave', 'acento agudo', 'acento circunflexo',
   'verbo', 'substantivo', 'adjetivo', 'pronome',
   'metáfora', 'metafora', 'comparação', 'comparacao',
   'figura de linguagem', 'figuras de linguagem',
   'sinônimo', 'sinonimo', 'antônimo', 'antonimo',
   'coesão', 'coesao', 'coerência', 'coerencia',
   'oração', 'oracao', 'sujeito', 'predicado',
-  'conjunção', 'conjuncao', 'preposição', 'preposicao'
+  'conjunção', 'conjuncao', 'preposição', 'preposicao',
+  'narrador', 'narrativa', 'conto', 'crônica', 'cronica',
+  'poesia', 'poema', 'estrofe', 'rima',
 ]
 
 const KEYWORDS_CIENCIAS = [
@@ -53,9 +66,13 @@ const KEYWORDS_CIENCIAS = [
   'célula', 'celula', 'ecossistema', 'fotossíntese', 'fotossintese',
   'animal', 'planta', 'saúde', 'saude', 'doença', 'doenca',
   'órgão', 'orgao', 'sistema digestivo', 'sistema respiratório', 'sistema respiratorio',
+  'sistema imunológico', 'sistema imunologico', 'imunológico', 'imunologico',
+  'sistema nervoso', 'sistema circulatório', 'sistema circulatorio',
   'teoria da evolução', 'teoria da evolucao', 'evolução das espécies', 'evolucao das especies',
   'dna', 'genética', 'genetica',
-  'vírus', 'virus', 'bactéria', 'bacteria', 'microscópio', 'microscopio'
+  'vírus', 'virus', 'bactéria', 'bacteria', 'microscópio', 'microscopio',
+  'invertebrado', 'vertebrado', 'mamífero', 'mamifero', 'réptil', 'reptil',
+  'nutrição', 'nutricao', 'respiração celular', 'respiracao celular',
 ]
 
 const KEYWORDS_HISTORIA = [
@@ -107,8 +124,18 @@ const KEYWORDS_FISICA = [
 // Extensível: conforme testes reais revelam colisões, basta adicionar aqui.
 // ────────────────────────────────────────────────────────────────────────────
 
-const ANTI_KEYWORDS_MATEMATICA: string[] = []
-const ANTI_KEYWORDS_PORTUGUES: string[] = []
+const ANTI_KEYWORDS_MATEMATICA: string[] = [
+  // 'vezes' no sentido de frequência/às vezes → NÃO é matemática
+  'às vezes', 'as vezes', 'umas vezes', 'outras vezes', 'algumas vezes',
+  'muitas vezes', 'poucas vezes', 'várias vezes', 'varias vezes',
+  // 'média' no sentido de Idade Média (história) → NÃO é matemática
+  'idade média', 'idade media',
+]
+const ANTI_KEYWORDS_PORTUGUES: string[] = [
+  // 'verbo' detectado quando o contexto é ESPANHOL ou INGLÊS
+  'em espanhol', 'de espanhol', 'en español', 'em inglês', 'de inglês', 'em ingles', 'de ingles',
+  'verbos em espanhol', 'verbos en español', 'verbos em inglês', 'verbos em ingles',
+]
 const ANTI_KEYWORDS_HISTORIA: string[] = []
 const ANTI_KEYWORDS_CIENCIAS: string[] = []
 const ANTI_KEYWORDS_GEOGRAFIA: string[] = []
@@ -125,6 +152,13 @@ const ANTI_KEYWORDS_FISICA = [
   'trabalho de biologia',
   'trabalho de casa', 'trabalho escolar', 'trabalho da escola',
   'trabalho de matemática', 'trabalho de matematica',
+  // "energia", "força", "calor", "movimento", "temperatura" em contexto cotidiano
+  // Frases que indicam uso metafórico/coloquial dessas palavras
+  'energia da', 'energia boa', 'energia positiva', 'energia negativa', 'muita energia',
+  'força de vontade', 'força moral', 'força emocional',
+  'calor humano', 'calor da', 'que calor',
+  'movimento de dança', 'movimento social', 'movimento estudantil', 'movimento artístico',
+  'temperatura da sopa', 'temperatura do corpo',  // corpo humano → ciências seria melhor
 ]
 
 const ANTI_KEYWORDS_QUIMICA: string[] = []
@@ -158,7 +192,9 @@ const KEYWORDS_ESPANHOL = [
   'espanhol', 'español', 'spanish', 'hola',
   'verbos em espanhol', 'conjugação espanhol', 'conjugacao espanhol',
   'como fala em espanhol', 'traduzir para espanhol',
-  'como se diz em espanhol'
+  'como se diz em espanhol',
+  'verbos en español', 'conjugar en español', 'conjugar en espanol',
+  'me ajuda em espanhol', 'aprender espanhol',
 ]
 
 // Palavras que indicam continuidade (não precisa de PSICO)
@@ -176,13 +212,34 @@ function removerAcentos(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
+// Caracteres que são parte de palavras em português (para word boundary)
+const WORD_CHARS = 'a-záéíóúâêîôûãõàèìòùçüäöï0-9_'
+const reWordBoundary = (keyword: string): RegExp => {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?<![${WORD_CHARS}])${escaped}(?![${WORD_CHARS}])`, 'i')
+}
+
 export function detectarTema(mensagem: string): string | null {
   const msg = mensagem.toLowerCase()
   const msgSemAcento = removerAcentos(msg)
 
   // Checar com e sem acentos para robustez de encoding
+  // Fix 1: Keywords curtas (≤6 chars, sem espaço) usam word boundary para evitar
+  // substring false positives:
+  //   'rio'  → 'próprio'  → 'proprio'  → \brio\b NÃO bate em 'proprio' (preceded by p)
+  //   'pais' → 'paisagem' → \bpais\b NÃO bate em 'paisagem' (followed by a)
+  //   'base' → 'baseado'  → \bbase\b NÃO bate em 'baseado' (followed by a)
   const temKeyword = (keywords: string[]) =>
-    keywords.some(k => msg.includes(k) || msgSemAcento.includes(removerAcentos(k)))
+    keywords.some(k => {
+      const kNorm = removerAcentos(k.toLowerCase())
+      // Usar word boundary para keywords MUITO curtas sem espaço (≤4 chars)
+      // Isso evita 'rio' → 'próprio', 'pais' → 'paisagem', 'base' → 'baseado', etc.
+      // Threshold conservador (4) preserva plurais: 'guerra'(6) ainda bate 'guerras'
+      if (!k.includes(' ') && kNorm.length <= 4) {
+        return reWordBoundary(kNorm).test(msgSemAcento)
+      }
+      return msg.includes(k) || msgSemAcento.includes(kNorm)
+    })
 
   // Match com bloqueio: keyword ativa o tema, anti-keyword cancela
   const matchKeyword = (keywords: string[], antiKeywords: string[]) => {
@@ -369,8 +426,31 @@ export async function decidirPersona(
   // 2. Detectar tema por keywords
   const temaKeywords = detectarTema(mensagem)
 
+  // Fix 3 — Stickiness Guard:
+  // Se há um herói ativo E as keywords detectaram um tema DIFERENTE do atual,
+  // exige confirmação do classificador LLM antes de quebrar o fluxo.
+  // Isso evita que "o próprio 40" (keywords → 'geografia') mate uma sessão de matemática.
+  // Se o LLM confirmar 'indefinido' → manter herói atual (continuidade).
+  // Se o LLM confirmar nova matéria → permitir a troca.
+  if (
+    temaKeywords &&
+    temaKeywords !== sessao.tema_atual &&
+    sessao.agente_atual &&
+    sessao.agente_atual !== 'PSICOPEDAGOGICO' &&
+    sessao.tema_atual !== null
+  ) {
+    const temaLLMConfirm = await classificarTema(mensagem)
+    if (!temaLLMConfirm || temaLLMConfirm === 'indefinido') {
+      console.log(`[stickiness] keywords='${temaKeywords}' mas LLM='indefinido' → mantendo ${sessao.agente_atual}`)
+      return { persona: sessao.agente_atual, temaDetectado: sessao.tema_atual }
+    }
+    // LLM confirma nova matéria → permitir troca
+    console.log(`[stickiness] LLM='${temaLLMConfirm}' confirma troca de ${sessao.tema_atual} → ${temaLLMConfirm}`)
+    return decidirComTema(temaLLMConfirm, sessao, ultimosTurnos)
+  }
+
   if (temaKeywords) {
-    // 3. Tema detectado por keywords → fluxo normal
+    // 3. Tema detectado por keywords → fluxo normal (sem herói ativo ou mesmo tema)
     return decidirComTema(temaKeywords, sessao, ultimosTurnos)
   }
 

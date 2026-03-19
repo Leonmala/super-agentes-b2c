@@ -2,7 +2,7 @@
 
 > **Regra:** Toda vez que um teste falha ou um bug é encontrado, registrar aqui ANTES de corrigir.
 > Formato: Data | Fase | Descrição | Causa raiz | Correção | Status
-> **Última atualização:** 2026-03-17 (Bloco H — 4 erros resolvidos)
+> **Última atualização:** 2026-03-18 (Router Fix — 3 fixes + 306 testes classificador)
 
 ---
 
@@ -88,6 +88,17 @@
 | 39 | 2026-03-17 | Produção | Backend nunca processava `sinal_psicopedagogico`, `motivo_sinal`, `observacoes_internas` dos heróis | Campos existiam no prompt dos heróis mas message.ts ignorava completamente. Sinais pedagógicos se perdiam | **D4:** Pipeline de sinais completo: herói → extração via ProcessedResponse → persistência Supabase (3 colunas novas + índice parcial). **H8:** Migração SQL aplicada | ✅ Resolvido |
 | 40 | 2026-03-17 | Produção | Imagens atualizadas por Leon não apareciam no app em produção | Leon atualizava originais em `Imagens/` (nomes originais) mas frontend serve de `web/public/` com nomes diferentes. Mapeamento: `Logo_SuperAgentesPenseAI.png` → `LogoPenseAI.png`, `SuperAgentesPenseAi_buble.png` → `logo-buble.png` | Copiados arquivos com nomes corretos para `web/public/`. Documentado mapeamento na MEMORIA_CURTA | ✅ Resolvido |
 
+## Erros Resolvidos (Router Fix — 2026-03-18)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 41 | 2026-03-18 | Produção | GAIA aparecia no meio de sessão de Matemática ("o próprio 40") | `'rio'` (3 chars) em `KEYWORDS_GEOGRAFIA` fazia `.includes()` match dentro de "próprio" (propr**io**). `detectarTema()` retornava 'geografia' → PSICO cascata → override forçava GAIA | **Fix 1 (word boundary):** `reWordBoundary()` helper + `temKeyword()` usa regex `(?<![a-z...])kw(?![a-z...])` para keywords ≤4 chars sem espaços. Threshold 4 evita quebrar plurais (guerra→guerras ok) | ✅ Resolvido |
+| 42 | 2026-03-18 | Produção | VECTOR (Física) aparecia no meio de sessão de História ("antes era grego") | `detectarTema()` retornava null → LLM classificador rodava → Gemini Flash classificou como 'fisica' (associou "grego" a letras gregas α,β,ω em física) → override forçava VECTOR | **Fix 3 (stickiness guard):** quando keywords detectam tema DIFERENTE do agente ativo, exige confirmação do LLM. Se LLM diz 'indefinido' → mantém herói atual. Elimina falsos positivos do classificador durante fluxo ativo | ✅ Resolvido |
+| 43 | 2026-03-18 | Router | `' mais '`/`' menos '` em KEYWORDS_MATEMATICA causavam falsos positivos | "ficou muito mais fácil" (histórico) → match de `' mais '` → detectava matematica. Mensagens cotidianas com "mais"/"menos" eram classificadas incorretamente | **Fix 2 (anti-keywords + remoção):** Removidos `' mais '`, `' menos '` de KEYWORDS_MATEMATICA. Adicionados ANTI_KEYWORDS_MATEMATICA: 'às vezes', 'idade média'. ANTI_KEYWORDS_PORTUGUES: 'em espanhol', 'de espanhol', 'em inglês'. Estendido ANTI_KEYWORDS_FISICA com contextos coloquiais | ✅ Resolvido |
+| 44 | 2026-03-18 | Router | Threshold word boundary inicial ≤6 quebrava plurais | `'guerra'` (6 chars) com `\bguerra\b` não matchava "guerras". `'molar'` (5 chars) não matchava "molaridade" | Threshold reduzido de ≤6 para ≤4. Keywords 5+ chars usam substring matching (permite plurais). Apenas 3-4 chars (rio, pais, base, arte) usam word boundary | ✅ Resolvido |
+| 45 | 2026-03-18 | Router | 'potência'/'potencia' adicionados a MATEMATICA causavam "energia potencial" → MATEMATICA | 'potencia' é substring de 'potencial'. MATEMATICA checada antes de FISICA → falso positivo | Removidos 'potência'/'potencia' de MATEMATICA (já cobertos por FISICA keywords) | ✅ Resolvido |
+| 46 | 2026-03-18 | Router | 'média'/'media' em MATEMATICA causava "idade média" → matematica (em vez de historia) | Keyword correta para estatística, mas "idade média" é período histórico medieval | Adicionados 'idade média', 'idade media' em ANTI_KEYWORDS_MATEMATICA | ✅ Resolvido |
+
 ## Erros Pendentes
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -117,6 +128,9 @@ _(Atualizar conforme erros se repetem)_
 - **Sanitização:** NUNCA enviar texto ao usuário sem passar pelo sanitizador incondicional (D2). Mesmo texto "limpo" pode ter resíduos JSON.
 - **Imagens (CRÍTICO):** Originais em `Imagens/` têm nomes DIFERENTES de `web/public/`. SEMPRE copiar com nome correto ao atualizar. Mapeamento: `Logo_SuperAgentesPenseAI.png`→`LogoPenseAI.png`, `SuperAgentesPenseAi_buble.png`→`logo-buble.png`.
 - **Router (Keywords):** Termos ambíguos causam colisão entre matérias. Mitigado com sistema de anti-keywords (blocklist por tema).
+- **Router (Substring):** Keywords curtas (≤4 chars: rio, pais, base, arte) PRECISAM de word boundary regex — `.includes()` pega substrings falsas. Fix permanente em `temKeyword()`.
+- **Router (Stickiness):** LLM classificador (Gemini Flash) pode associar termos cotidianos ("grego") a matérias erradas. Stickiness guard exige LLM='indefinido' antes de quebrar fluxo ativo. NUNCA remover esse guard.
+- **Router (Keywords genéricas):** NUNCA adicionar preposições ou artigos a keywords de matérias ('mais', 'menos', 'conta', 'rio' solto). Keywords devem ser termos técnicos ou expressões compostas específicas.
 - **Build:** `tsc` NÃO copia arquivos não-TypeScript (.md, .json). Sempre copiar manualmente no script build.
 - **Dev vs Prod:** `tsx` (dev) roda direto do `src/`, `node` (prod) roda do `dist/`. Paths relativos divergem.
 - **Logo Pense-AI:** Arquivo correto é `LogoPenseAI.png` (cubo 3D). NUNCA usar `logo-penseai.png`. NUNCA aplicar `brightness-0 invert`. Sempre com `relative z-10` para ficar na frente de blobs.

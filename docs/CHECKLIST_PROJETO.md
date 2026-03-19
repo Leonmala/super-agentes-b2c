@@ -1,7 +1,7 @@
 # CHECKLIST DO PROJETO — Super Agentes V1.0
 
 > **Regra:** A cada task concluída, marcar [x]. A cada fase concluída com Gate passando, marcar o Gate.
-> **Última atualização:** 2026-03-17 (Bloco H completo + validado em produção)
+> **Última atualização:** 2026-03-18 (Router Fix + 306 testes classificador — TypeScript 0 erros)
 
 ---
 
@@ -163,8 +163,18 @@
 
 ### Polimento Pré-Venda — Bloco E: Funcionalidades Pendentes
 
-- [ ] **PE1** Botão "+" (anexar imagem): fotos da galeria ou câmera (cel/computador)
-- [ ] **PE2** Brainstorm agente NotebookLM com Leon
+- [x] **PE1.1** Utilitário compressão imagem (image-compress.ts, ImagemComprimida interface)
+- [x] **PE1.2** ChatInput: botão + abre file picker, thumbnail preview + X, toast erro ✅ (2026-03-18)
+- [x] **PE1.3** ChatBubble: shimmer overlay + badge pulsante durante análise ✅ (2026-03-18)
+- [x] **PE1.4** Backend multimodal: inlineData Google SDK, validação 700KB, cascata repassa imagem ✅ (2026-03-18)
+- [x] **PE1** — Botão "+" com visão multimodal completo ✅ (frontend + backend — 2026-03-18)
+- [x] **PE2** Router Fix: word boundary + stickiness guard + 306 testes classificador ✅ (2026-03-18)
+  - [x] Fix 1: `reWordBoundary()` helper — word boundary para keywords ≤4 chars
+  - [x] Fix 2: Remover ' mais '/' menos ' de MATEMATICA + anti-keywords por tema
+  - [x] Fix 3: Stickiness guard em `decidirPersona()` — LLM confirmation antes de trocar herói
+  - [x] 306 testes `router-classificador.test.ts` — 306/306 PASS
+  - [x] TypeScript typecheck: 0 erros ✅
+- [ ] **PE3** Brainstorm agente NotebookLM / Super Prova com Leon
 
 ### Robustez + UX + Testes — Bloco G (2026-03-17)
 
