@@ -53,7 +53,14 @@ export function ChatInput() {
     const trimmed = texto.trim()
     // Permitir envio só com imagem (sem texto)
     if ((!trimmed && !imagemPendente) || streaming) return
-    const agenteOverride = agenteMenu !== 'super_agentes' ? agenteMenu.toUpperCase() : undefined
+    // Mapeamento explícito: slug do menu → nome real do agente no backend
+    const MENU_TO_AGENTE: Record<string, string> = {
+      professor_ia: 'PROFESSOR_IA',
+      supervisor: 'SUPERVISOR_EDUCACIONAL',
+    }
+    const agenteOverride = agenteMenu !== 'super_agentes'
+      ? (MENU_TO_AGENTE[agenteMenu] ?? agenteMenu.toUpperCase())
+      : undefined
     enviar(trimmed, agenteOverride, imagemPendente?.base64)
     setTexto('')
     setImagemPendente(null)

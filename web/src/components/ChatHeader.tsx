@@ -1,7 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
-import { HEROES } from '../constants'
+import { HEROES, AGENTES_ESPECIAIS } from '../constants'
 import type { HeroId } from '../types'
 
 interface ChatHeaderProps {
@@ -9,16 +9,19 @@ interface ChatHeaderProps {
 }
 
 export function ChatHeader({ onMenuToggle }: ChatHeaderProps) {
-  const { heroiAtivo } = useChat()
+  const { heroiAtivo, agenteMenu } = useChat()
   const { perfilAtivo } = useAuth()
-  const hero = heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
 
-  const gradientFrom = hero?.gradientFrom || '#2563EB'
-  const gradientTo = hero?.gradientTo || '#1E3A8A'
-  const bgImage = hero?.bgImage || null
-  const avatar = hero?.avatar || '/logo-super-agentes.png'
-  const nome = hero?.nome || 'Super Agentes'
-  const materia = hero?.materia || ''
+  // Prioridade: (1) agente especial selecionado no menu, (2) herói ativo (SSE), (3) defaults
+  const especial = agenteMenu !== 'super_agentes' ? AGENTES_ESPECIAIS[agenteMenu] : null
+  const hero = !especial && heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
+
+  const gradientFrom = especial?.gradientFrom || hero?.gradientFrom || '#2563EB'
+  const gradientTo = especial?.gradientTo || hero?.gradientTo || '#1E3A8A'
+  const bgImage = hero?.bgImage || null   // agentes especiais não têm bgImage
+  const avatar = especial?.avatar || hero?.avatar || '/logo-super-agentes.png'
+  const nome = especial?.nome || hero?.nome || 'Super Agentes'
+  const materia = especial?.materia || hero?.materia || ''
 
   return (
     <header className="relative overflow-hidden shrink-0">

@@ -59,6 +59,31 @@ export const HEROES: Record<HeroId, HeroMeta> = {
   },
 }
 
+// Metadados de exibição para agentes especiais (não-heróis)
+// Usados no ChatHeader quando agenteMenu !== 'super_agentes'
+export const AGENTES_ESPECIAIS: Record<string, {
+  nome: string
+  materia: string
+  gradientFrom: string
+  gradientTo: string
+  avatar: string
+}> = {
+  professor_ia: {
+    nome: 'Prof. Pense-AI',
+    materia: 'Uso de IA & Prompts',
+    gradientFrom: '#0F766E',
+    gradientTo: '#042F2E',
+    avatar: '/LogoPenseAI.png',
+  },
+  supervisor: {
+    nome: 'Supervisor Educacional',
+    materia: 'Relatório Semanal',
+    gradientFrom: '#047857',
+    gradientTo: '#022C22',
+    avatar: '/logo-super-agentes.png',
+  },
+}
+
 export const INTERFACE_COLORS = {
   fundamental: '#2563EB',
   medio: '#7C3AED',
