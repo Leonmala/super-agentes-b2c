@@ -25,6 +25,7 @@ import {
   resetarSessaoAgente
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
+import { buscarContextoProfessorIA } from '../db/qdrant.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
 import { registrarDispositivo, verificarLimiteDispositivos } from '../core/dispositivos.js'
 
@@ -66,7 +67,7 @@ const HEROIS_VALIDOS = [
 ]
 
 // Agentes acessíveis via agente_override (heróis + SUPERVISOR para pais)
-const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL']
+const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL', 'PROFESSOR_IA']
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/message — SSE endpoint
@@ -370,9 +371,32 @@ router.post('/message', async (req: Request, res: Response) => {
       console.log(`[${aluno_id}] Chamando ${persona} em stream (continuidade)...`)
       enviarEvento('agente', { agente: persona })
 
+      // Injetar memória longa do PROFESSOR_IA (se disponível no Qdrant)
+      let contextoFinal = contexto
+      if (persona === 'PROFESSOR_IA') {
+        const responsavelId = sessao.responsavel_id || null
+        const memoriaLonga = await buscarContextoProfessorIA(
+          aluno_id,
+          responsavelId,
+          tipoUsuario
+        ).catch(() => null)
+
+        if (memoriaLonga) {
+          contextoFinal = contexto +
+            `\n\n═══════════════════════════════════════════\n` +
+            `MEMÓRIA DE SESSÕES ANTERIORES (PROFESSOR_IA):\n` +
+            `═══════════════════════════════════════════\n` +
+            memoriaLonga +
+            `\n═══════════════════════════════════════════\n` +
+            `INSTRUÇÃO: Use esse histórico para continuar a jornada de onde parou. ` +
+            `Não comece do zero. Reconheça o progresso já feito implicitamente.\n`
+          console.log(`[${aluno_id}] PROFESSOR_IA: memória longa injetada (${memoriaLonga.length} chars)`)
+        }
+      }
+
       const resultadoHeroi: ResultadoStream = await chamarLLMStream(
         systemPrompt,
-        contexto,
+        contextoFinal,
         mensagem.trim(),
         persona,
         (chunk) => {

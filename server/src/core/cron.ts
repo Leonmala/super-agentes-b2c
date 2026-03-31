@@ -150,6 +150,9 @@ async function processarAlunoSemanal(
   // c. Gerar resumo semântico via LLM
   const resumo = await gerarResumoSemantico(turnos as Turno[])
 
+  // c2. Processar turnos PROFESSOR_IA separadamente (memória longa da jornada IA)
+  await processarProfessorIATurnos(alunoId, semanaRef, turnos as Turno[], usarQdrant)
+
   // d. Gerar embedding e salvar no Qdrant (se configurado)
   let pontoId: string | null = null
   if (usarQdrant) {
@@ -255,6 +258,152 @@ RESUMO SEMÂNTICO:`
     // Fallback: resumo básico sem LLM
     const materias = [...new Set(turnos.map(t => t.agente))].join(', ')
     return `Semana com ${turnos.length} interações. Matérias: ${materias}. Resumo automático não disponível.`
+  }
+}
+
+// ============================================================
+// PROCESSAR TURNOS PROFESSOR_IA — MEMÓRIA LONGA
+// ============================================================
+
+/**
+ * Processa turnos do PROFESSOR_IA separadamente para salvar no Qdrant
+ * com namespace específico (professor_ia vs professor_ia_pai)
+ */
+export async function processarProfessorIATurnos(
+  alunoId: string,
+  semanaRef: string,
+  turnos: Turno[],
+  usarQdrant: boolean
+): Promise<void> {
+  // Filtrar apenas turnos do Professor Pense-AI
+  const turnosProfessorIA = turnos.filter(t => t.agente === 'PROFESSOR_IA')
+
+  if (turnosProfessorIA.length === 0) return
+
+  // Buscar sessões para identificar tipo_usuario E responsavel_id (pai tem identidade própria)
+  const sessaoIds = [...new Set(turnosProfessorIA.map(t => t.sessao_id))]
+  const { data: sessoes } = await supabase
+    .from('b2c_sessoes')
+    .select('id, tipo_usuario, responsavel_id')
+    .in('id', sessaoIds)
+
+  if (!sessoes || sessoes.length === 0) return
+
+  type SessaoInfo = { tipo_usuario: 'filho' | 'pai'; responsavel_id: string | null }
+  const sessaoMap = new Map<string, SessaoInfo>(
+    sessoes.map(s => [s.id, {
+      tipo_usuario: (s.tipo_usuario as 'filho' | 'pai') || 'filho',
+      responsavel_id: s.responsavel_id || null
+    }])
+  )
+
+  // Separar turnos por tipo_usuario
+  const turnosFilho = turnosProfessorIA.filter(t => sessaoMap.get(t.sessao_id)?.tipo_usuario === 'filho')
+  const turnosPai   = turnosProfessorIA.filter(t => sessaoMap.get(t.sessao_id)?.tipo_usuario === 'pai')
+
+  // Processar grupo filho
+  if (turnosFilho.length > 0) {
+    await salvarGrupoProfessorIA(
+      alunoId,
+      null,           // filho: sem responsavel_id
+      semanaRef,
+      turnosFilho,
+      'professor_ia',
+      usarQdrant
+    )
+  }
+
+  // Processar grupo pai — agrupar por responsavel_id (um pai pode ter múltiplos filhos)
+  if (turnosPai.length > 0) {
+    const responsavelIds = [...new Set(
+      turnosPai.map(t => sessaoMap.get(t.sessao_id)?.responsavel_id).filter(Boolean)
+    )] as string[]
+
+    for (const responsavelId of responsavelIds) {
+      const turnosDessePai = turnosPai.filter(
+        t => sessaoMap.get(t.sessao_id)?.responsavel_id === responsavelId
+      )
+      await salvarGrupoProfessorIA(
+        alunoId,
+        responsavelId,  // pai: com responsavel_id (jornada pertence ao pai, não ao aluno)
+        semanaRef,
+        turnosDessePai,
+        'professor_ia_pai',
+        usarQdrant
+      )
+    }
+  }
+}
+
+async function salvarGrupoProfessorIA(
+  alunoId: string,
+  responsavelId: string | null,
+  semanaRef: string,
+  turnos: Turno[],
+  tipo: string,
+  usarQdrant: boolean
+): Promise<void> {
+  // Gerar resumo focado em jornada de aprendizado de IA
+  const resumo = await gerarResumoProfessorIA(turnos)
+
+  let pontoId: string | null = null
+  if (usarQdrant) {
+    try {
+      const embedding = await gerarEmbedding(resumo)
+      pontoId = await salvarEmbeddingSemanal(alunoId, semanaRef, embedding, resumo, tipo)
+    } catch (erro: any) {
+      console.error(`[CRON] Erro Qdrant ${tipo} para ${alunoId}:`, erro.message)
+    }
+  }
+
+  // Salvar referência em b2c_qdrant_refs
+  const namespace = responsavelId
+    ? `professor_ia_pai_${responsavelId}`
+    : `professor_ia_${alunoId}`
+
+  const { error: erroRef } = await supabase.from('b2c_qdrant_refs').insert({
+    aluno_id: alunoId,
+    responsavel_id: responsavelId,
+    namespace,
+    semana_ref: semanaRef,
+    ponto_ids: pontoId ? [pontoId] : null,
+    resumo_semantico: resumo
+  })
+
+  if (erroRef) {
+    console.error(`[CRON] Erro ao salvar ref PROFESSOR_IA (${tipo}):`, erroRef.message)
+  }
+
+  console.log(`[CRON] PROFESSOR_IA (${tipo}): ${turnos.length} turnos → Qdrant para ${alunoId}`)
+}
+
+export async function gerarResumoProfessorIA(turnos: Turno[]): Promise<string> {
+  const turnosTexto = turnos.map(t =>
+    `Usuário: "${t.entrada}" → Professor Pense-AI: "${t.resposta.substring(0, 300)}..."`
+  ).join('\n')
+
+  const prompt = `Analise as interações desta semana com o Professor Pense-AI e gere um RESUMO DE JORNADA conciso (máximo 250 palavras).
+
+O resumo deve capturar:
+1. Nível atual na jornada de uso de IA (descreva o comportamento — ex: "pede respostas prontas sem contexto", "começa a elaborar intenção antes de pedir")
+2. Prompts trabalhados e o que melhorou
+3. Conceitos de IA que a pessoa aprendeu ou demonstrou curiosidade
+4. Padrões de comportamento observados
+5. Próxima oportunidade de aprendizado
+
+INTERAÇÕES:
+${turnosTexto}
+
+RESUMO:`
+
+  const systemPrompt = 'Você é um analista de aprendizado de IA. Gere resumos de jornada concisos, observacionais e práticos. Não use jargões pedagógicos pesados.'
+
+  try {
+    const resposta = await chamarLLM(systemPrompt, '', prompt, 'RESUMO_PROFESSOR_IA')
+    return resposta.raw.trim()
+  } catch (erro: any) {
+    const temas = [...new Set(turnos.map(t => t.entrada.split(' ').slice(0, 5).join(' ')))].join(' | ')
+    return `Semana com ${turnos.length} interações com Professor Pense-AI. Tópicos: ${temas}. Resumo automático indisponível.`
   }
 }
 

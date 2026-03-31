@@ -82,7 +82,8 @@ export async function salvarEmbeddingSemanal(
   alunoId: string,
   semanaRef: string,
   embedding: number[],
-  resumo: string
+  resumo: string,
+  tipo: string = 'educacional'
 ): Promise<string> {
   const client = getQdrantClient()
   const pontoId = crypto.randomUUID()
@@ -97,13 +98,14 @@ export async function salvarEmbeddingSemanal(
           aluno_id: alunoId,
           semana_ref: semanaRef,
           resumo,
+          tipo,
           created_at: new Date().toISOString()
         }
       }
     ]
   })
 
-  console.log(`[Qdrant] Ponto ${pontoId} salvo para aluno ${alunoId} (${semanaRef})`)
+  console.log(`[Qdrant] Ponto ${pontoId} salvo para aluno ${alunoId} (${semanaRef}, tipo: ${tipo})`)
   return pontoId
 }
 
@@ -114,7 +116,8 @@ export async function salvarEmbeddingSemanal(
 export async function buscarContextoLongoPrazo(
   alunoId: string,
   queryTexto: string,
-  topK: number = 3
+  topK: number = 3,
+  tipo: string = 'educacional'
 ): Promise<Array<{ semana_ref: string; resumo: string; score: number }>> {
   const client = getQdrantClient()
   const queryEmbedding = await gerarEmbedding(queryTexto)
@@ -127,6 +130,10 @@ export async function buscarContextoLongoPrazo(
         {
           key: 'aluno_id',
           match: { value: alunoId }
+        },
+        {
+          key: 'tipo',
+          match: { value: tipo }
         }
       ]
     },
@@ -138,6 +145,64 @@ export async function buscarContextoLongoPrazo(
     resumo: (r.payload as any)?.resumo || '',
     score: r.score
   }))
+}
+
+// ============================================================
+// BUSCAR CONTEXTO LONGO PRAZO — PROFESSOR_IA
+// ============================================================
+
+/**
+ * Busca contexto de longo prazo do PROFESSOR_IA
+ * Para filhos: busca por aluno_id + tipo 'professor_ia'
+ * Para pais: busca por responsavel_id + tipo 'professor_ia_pai'
+ */
+export async function buscarContextoProfessorIA(
+  alunoId: string,
+  responsavelId: string | null,
+  tipoUsuario: 'filho' | 'pai',
+  topK: number = 2
+): Promise<string | null> {
+  if (!qdrantConfigurado()) return null
+
+  try {
+    const client = getQdrantClient()
+    const tipo = tipoUsuario === 'pai' ? 'professor_ia_pai' : 'professor_ia'
+
+    // Query genérica sobre a jornada
+    const queryTexto = tipoUsuario === 'pai'
+      ? 'jornada do responsável aprendendo IA como parceiro de pensamento'
+      : 'jornada do aluno aprendendo a usar IA como parceiro'
+
+    const queryEmbedding = await gerarEmbedding(queryTexto)
+
+    // Filtro: pai usa responsavel_id, filho usa aluno_id
+    const filtroId = tipoUsuario === 'pai' && responsavelId
+      ? { key: 'responsavel_id', match: { value: responsavelId } }
+      : { key: 'aluno_id', match: { value: alunoId } }
+
+    const results = await client.search(COLLECTION_NAME, {
+      vector: queryEmbedding,
+      limit: topK,
+      filter: {
+        must: [
+          filtroId,
+          { key: 'tipo', match: { value: tipo } }
+        ]
+      },
+      with_payload: true
+    })
+
+    if (results.length === 0) return null
+
+    const resumos = results
+      .map(r => `[Semana ${(r.payload as any)?.semana_ref}]: ${(r.payload as any)?.resumo}`)
+      .join('\n\n')
+
+    return resumos
+  } catch (erro: any) {
+    console.error('[Qdrant] Erro ao buscar contexto PROFESSOR_IA:', erro.message)
+    return null
+  }
 }
 
 // ============================================================

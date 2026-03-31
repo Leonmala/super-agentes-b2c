@@ -1,15 +1,15 @@
 # MEMÓRIA LONGA — Super Agentes V1.0
 
 > **Propósito:** Banco de memória persistente com TUDO que aconteceu no projeto. Lido no início de cada sessão nova para restaurar contexto completo.
-> **Última atualização:** 2026-03-15
+> **Última atualização:** 2026-03-31
 
 ---
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** Visual Refactor V5 implementado + ajustes finos com Leon
-**Próximo passo:** (1) Botão "+" para fotos/câmera, (2) Brainstorm agente NotebookLM
-**Bloqueios:** Railway env vars precisam ser configuradas pelo Leon
+**Fase:** Polimento Pré-Venda — Implementação Professor Pense-AI + depois Super Prova
+**Próximo passo:** writing-plans (spec em docs/PROFESSOR_PENSE_AI_SPEC.md) → 5 itens técnicos → Brainstorm Super Prova → spec → impl → Fase 5 SaaS
+**Bloqueios:** Nenhum. PE1 + PE2 em produção.
 
 ### Progresso por Fase
 
@@ -17,7 +17,7 @@
 |------|--------|------|
 | Fase 1: Backend | 100% ✅ | PASSED (21/21) 2026-03-12 |
 | Fase 2: Agentes | 100% ✅ | PASSED (13/13) 2026-03-12 |
-| Fase 2.5: Workshop PROFESSOR_IA | 0% | Adiada — será por último (após Fases 4→5→6) |
+| Fase 2.5: Professor Pense-AI | 10% | Brainstorm concluído. Spec aprovada. Pronto para writing-plans + implementação. |
 | Fase 3: Frontend | 100% ✅ | PASSED (6/6) 2026-03-12 |
 | Deploy Railway | 100% ✅ | App rodando em produção 2026-03-13 |
 | Visual Polish (round 1) | 100% ✅ | Leon aprovou interface 2026-03-13 |
@@ -26,7 +26,13 @@
 | Gate 5 E2E: 8 Agentes | 100% ✅ | PASSED (14/14, média 9.3/10) 2026-03-13 |
 | Hotfixes Produção | 100% ✅ | 4 bugs corrigidos (personas, JSON, cascata, turnos) 2026-03-13 |
 | UX: Markdown + Typing | 100% ✅ | remark-gfm + useTypingEffect + CSS 2026-03-13 |
-| Fase 5: SaaS | 0% | - |
+| Bloco G: Robustez + UX + Testes | 100% ✅ | useBubbleReveal, TypingDots, timeout, router async — 2026-03-17 |
+| Bloco H: Disjuntores Arquiteturais | 100% ✅ | response-processor, fallback, sinais, migration — 2026-03-17 |
+| PE1: Botão + Multimodal | 100% ✅ | compressão, preview, inlineData Google SDK, shimmer — 2026-03-18 |
+| PE2: Router Fix | 100% ✅ | word boundary, stickiness guard, 306 testes — 2026-03-18 |
+| PE3: Brainstorm Super Prova | 0% | Pendente — com Leon |
+| Fase 2.5: PROFESSOR_IA | 0% | Pendente — prompt não existe, 4 itens de código |
+| Fase 5: SaaS | 0% | Após PE3 + Fase 2.5 |
 | Fase 6: Deploy Final | 0% | - |
 
 ---
@@ -96,6 +102,22 @@
 | 54 | Menu lateral w-[290px] com SVGs protótipo | Ícones: raio (Super Agentes), monitor (Professor IA), olho (Supervisor), user (Trocar), logout (Sair). Botões inferiores sem background. | 2026-03-15 |
 | 55 | Login gradiente profundo | `from-[#1E40AF] via-[#1E3A8A] to-[#0F172A]` — azul profundo→navy escuro. Blobs com radial-gradient + blur(80px). | 2026-03-15 |
 | 56 | Numpad PIN aspect-ratio 1.3 | Em vez de h fixo, usa aspect-ratio para teclas proporcionais em qualquer tela. Max-w 280px. | 2026-03-15 |
+| 57 | useBubbleReveal hook (Bloco G) | Revelação balão por balão com tempo de leitura estimado. Remove useTypingEffect anterior. ChatContext+ChatMessages refatorados. | 2026-03-17 |
+| 58 | response-processor pipeline 4 camadas (Bloco H) | JSON.parse → markdown strip → regex → texto puro. Sanitizador incondicional antes de enviar ao aluno. Elimina JSON leaks residuais. | 2026-03-17 |
+| 59 | Fallback messages por persona | 10 personas + DEFAULT. Exibido quando LLM retorna vazio/erro. Evita tela em branco. | 2026-03-17 |
+| 60 | Sinais pedagógicos persistidos | `b2c_turnos`: 3 novas colunas (sinal_aprendizado, sinal_dificuldade, sinal_emocional). SUPERVISOR lê para resumo semanal. | 2026-03-17 |
+| 61 | Botão + multimodal (PE1) | `image-compress.ts` (700KB limit), thumbnail preview, inlineData Google SDK, shimmer overlay no ChatBubble durante análise. NUNCA usar image_url (OpenAI compat). | 2026-03-18 |
+| 62 | Router word boundary ≤4 chars (PE2) | Helper `reWordBoundary()`. Keywords curtas (rio, pais, luz, mar…) só matcham como palavras inteiras. Threshold 4 chars. | 2026-03-18 |
+| 63 | Stickiness guard em decidirPersona (PE2) | Troca de herói mid-sessão exige confirmação do LLM. Se LLM retorna 'indefinido' → mantém herói atual. NUNCA remover esta lógica. | 2026-03-18 |
+| 64 | 306 testes de classificador (PE2) | `router-classificador.test.ts` — 21 describe blocks, seções A-G. Cobre substrings, falsos positivos semânticos, trocas explícitas. | 2026-03-18 |
+| 65 | PROFESSOR_IA: prompt não existe + 4 fixes | (1) criar PROFESSOR_IA.md, (2) add em AGENTES_OVERRIDE_VALIDOS, (3) ChatInput passar agenteMenu como override, (4) instrucaoFormatoPorPersona. | 2026-03-31 |
+| 66 | Brainstorm de features sempre com Leon | Nunca fazer brainstorm de feature sozinho. Super Prova e PROFESSOR_IA devem ser definidos com Leon antes de qualquer implementação. | 2026-03-31 |
+| 67 | PROFESSOR_IA renomeado para Professor Pense-AI | Identidade: espírito PENSE-AI, sem máscara/herói. Tom caloroso, provocador, construtivista. Spec: docs/PROFESSOR_PENSE_AI_SPEC.md. | 2026-03-31 |
+| 68 | PROFESSOR_IA: independente do cascade | Não passa por PSICOPEDAGOGICO. Direto via agente_override. Acesso: EM + Pai. Abertura: "Olá, o que vamos fazer hoje? Te ajudo com um prompt ou quer bater um papo sobre IA?" | 2026-03-31 |
+| 69 | PROFESSOR_IA: dois modos de conversa | Modo Prompt (melhoria construtivista + fechamento progressão "2/10→10/10") e Modo Conversa Livre (AI dictionary, ferramentas, LLMs, plataformas). | 2026-03-31 |
+| 70 | PROFESSOR_IA: adaptação por tipo_usuario | MODO FILHO (EM): mais curto, direto, exemplos adolescentes. MODO PAI: mais calmo, mais escuta, exemplos adultos. Mesmos objetivos, condução diferente. | 2026-03-31 |
+| 71 | PROFESSOR_IA: Qdrant memória longa (NOVO) | Dois novos namespaces Qdrant: professor_ia_{aluno_id} (aluno) e professor_ia_pai_{aluno_id} (pai). CRON domingo 23h inclui esses dois novos passos. 5º item técnico. | 2026-03-31 |
+| 72 | PROFESSOR_IA: namespace pai associável ao SUPERVISOR | professor_ia_pai_{aluno_id} pode informar o SUPERVISOR_EDUCACIONAL no futuro. Pai que entende IA pode ser orientado diferente. Cross-pollination intencionada. | 2026-03-31 |
 
 ---
 

@@ -14,7 +14,7 @@ export function ChatInput() {
   const [texto, setTexto] = useState('')
   const [imagemPendente, setImagemPendente] = useState<ImagemPendente | null>(null)
   const [erroImagem, setErroImagem] = useState<string | null>(null)
-  const { enviar, streaming, heroiAtivo } = useChat()
+  const { enviar, streaming, heroiAtivo, agenteMenu } = useChat()
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -53,7 +53,8 @@ export function ChatInput() {
     const trimmed = texto.trim()
     // Permitir envio só com imagem (sem texto)
     if ((!trimmed && !imagemPendente) || streaming) return
-    enviar(trimmed, undefined, imagemPendente?.base64)
+    const agenteOverride = agenteMenu !== 'super_agentes' ? agenteMenu.toUpperCase() : undefined
+    enviar(trimmed, agenteOverride, imagemPendente?.base64)
     setTexto('')
     setImagemPendente(null)
     if (inputRef.current) {

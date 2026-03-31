@@ -52,11 +52,14 @@
 
 ---
 
-## FASE 2.5: Workshop PROFESSOR_IA
+## FASE 2.5: Workshop PROFESSOR_IA ✅ CONCLUÍDO (2026-03-31)
 
-- [ ] **2.5.1** Sessão de design colaborativo com Leon
-- [ ] **2.5.2** Criar prompt PROFESSOR_IA.md
-- [ ] **2.5.3** Integrar no sistema (router, llm, interface)
+- [x] **2.5.1** Sessão de design colaborativo com Leon — brainstorm 4 perguntas + spec aprovada
+- [x] **2.5.2** Criar prompt PROFESSOR_IA.md — 203 linhas, metodologia PENSE-AI completa
+- [x] **2.5.3** Integrar no sistema (router, llm, interface, Qdrant, CRON, DB migration)
+- [x] **2.5.4** DB migration: `b2c_qdrant_refs.responsavel_id` — jornada pai por responsável
+- [x] **2.5.5** Memory loop: `buscarContextoProfessorIA` + injeção em message.ts
+- [x] **2.5.T** Testes: cron-professor-ia.test.ts 6/6 passando, TypeScript 0 erros
 
 ---
 

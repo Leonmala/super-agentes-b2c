@@ -514,7 +514,15 @@ REGRAS OBRIGATÓRIAS:
 5. Máximo 500 palavras no resumo_text
 6. Máximo 3 recomendações e 3 alertas
 
-NOTA: Este agente é EXCLUSIVO para responsáveis (MODO PAI). Linguagem sempre adulta e prática. Você é um orientador pedagógico, não um professor.`
+NOTA: Este agente é EXCLUSIVO para responsáveis (MODO PAI). Linguagem sempre adulta e prática. Você é um orientador pedagógico, não um professor.`,
+
+    PROFESSOR_IA: `
+⚠️ INSTRUÇÃO DE FORMATO — PROFESSOR_IA:
+Retorne APENAS texto em português brasileiro. SEM JSON. SEM blocos de código. SEM markdown excessivo.
+Use negrito (**texto**) apenas para destacar prompts melhorados no fechamento.
+Texto conversacional, direto, como uma mensagem humana.
+Máximo 200 palavras por resposta, exceto quando entregar o prompt melhorado final.
+Nunca comece com "Olá!" se já houver histórico na conversa (ver HISTÓRICO RECENTE no contexto).`
   }
 
   const instrucaoFormato = instrucaoFormatoPorPersona[persona] || `
