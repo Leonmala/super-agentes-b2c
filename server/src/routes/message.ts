@@ -394,6 +394,11 @@ router.post('/message', async (req: Request, res: Response) => {
         }
       }
 
+      // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)
+      const onSearching = persona === 'PROFESSOR_IA'
+        ? () => enviarEvento('search', { texto: '🔍 consultando fontes atualizadas...' })
+        : undefined
+
       const resultadoHeroi: ResultadoStream = await chamarLLMStream(
         systemPrompt,
         contextoFinal,
@@ -403,7 +408,8 @@ router.post('/message', async (req: Request, res: Response) => {
           respostaFinal += chunk
           enviarEvento('chunk', { texto: chunk })
         },
-        imagemBase64
+        imagemBase64,
+        onSearching
       )
 
       // Bloco H: capturar sinais pedagógicos do herói

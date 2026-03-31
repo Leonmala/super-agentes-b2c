@@ -12,6 +12,9 @@ if (!GOOGLE_API_KEY) {
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY)
 const MODELO = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 const MODELO_PSICO = process.env.GEMINI_MODEL_PSICO || 'gemini-2.5-flash'
+// PROFESSOR_IA sempre usa Gemini (Google Search grounding é exclusivo da API Google)
+// Em produção: GEMINI_MODEL pode apontar para Kimi, mas PROFESSOR_IA fica em Gemini
+const MODELO_PROFESSOR_IA = process.env.GEMINI_MODEL_PROFESSOR_IA || 'gemini-2.5-flash'
 const LLM_TIMEOUT_MS = parseInt(process.env.LLM_TIMEOUT_MS || '60000', 10)
 
 // Interface para resposta estruturada
@@ -126,20 +129,40 @@ export async function chamarLLMStream(
   mensagemAluno: string,
   persona: string,
   onChunk: (texto: string) => void,
-  imagemBase64?: string
+  imagemBase64?: string,
+  onSearching?: () => void
 ): Promise<ResultadoStream> {
 
   const gestorSystemPrompt = construirEnvelopeGestor(systemPrompt, contexto, persona, mensagemAluno)
 
-  const model = genAI.getGenerativeModel({
-    model: MODELO,
+  // PROFESSOR_IA usa modelo próprio (sempre Gemini, mesmo em produção com Kimi nos heróis)
+  const modeloEscolhido = persona === 'PROFESSOR_IA' ? MODELO_PROFESSOR_IA : MODELO
+
+  // Google Search grounding — ativo no PROFESSOR_IA (que sempre usa Gemini)
+  // O modelo decide quando buscar; não há custo extra de API além do GOOGLE_API_KEY existente
+  const usarGrounding = persona === 'PROFESSOR_IA'
+
+  const modelConfig: Parameters<typeof genAI.getGenerativeModel>[0] = {
+    model: modeloEscolhido,
     systemInstruction: gestorSystemPrompt,
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
       maxOutputTokens: 4000,
-    }
-  })
+    },
+  }
+
+  if (usarGrounding) {
+    // @ts-ignore — googleSearch é suportado em @google/generative-ai ≥0.21 mas ausente em tipos antigos
+    modelConfig.tools = [{ googleSearch: {} }]
+  }
+
+  const model = genAI.getGenerativeModel(modelConfig)
+
+  // Avisar frontend que a busca vai acontecer (antes da chamada LLM — feedback imediato)
+  if (usarGrounding && onSearching) {
+    onSearching()
+  }
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
@@ -184,7 +207,17 @@ export async function chamarLLMStream(
     const tokens_output = usageMetadata?.candidatesTokenCount ?? 0
     const tokens_total = usageMetadata?.totalTokenCount ?? (tokens_input + tokens_output)
 
-    return { tokens_input, tokens_output, tokens_total, tempo_ms, modelo: MODELO, processed }
+    // Log de grounding (para observabilidade — não impacta resposta)
+    if (usarGrounding) {
+      const grounding = (response as any).candidates?.[0]?.groundingMetadata
+      if (grounding?.webSearchQueries?.length) {
+        console.log(`[LLM Stream] 🔍 PROFESSOR_IA buscou: ${grounding.webSearchQueries.join(', ')}`)
+      } else {
+        console.log(`[LLM Stream] 🔍 PROFESSOR_IA: grounding ativo (sem busca explícita necessária)`)
+      }
+    }
+
+    return { tokens_input, tokens_output, tokens_total, tempo_ms, modelo: modeloEscolhido, processed }
 
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {

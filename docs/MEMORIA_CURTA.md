@@ -1,7 +1,7 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-31 — PROFESSOR_IA implementado completamente. Aguardando push + deploy Railway.
+> **Última atualização:** 2026-03-31 — PROFESSOR_IA com Google Search grounding (Gemini nativo). Aguardando push + deploy Railway.
 
 ---
 
@@ -53,6 +53,7 @@ Todos os 5 itens técnicos + Chunk 0 (DB) concluídos:
 5. ✅ CRON processa turnos PROFESSOR_IA → Qdrant com responsavel_id para pais
 - ✅ BÔNUS: `buscarContextoProfessorIA` injetado em message.ts (memory loop fechado)
 - ✅ BÔNUS: Migration `b2c_qdrant_refs.responsavel_id` aplicada no Supabase
+- ✅ Google Search grounding: `tools: [{ googleSearch: {} }]` em `chamarLLMStream` para PROFESSOR_IA + SSE `search` event + guardrail no prompt
 
 **Spec:** `docs/PROFESSOR_PENSE_AI_SPEC.md`
 

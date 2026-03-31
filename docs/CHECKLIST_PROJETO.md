@@ -55,11 +55,13 @@
 ## FASE 2.5: Workshop PROFESSOR_IA ✅ CONCLUÍDO (2026-03-31)
 
 - [x] **2.5.1** Sessão de design colaborativo com Leon — brainstorm 4 perguntas + spec aprovada
-- [x] **2.5.2** Criar prompt PROFESSOR_IA.md — 203 linhas, metodologia PENSE-AI completa
+- [x] **2.5.2** Criar prompt PROFESSOR_IA.md — metodologia PENSE-AI completa
 - [x] **2.5.3** Integrar no sistema (router, llm, interface, Qdrant, CRON, DB migration)
 - [x] **2.5.4** DB migration: `b2c_qdrant_refs.responsavel_id` — jornada pai por responsável
 - [x] **2.5.5** Memory loop: `buscarContextoProfessorIA` + injeção em message.ts
 - [x] **2.5.T** Testes: cron-professor-ia.test.ts 6/6 passando, TypeScript 0 erros
+- [x] **2.5.6** Google Search grounding (Gemini nativo) — `tools: [{ googleSearch: {} }]` em chamarLLMStream para PROFESSOR_IA + SSE `search` event + guardrail no prompt (2026-03-31)
+- [ ] **PIA-WS5 [V2]** Glossário auto-melhorável — `b2c_professor_ia_glossario` Supabase + enriquecimento via resultados de busca reais
 
 ---
 
@@ -207,6 +209,14 @@
 - [x] **H8** Migration Supabase: 3 colunas + índice parcial em b2c_turnos
 - [x] **H9** Testes: 9/9 passando + TypeScript 0 erros
 - [x] **H10** Push + deploy Railway + validação em produção ✅ (Gate Bloco H: 16/16 testes, ZERO JSON leaks — 2026-03-17)
+
+### PROFESSOR_IA — Web Search + Glossário (pendente implementação)
+
+- [ ] **PIA-WS1** Brainstorm web search concluído → spec aprovada
+- [ ] **PIA-WS2** Implementar pre-search middleware (Tavily/Brave/Exa) em message.ts para PROFESSOR_IA
+- [ ] **PIA-WS3** Glossário estático de ~50 termos IA embutido no prompt como guardrail
+- [ ] **PIA-WS4** SSE event `search` → frontend mostra "🔍 buscando sobre X..."
+- [ ] **PIA-WS5** [V2 — IDEIA PERSISTIDA] Glossário auto-evolutivo: quando agente busca termo novo e confiável, salva em b2c_professor_ia_glossario no Supabase. Próximas sessões carregam glossário dinâmico + estático. Aprende com uso real dos usuários.
 
 ### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
 
