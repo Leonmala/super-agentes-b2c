@@ -24,7 +24,10 @@ import {
   atualizarUltimoTurno,
   resetarSessaoAgente,
   buscarFilhosDaFamilia,
-  buscarTurnosDaFilha
+  buscarTurnosDaFilha,
+  buscarOuCriarSessaoSupervisor,
+  salvarTurnoSupervisor,
+  buscarUltimaInteracaoFilha
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
@@ -396,67 +399,99 @@ router.post('/message', async (req: Request, res: Response) => {
         }
       }
 
-      // Reconstruir contexto completo para SUPERVISOR_EDUCACIONAL
-      // PROBLEMA ORIGINAL: contexto base contém os turnos do PAI (não da filha)
-      // quando o pai usa SUPERVISOR via sessão tipo_usuario='pai'.
-      // SOLUÇÃO: buscar turnos reais das sessões da filha (tipo_usuario='filho')
-      // e montar contextoFinal do zero, sem os turnos do pai.
+      // ── SUPERVISOR_EDUCACIONAL: arquitetura dedicada ───────────────────────
+      // Memória independente por sessão (b2c_supervisor_sessoes).
+      // Flush automático quando nova_sessao=true.
+      // Dados honestos: acessa apenas sessões 'filho' da filha selecionada.
+      // Honesty layer: se zero dados, declara explicitamente.
       if (persona === 'SUPERVISOR_EDUCACIONAL') {
-        // 1. Todas as filhas da família
-        const todasFilhas = await buscarFilhosDaFamilia(familia_id).catch(() => [])
-
-        // 2. Turnos REAIS da filha (sessões 'filho', não do pai)
-        const turnosDaFilha = await buscarTurnosDaFilha(aluno_id, 10).catch(() => [])
-
-        // 3. Memória Qdrant da filha
-        const memoriaResultados = await buscarContextoLongoPrazo(
+        // 1. Sessão própria do Supervisor (com flush se nova_sessao)
+        const sessaoSupervisor = await buscarOuCriarSessaoSupervisor(
+          familia_id,
           aluno_id,
-          'resumo pedagógico semanal do aluno',
-          3,
-          'educacional'
-        ).catch(() => [])
+          nova_sessao === true
+        )
+
+        // 2. Dados em paralelo
+        const [todasFilhas, turnosDaFilha, memoriaResultados, ultimaInteracao] = await Promise.all([
+          buscarFilhosDaFamilia(familia_id).catch(() => []),
+          buscarTurnosDaFilha(aluno_id, 10).catch(() => []),
+          buscarContextoLongoPrazo(aluno_id, 'resumo pedagógico semanal do aluno', 3, 'educacional').catch(() => []),
+          buscarUltimaInteracaoFilha(aluno_id).catch(() => null)
+        ])
 
         const memoriaFilha = memoriaResultados.length > 0
           ? memoriaResultados.map(r => `[Semana ${r.semana_ref}]: ${r.resumo}`).join('\n\n')
           : null
 
-        // 4. Montar dados
         const listaFilhas = todasFilhas.map(f => `- ${f.nome} (${f.serie})`).join('\n')
         const filhaAtual = todasFilhas.find(f => f.id === aluno_id)
         const nomeFilhaAtual = filhaAtual?.nome || 'filha selecionada'
 
-        // 5. Histórico real da filha formatado
-        let historicoFilha = ''
-        if (turnosDaFilha.length > 0) {
-          const ordenados = [...turnosDaFilha].sort((a, b) => a.numero - b.numero)
-          historicoFilha = ordenados.map(t => {
-            const r = t.resposta.length > 300 ? t.resposta.substring(0, 300) + '...' : t.resposta
-            return `[${t.agente}] Aluno: "${t.entrada}" → Resposta: "${r}"`
-          }).join('\n')
+        // 3. Dados de atividade da filha (com honesty layer)
+        let secaoDadosFilha: string
+        if (turnosDaFilha.length === 0 && !memoriaFilha) {
+          // ZERO DADOS — instrução explícita de honestidade
+          const ultimaStr = ultimaInteracao
+            ? `Última interação registrada: ${new Date(ultimaInteracao).toLocaleDateString('pt-BR')}`
+            : 'Nunca usou a plataforma'
+          secaoDadosFilha =
+            `⚠️ ALERTA DE HONESTIDADE — ZERO DADOS:\n` +
+            `${nomeFilhaAtual} NÃO tem atividades registradas na plataforma esta semana.\n` +
+            `${ultimaStr}.\n` +
+            `INSTRUÇÃO OBRIGATÓRIA: Informe o pai diretamente que não há atividades para relatar.\n` +
+            `NÃO invente, NÃO presuma, NÃO infira atividades a partir desta conversa.\n`
+        } else {
+          // HÁ DADOS — formatar honestamente
+          let partes = ''
+          if (turnosDaFilha.length > 0) {
+            const ordenados = [...turnosDaFilha].sort((a, b) => a.numero - b.numero)
+            const turnos = ordenados.map(t => {
+              const r = t.resposta.length > 300 ? t.resposta.substring(0, 300) + '...' : t.resposta
+              return `  [${t.agente}] Aluno: "${t.entrada}" → "${r}"`
+            }).join('\n')
+            partes += `CONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} COM OS PROFESSORES:\n${turnos}\n`
+          }
+          if (memoriaFilha) {
+            partes += `\nHISTÓRICO CONSOLIDADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
+          }
+          if (ultimaInteracao) {
+            partes += `\nÚltima interação da filha: ${new Date(ultimaInteracao).toLocaleDateString('pt-BR')}\n`
+          }
+          secaoDadosFilha = partes
         }
 
-        // 6. Contexto reconstruído sem os turnos do pai
+        // 4. Histórico desta conversa com o pai (memória de sessão)
+        let secaoHistorico = ''
+        if (sessaoSupervisor.historico.length > 0) {
+          const linhas = sessaoSupervisor.historico.map(h =>
+            `[${h.role === 'pai' ? 'PAI' : 'SUPERVISOR'}]: ${h.conteudo}`
+          ).join('\n')
+          secaoHistorico =
+            `\n═══════════════════════════════════════════\n` +
+            `HISTÓRICO DESTA CONVERSA (memória de sessão):\n` +
+            `═══════════════════════════════════════════\n` +
+            linhas + '\n'
+        }
+
+        // 5. Contexto final reconstruído sem turnos do pai
         contextoFinal =
-          `MODO: SUPERVISOR_EDUCACIONAL (relatório para o responsável)\n` +
+          `MODO: SUPERVISOR_EDUCACIONAL\n` +
           `PERFIL DA FILHA SELECIONADA:\n` +
           `Nome: ${aluno.nome}, ${aluno.idade || '?'} anos, ${aluno.serie}\n` +
           (aluno.perfil ? `Perfil: ${aluno.perfil}\n` : '') +
-          (aluno.dificuldades ? `Dificuldades conhecidas: ${aluno.dificuldades}\n` : '') +
+          (aluno.dificuldades ? `Dificuldades: ${aluno.dificuldades}\n` : '') +
           (aluno.interesses ? `Interesses: ${aluno.interesses}\n` : '') +
           `\n═══════════════════════════════════════════\n` +
-          `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos cadastrados)'}\n\n` +
-          `RELATÓRIO SENDO GERADO PARA: ${nomeFilhaAtual}\n` +
-          (historicoFilha
-            ? `\nCONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} COM OS PROFESSORES:\n${historicoFilha}\n`
-            : `\nNOTA: ${nomeFilhaAtual} ainda não iniciou conversas com os professores.\n`) +
-          (memoriaFilha
-            ? `\nHISTÓRICO CONSOLIDADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
-            : '') +
+          `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos)'}\n` +
+          `RELATÓRIO PARA: ${nomeFilhaAtual}\n` +
           `═══════════════════════════════════════════\n` +
-          `ATENÇÃO: Os dados acima são das FILHAS como alunas. ` +
-          `NÃO confunda com conversas do próprio responsável.\n`
+          secaoDadosFilha +
+          secaoHistorico +
+          `═══════════════════════════════════════════\n` +
+          `ATENÇÃO: dados acima são da FILHA como aluna. NÃO confunda com conversas do responsável.\n`
 
-        console.log(`[${aluno_id}] SUPERVISOR: contexto reconstruido (${todasFilhas.length} filha(s), ${turnosDaFilha.length} turnos da filha, memoria=${!!memoriaFilha})`)
+        console.log(`[${aluno_id}] SUPERVISOR: sessao=${sessaoSupervisor.id.slice(0,8)}, historico=${sessaoSupervisor.historico.length} items, filha=${nomeFilhaAtual}, turnos=${turnosDaFilha.length}, memoria=${!!memoriaFilha}, zeroDados=${turnosDaFilha.length === 0 && !memoriaFilha}`)
       }
 
       // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)
@@ -476,6 +511,13 @@ router.post('/message', async (req: Request, res: Response) => {
         imagemBase64,
         onSearching
       )
+
+      // Salvar histórico do Supervisor após stream completo (respostaFinal preenchida)
+      if (persona === 'SUPERVISOR_EDUCACIONAL') {
+        salvarTurnoSupervisor(familia_id, mensagem.trim(), respostaFinal).catch(e =>
+          console.error('[Supervisor] Erro ao salvar histórico:', e)
+        )
+      }
 
       // Bloco H: capturar sinais pedagógicos do herói
       sinaisHeroi = resultadoHeroi.processed.sinais

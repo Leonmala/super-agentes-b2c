@@ -304,6 +304,123 @@ export async function buscarTurnosDaFilha(
   return (data || []) as Turno[]
 }
 
+// ============================================================
+// SUPERVISOR EDUCACIONAL — SESSÃO E MEMÓRIA POR CONVERSA
+// ============================================================
+
+export interface HistoricoSupervisorItem {
+  role: 'pai' | 'supervisor'
+  conteudo: string
+  ts: string
+}
+
+/**
+ * Cria ou recupera a sessão Supervisor da família.
+ * Se nova_sessao=true: limpa o histórico (flush) mas preserva ultima_interacao_pai.
+ */
+export async function buscarOuCriarSessaoSupervisor(
+  familiaId: string,
+  alunoId: string,
+  novaSessao: boolean
+): Promise<{ id: string; historico: HistoricoSupervisorItem[]; ultima_interacao_pai: string | null }> {
+  if (novaSessao) {
+    // UPSERT: garante que existe e limpa o histórico
+    const { data, error } = await supabase
+      .from('b2c_supervisor_sessoes')
+      .upsert(
+        {
+          familia_id: familiaId,
+          aluno_id: alunoId,
+          historico: [],
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'familia_id', ignoreDuplicates: false }
+      )
+      .select('id, historico, ultima_interacao_pai')
+      .single()
+
+    if (error || !data) {
+      console.error('[Supervisor] Erro ao criar sessão:', error?.message)
+      return { id: '', historico: [], ultima_interacao_pai: null }
+    }
+    return {
+      id: data.id as string,
+      historico: [],
+      ultima_interacao_pai: (data.ultima_interacao_pai as string) || null
+    }
+  }
+
+  // SELECT existente
+  const { data } = await supabase
+    .from('b2c_supervisor_sessoes')
+    .select('id, historico, ultima_interacao_pai')
+    .eq('familia_id', familiaId)
+    .single()
+
+  if (!data) {
+    // Primeira vez — criar sessão
+    return buscarOuCriarSessaoSupervisor(familiaId, alunoId, true)
+  }
+
+  return {
+    id: data.id as string,
+    historico: (data.historico as HistoricoSupervisorItem[]) || [],
+    ultima_interacao_pai: (data.ultima_interacao_pai as string) || null
+  }
+}
+
+/**
+ * Salva o par pergunta/resposta no histórico da sessão Supervisor.
+ * Mantém no máximo 20 pares (40 itens) para não inflar o contexto.
+ */
+export async function salvarTurnoSupervisor(
+  familiaId: string,
+  entradaPai: string,
+  respostaSupervisor: string
+): Promise<void> {
+  const agora = new Date().toISOString()
+
+  const novosItens: HistoricoSupervisorItem[] = [
+    { role: 'pai', conteudo: entradaPai, ts: agora },
+    { role: 'supervisor', conteudo: respostaSupervisor, ts: agora }
+  ]
+
+  // Buscar histórico atual
+  const { data } = await supabase
+    .from('b2c_supervisor_sessoes')
+    .select('historico')
+    .eq('familia_id', familiaId)
+    .single()
+
+  const historicoAtual: HistoricoSupervisorItem[] = (data?.historico as HistoricoSupervisorItem[]) || []
+  const historicoAtualizado = [...historicoAtual, ...novosItens].slice(-40) // máx 20 pares
+
+  await supabase
+    .from('b2c_supervisor_sessoes')
+    .update({
+      historico: historicoAtualizado,
+      ultima_interacao_pai: agora,
+      updated_at: agora
+    })
+    .eq('familia_id', familiaId)
+}
+
+/**
+ * Retorna o updated_at da sessão 'filho' mais recente — data real de uso da filha.
+ */
+export async function buscarUltimaInteracaoFilha(alunoId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('b2c_sessoes')
+    .select('updated_at')
+    .eq('aluno_id', alunoId)
+    .eq('tipo_usuario', 'filho')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  return (data?.updated_at as string) || null
+}
+
 /**
  * Retorna todos os alunos de uma família — usado pelo SUPERVISOR para listar filhos
  */
