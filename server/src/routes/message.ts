@@ -486,6 +486,9 @@ router.post('/message', async (req: Request, res: Response) => {
           `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos)'}\n` +
           `RELATÓRIO PARA: ${nomeFilhaAtual}\n` +
           `═══════════════════════════════════════════\n` +
+          (sessaoSupervisor.historico.length === 0
+            ? `⚠️ PRIMEIRA MENSAGEM DESTA SESSÃO — Siga o protocolo de abertura do prompt.\n`
+            : '') +
           secaoDadosFilha +
           secaoHistorico +
           `═══════════════════════════════════════════\n` +
