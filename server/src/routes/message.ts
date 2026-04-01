@@ -23,7 +23,8 @@ import {
   atualizarSessao,
   atualizarUltimoTurno,
   resetarSessaoAgente,
-  buscarFilhosDaFamilia
+  buscarFilhosDaFamilia,
+  buscarTurnosDaFilha
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
@@ -395,12 +396,19 @@ router.post('/message', async (req: Request, res: Response) => {
         }
       }
 
-      // Injetar contexto rico para SUPERVISOR_EDUCACIONAL
+      // Reconstruir contexto completo para SUPERVISOR_EDUCACIONAL
+      // PROBLEMA ORIGINAL: contexto base contém os turnos do PAI (não da filha)
+      // quando o pai usa SUPERVISOR via sessão tipo_usuario='pai'.
+      // SOLUÇÃO: buscar turnos reais das sessões da filha (tipo_usuario='filho')
+      // e montar contextoFinal do zero, sem os turnos do pai.
       if (persona === 'SUPERVISOR_EDUCACIONAL') {
-        // 1. Buscar todas as filhas da família
+        // 1. Todas as filhas da família
         const todasFilhas = await buscarFilhosDaFamilia(familia_id).catch(() => [])
 
-        // 2. Buscar histórico Qdrant da filha atualmente selecionada
+        // 2. Turnos REAIS da filha (sessões 'filho', não do pai)
+        const turnosDaFilha = await buscarTurnosDaFilha(aluno_id, 10).catch(() => [])
+
+        // 3. Memória Qdrant da filha
         const memoriaResultados = await buscarContextoLongoPrazo(
           aluno_id,
           'resumo pedagógico semanal do aluno',
@@ -412,26 +420,43 @@ router.post('/message', async (req: Request, res: Response) => {
           ? memoriaResultados.map(r => `[Semana ${r.semana_ref}]: ${r.resumo}`).join('\n\n')
           : null
 
-        // 3. Montar lista de filhas para o agente saber quem existe
-        const listaFilhas = todasFilhas
-          .map(f => `- ${f.nome} (${f.serie})`)
-          .join('\n')
-
+        // 4. Montar dados
+        const listaFilhas = todasFilhas.map(f => `- ${f.nome} (${f.serie})`).join('\n')
         const filhaAtual = todasFilhas.find(f => f.id === aluno_id)
         const nomeFilhaAtual = filhaAtual?.nome || 'filha selecionada'
 
-        contextoFinal = contexto +
-          `\n\n═══════════════════════════════════════════\n` +
-          `SUPERVISOR — DADOS PEDAGÓGICOS\n` +
-          `═══════════════════════════════════════════\n` +
+        // 5. Histórico real da filha formatado
+        let historicoFilha = ''
+        if (turnosDaFilha.length > 0) {
+          const ordenados = [...turnosDaFilha].sort((a, b) => a.numero - b.numero)
+          historicoFilha = ordenados.map(t => {
+            const r = t.resposta.length > 300 ? t.resposta.substring(0, 300) + '...' : t.resposta
+            return `[${t.agente}] Aluno: "${t.entrada}" → Resposta: "${r}"`
+          }).join('\n')
+        }
+
+        // 6. Contexto reconstruído sem os turnos do pai
+        contextoFinal =
+          `MODO: SUPERVISOR_EDUCACIONAL (relatório para o responsável)\n` +
+          `PERFIL DA FILHA SELECIONADA:\n` +
+          `Nome: ${aluno.nome}, ${aluno.idade || '?'} anos, ${aluno.serie}\n` +
+          (aluno.perfil ? `Perfil: ${aluno.perfil}\n` : '') +
+          (aluno.dificuldades ? `Dificuldades conhecidas: ${aluno.dificuldades}\n` : '') +
+          (aluno.interesses ? `Interesses: ${aluno.interesses}\n` : '') +
+          `\n═══════════════════════════════════════════\n` +
           `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos cadastrados)'}\n\n` +
           `RELATÓRIO SENDO GERADO PARA: ${nomeFilhaAtual}\n` +
+          (historicoFilha
+            ? `\nCONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} COM OS PROFESSORES:\n${historicoFilha}\n`
+            : `\nNOTA: ${nomeFilhaAtual} ainda não iniciou conversas com os professores.\n`) +
           (memoriaFilha
-            ? `\nHISTÓRICO DE APRENDIZADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
-            : `\nNOTA: Ainda não há histórico semanal consolidado para ${nomeFilhaAtual}. Use os turnos recentes disponíveis.\n`) +
-          `═══════════════════════════════════════════\n`
+            ? `\nHISTÓRICO CONSOLIDADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
+            : '') +
+          `═══════════════════════════════════════════\n` +
+          `ATENÇÃO: Os dados acima são das FILHAS como alunas. ` +
+          `NÃO confunda com conversas do próprio responsável.\n`
 
-        console.log(`[${aluno_id}] SUPERVISOR: contexto enriquecido (${todasFilhas.length} filha(s), memoria=${!!memoriaFilha})`)
+        console.log(`[${aluno_id}] SUPERVISOR: contexto reconstruido (${todasFilhas.length} filha(s), ${turnosDaFilha.length} turnos da filha, memoria=${!!memoriaFilha})`)
       }
 
       // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)

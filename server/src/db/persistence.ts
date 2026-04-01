@@ -269,6 +269,42 @@ export async function buscarSinaisAluno(
 }
 
 /**
+ * Busca os turnos REAIS da filha como aluna (sessões tipo_usuario='filho')
+ * Usado pelo SUPERVISOR para ver o que a filha estudou — NÃO os turnos do pai
+ */
+export async function buscarTurnosDaFilha(
+  alunoId: string,
+  limite: number = 10
+): Promise<Turno[]> {
+  // Sessões onde a filha usou o sistema como aluna
+  const { data: sessoes } = await supabase
+    .from('b2c_sessoes')
+    .select('id')
+    .eq('aluno_id', alunoId)
+    .eq('tipo_usuario', 'filho')
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (!sessoes || sessoes.length === 0) return []
+
+  const sessaoIds = sessoes.map((s: { id: string }) => s.id)
+
+  const { data, error } = await supabase
+    .from('b2c_turnos')
+    .select('*')
+    .in('sessao_id', sessaoIds)
+    .order('created_at', { ascending: false })
+    .limit(limite)
+
+  if (error) {
+    console.error('Erro ao buscar turnos da filha:', error)
+    return []
+  }
+
+  return (data || []) as Turno[]
+}
+
+/**
  * Retorna todos os alunos de uma família — usado pelo SUPERVISOR para listar filhos
  */
 export async function buscarFilhosDaFamilia(familiaId: string): Promise<Aluno[]> {
