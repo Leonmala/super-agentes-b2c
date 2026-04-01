@@ -270,18 +270,24 @@ export async function buscarSinaisAluno(
 
 /**
  * Busca os turnos REAIS da filha como aluna (sessões tipo_usuario='filho')
- * Usado pelo SUPERVISOR para ver o que a filha estudou — NÃO os turnos do pai
+ * Limitado aos últimos 14 dias para evitar resíduo de sessões de teste.
+ * Usado pelo SUPERVISOR — NÃO retorna turnos do pai.
  */
 export async function buscarTurnosDaFilha(
   alunoId: string,
-  limite: number = 10
+  limite: number = 10,
+  diasAtras: number = 14
 ): Promise<Turno[]> {
-  // Sessões onde a filha usou o sistema como aluna
+  const dataCorte = new Date()
+  dataCorte.setDate(dataCorte.getDate() - diasAtras)
+
+  // Sessões da filha como aluna nos últimos N dias
   const { data: sessoes } = await supabase
     .from('b2c_sessoes')
     .select('id')
     .eq('aluno_id', alunoId)
     .eq('tipo_usuario', 'filho')
+    .gte('updated_at', dataCorte.toISOString())
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -293,6 +299,7 @@ export async function buscarTurnosDaFilha(
     .from('b2c_turnos')
     .select('*')
     .in('sessao_id', sessaoIds)
+    .gte('created_at', dataCorte.toISOString())
     .order('created_at', { ascending: false })
     .limit(limite)
 

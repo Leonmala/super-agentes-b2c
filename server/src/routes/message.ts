@@ -443,14 +443,30 @@ router.post('/message', async (req: Request, res: Response) => {
             `NÃO invente, NÃO presuma, NÃO infira atividades a partir desta conversa.\n`
         } else {
           // HÁ DADOS — formatar honestamente
+          const NOMES_AGENTES: Record<string, string> = {
+            CALCULUS: 'Matemática',
+            VERBETTA: 'Português',
+            NEURON: 'Ciências/Biologia',
+            TEMPUS: 'História',
+            GAIA: 'Geografia',
+            VECTOR: 'Física',
+            ALKA: 'Química',
+            FLEX: 'Inglês/Espanhol',
+            PSICOPEDAGOGICO: 'Orientação pedagógica',
+            SUPERVISOR_EDUCACIONAL: 'Supervisor',
+            PROFESSOR_IA: 'Professor de IA',
+          }
+
           let partes = ''
           if (turnosDaFilha.length > 0) {
             const ordenados = [...turnosDaFilha].sort((a, b) => a.numero - b.numero)
             const turnos = ordenados.map(t => {
-              const r = t.resposta.length > 300 ? t.resposta.substring(0, 300) + '...' : t.resposta
-              return `  [${t.agente}] Aluno: "${t.entrada}" → "${r}"`
+              const nomeAgente = NOMES_AGENTES[t.agente] || t.agente
+              const data = new Date(t.created_at).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+              const entrada = t.entrada.length > 150 ? t.entrada.substring(0, 150) + '...' : t.entrada
+              return `  [${data} — ${nomeAgente}] Pergunta: "${entrada}"`
             }).join('\n')
-            partes += `CONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} COM OS PROFESSORES:\n${turnos}\n`
+            partes += `CONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} (últimos 14 dias):\n${turnos}\n`
           }
           if (memoriaFilha) {
             partes += `\nHISTÓRICO CONSOLIDADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
