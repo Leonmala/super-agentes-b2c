@@ -71,8 +71,8 @@ export const AGENTES_ESPECIAIS: Record<string, {
   professor_ia: {
     nome: 'Prof. Pense-AI',
     materia: 'Uso de IA & Prompts',
-    gradientFrom: '#0F766E',
-    gradientTo: '#042F2E',
+    gradientFrom: '#B45309',
+    gradientTo: '#3B1A00',
     avatar: '/LogoPenseAI.png',
   },
   supervisor: {
