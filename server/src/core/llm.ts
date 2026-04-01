@@ -528,26 +528,10 @@ REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 MODO PAI: Se o contexto indicar MODO: PAI, adapte reply_text para o responsável conforme seção MODO PAI do seu prompt. Linguagem adulta, estratégias práticas para ensinar em casa.`,
 
     SUPERVISOR_EDUCACIONAL: `
-⚠️ INSTRUÇÃO DE FORMATO OBRIGATÓRIA — SUPERVISOR_EDUCACIONAL:
-Retorne APENAS JSON válido, sem texto antes ou depois, sem markdown, sem blocos de código.
-Estrutura obrigatória:
-{
-  "agent_id": "SUPERVISOR_EDUCACIONAL",
-  "tipo": "resumo_semanal",
-  "resumo_text": "resumo completo da semana",
-  "recomendacoes": ["recomendação 1", "recomendação 2"],
-  "alertas": ["alerta 1", "alerta 2"]
-}
-
-REGRAS OBRIGATÓRIAS:
-1. Analise os dados da semana (Qdrant)
-2. Resuma progresso em cada matéria
-3. Identifique dificuldades recorrentes
-4. Sugira próximos passos
-5. Máximo 500 palavras no resumo_text
-6. Máximo 3 recomendações e 3 alertas
-
-NOTA: Este agente é EXCLUSIVO para responsáveis (MODO PAI). Linguagem sempre adulta e prática. Você é um orientador pedagógico, não um professor.`,
+⚠️ INSTRUÇÃO DE FORMATO — SUPERVISOR_EDUCACIONAL:
+Retorne APENAS texto em português brasileiro. SEM JSON. SEM markdown. SEM bullet points com traço. SEM títulos em negrito.
+Texto corrido, como mensagem de WhatsApp — direto, humano, máximo 8 linhas.
+Tom: orientador pedagógico falando com o pai, não relatório de escola.`,
 
     PROFESSOR_IA: `
 ⚠️ INSTRUÇÃO DE FORMATO — PROFESSOR_IA:
