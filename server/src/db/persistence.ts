@@ -2,7 +2,7 @@
 // Todas as tabelas usam prefixo b2c_ para isolamento no Supabase
 
 import { supabase } from './supabase.js'
-import type { Sessao, Turno } from './supabase.js'
+import type { Aluno, Sessao, Turno } from './supabase.js'
 import type { SinaisPedagogicos } from '../core/response-processor.js'
 
 export async function persistirTurno(
@@ -266,6 +266,20 @@ export async function buscarSinaisAluno(
   }
 
   return (data || []) as Turno[]
+}
+
+/**
+ * Retorna todos os alunos de uma família — usado pelo SUPERVISOR para listar filhos
+ */
+export async function buscarFilhosDaFamilia(familiaId: string): Promise<Aluno[]> {
+  const { data, error } = await supabase
+    .from('b2c_alunos')
+    .select('*')
+    .eq('familia_id', familiaId)
+    .order('nome', { ascending: true })
+
+  if (error) throw new Error(`Erro ao buscar filhos: ${error.message}`)
+  return (data || []) as Aluno[]
 }
 
 /**

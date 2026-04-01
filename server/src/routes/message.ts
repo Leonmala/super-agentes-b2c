@@ -22,10 +22,11 @@ import {
   persistirTurno,
   atualizarSessao,
   atualizarUltimoTurno,
-  resetarSessaoAgente
+  resetarSessaoAgente,
+  buscarFilhosDaFamilia
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
-import { buscarContextoProfessorIA } from '../db/qdrant.js'
+import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
 import { registrarDispositivo, verificarLimiteDispositivos } from '../core/dispositivos.js'
 
@@ -392,6 +393,45 @@ router.post('/message', async (req: Request, res: Response) => {
             `Não comece do zero. Reconheça o progresso já feito implicitamente.\n`
           console.log(`[${aluno_id}] PROFESSOR_IA: memória longa injetada (${memoriaLonga.length} chars)`)
         }
+      }
+
+      // Injetar contexto rico para SUPERVISOR_EDUCACIONAL
+      if (persona === 'SUPERVISOR_EDUCACIONAL') {
+        // 1. Buscar todas as filhas da família
+        const todasFilhas = await buscarFilhosDaFamilia(familia_id).catch(() => [])
+
+        // 2. Buscar histórico Qdrant da filha atualmente selecionada
+        const memoriaResultados = await buscarContextoLongoPrazo(
+          aluno_id,
+          'resumo pedagógico semanal do aluno',
+          3,
+          'educacional'
+        ).catch(() => [])
+
+        const memoriaFilha = memoriaResultados.length > 0
+          ? memoriaResultados.map(r => `[Semana ${r.semana_ref}]: ${r.resumo}`).join('\n\n')
+          : null
+
+        // 3. Montar lista de filhas para o agente saber quem existe
+        const listaFilhas = todasFilhas
+          .map(f => `- ${f.nome} (${f.serie})`)
+          .join('\n')
+
+        const filhaAtual = todasFilhas.find(f => f.id === aluno_id)
+        const nomeFilhaAtual = filhaAtual?.nome || 'filha selecionada'
+
+        contextoFinal = contexto +
+          `\n\n═══════════════════════════════════════════\n` +
+          `SUPERVISOR — DADOS PEDAGÓGICOS\n` +
+          `═══════════════════════════════════════════\n` +
+          `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos cadastrados)'}\n\n` +
+          `RELATÓRIO SENDO GERADO PARA: ${nomeFilhaAtual}\n` +
+          (memoriaFilha
+            ? `\nHISTÓRICO DE APRENDIZADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
+            : `\nNOTA: Ainda não há histórico semanal consolidado para ${nomeFilhaAtual}. Use os turnos recentes disponíveis.\n`) +
+          `═══════════════════════════════════════════\n`
+
+        console.log(`[${aluno_id}] SUPERVISOR: contexto enriquecido (${todasFilhas.length} filha(s), memoria=${!!memoriaFilha})`)
       }
 
       // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)
