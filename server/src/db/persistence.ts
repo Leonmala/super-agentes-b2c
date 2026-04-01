@@ -91,11 +91,14 @@ export async function buscarOuCriarSessao(
   alunoId: string,
   tipoUsuario: 'filho' | 'pai' = 'filho'
 ): Promise<Sessao> {
-  // Buscar sessão ativa existente
+  // Buscar sessão ativa existente — FILTRO POR tipo_usuario obrigatório
+  // Sem esse filtro, sessões 'pai' e 'filho' se misturam no mesmo aluno_id,
+  // contaminando os dados do aluno com conversas do responsável.
   const { data: sessoes, error: erroBusca } = await supabase
     .from('b2c_sessoes')
     .select('*')
     .eq('aluno_id', alunoId)
+    .eq('tipo_usuario', tipoUsuario)
     .eq('status', 'ativa')
     .order('created_at', { ascending: false })
     .limit(1)
