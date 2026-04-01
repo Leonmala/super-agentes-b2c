@@ -532,8 +532,10 @@ router.post('/message', async (req: Request, res: Response) => {
       )
 
       // Salvar histórico do Supervisor após stream completo (respostaFinal preenchida)
+      // AWAIT obrigatório: fire-and-forget causava race condition — próximo request chegava
+      // antes do save completar, agente perdia memória do turno anterior e repetia tudo.
       if (persona === 'SUPERVISOR_EDUCACIONAL') {
-        salvarTurnoSupervisor(familia_id, mensagem.trim(), respostaFinal).catch(e =>
+        await salvarTurnoSupervisor(familia_id, mensagem.trim(), respostaFinal).catch(e =>
           console.error('[Supervisor] Erro ao salvar histórico:', e)
         )
       }
