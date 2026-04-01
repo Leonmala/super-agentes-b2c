@@ -413,19 +413,30 @@ export async function salvarTurnoSupervisor(
 }
 
 /**
- * Retorna o updated_at da sessão 'filho' mais recente — data real de uso da filha.
+ * Retorna a data do turno mais recente da filha como aluna.
+ * Usa b2c_turnos.created_at — turno só existe quando a aluna enviou mensagem.
+ * NÃO usa b2c_sessoes.updated_at (pode ser atualizado por operações do sistema).
  */
 export async function buscarUltimaInteracaoFilha(alunoId: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data: sessoes } = await supabase
     .from('b2c_sessoes')
-    .select('updated_at')
+    .select('id')
     .eq('aluno_id', alunoId)
     .eq('tipo_usuario', 'filho')
-    .order('updated_at', { ascending: false })
+
+  if (!sessoes || sessoes.length === 0) return null
+
+  const sessaoIds = sessoes.map((s: { id: string }) => s.id)
+
+  const { data } = await supabase
+    .from('b2c_turnos')
+    .select('created_at')
+    .in('sessao_id', sessaoIds)
+    .order('created_at', { ascending: false })
     .limit(1)
     .single()
 
-  return (data?.updated_at as string) || null
+  return (data?.created_at as string) || null
 }
 
 /**
