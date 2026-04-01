@@ -415,7 +415,7 @@ router.post('/message', async (req: Request, res: Response) => {
         // 2. Dados em paralelo
         const [todasFilhas, turnosDaFilha, memoriaResultados, ultimaInteracao] = await Promise.all([
           buscarFilhosDaFamilia(familia_id).catch(() => []),
-          buscarTurnosDaFilha(aluno_id, 10).catch(() => []),
+          buscarTurnosDaFilha(aluno_id, 30).catch(() => []),
           buscarContextoLongoPrazo(aluno_id, 'resumo pedagógico semanal do aluno', 3, 'educacional').catch(() => []),
           buscarUltimaInteracaoFilha(aluno_id).catch(() => null)
         ])
