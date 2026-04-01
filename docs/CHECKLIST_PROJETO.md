@@ -62,6 +62,8 @@
 - [x] **2.5.T** Testes: cron-professor-ia.test.ts 6/6 passando, TypeScript 0 erros
 - [x] **2.5.6** Google Search grounding (Gemini nativo) — `tools: [{ googleSearch: {} }]` em chamarLLMStream para PROFESSOR_IA + SSE `search` event + guardrail no prompt (2026-03-31)
 - [ ] **PIA-WS5 [V2]** Glossário auto-melhorável — `b2c_professor_ia_glossario` Supabase + enriquecimento via resultados de busca reais
+- [x] **BUG-52** Cor PROFESSOR_IA no header: teal → âmbar (`#B45309` / `#3B1A00`) ✅ 2026-04-01
+- [x] **BUG-51** Supervisor injeta lista de filhas + Qdrant da filha selecionada + instrução multi-filho no prompt ✅ 2026-04-01
 
 ---
 

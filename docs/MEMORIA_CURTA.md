@@ -1,16 +1,16 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-03-31 — PROFESSOR_IA com Google Search grounding (Gemini nativo). Aguardando push + deploy Railway.
+> **Última atualização:** 2026-04-01 — BUG-51 e BUG-52 resolvidos. Push Railway feito. Próximo: Brainstorm Super Prova com Leon.
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Polimento Pré-Venda — Professor Pense-AI ✅ IMPLEMENTADO (aguardando push) → Super Prova → Fase 5 SaaS
-**Status:** Implementação completa. TypeScript 0 erros (server + web). 6/6 testes unitários passando. Escape Hatch montado para Leon fazer push.
+**Fase atual:** Polimento Pré-Venda — BUG-51 ✅ + BUG-52 ✅ em produção → Próximo: Brainstorm Super Prova → Fase 5 SaaS
+**Status:** Todos os bugs conhecidos resolvidos. Deploy Railway ativo.
 **URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo:** Leon roda Escape Hatch (push) → deploy Railway → teste manual 3 cenários → brainstorm Super Prova
+**Próximo (INÍCIO DA PRÓXIMA SESSÃO):** Brainstorm Super Prova com Leon (PE3)
 
 ---
 
@@ -54,23 +54,27 @@ Todos os 5 itens técnicos + Chunk 0 (DB) concluídos:
 - ✅ BÔNUS: `buscarContextoProfessorIA` injetado em message.ts (memory loop fechado)
 - ✅ BÔNUS: Migration `b2c_qdrant_refs.responsavel_id` aplicada no Supabase
 - ✅ Google Search grounding: `tools: [{ googleSearch: {} }]` em `chamarLLMStream` para PROFESSOR_IA + SSE `search` event + guardrail no prompt
+- ✅ Fix: Supervisor não funcionava (`'supervisor'.toUpperCase()` → `'SUPERVISOR'` ≠ `'SUPERVISOR_EDUCACIONAL'`) — adicionado mapa explícito `MENU_TO_AGENTE` em `ChatInput.tsx`
+- ✅ Fix: Header não atualizava ao trocar para Supervisor/PROFESSOR_IA — `ChatHeader` agora lê `agenteMenu` e usa `AGENTES_ESPECIAIS` de `constants.ts`. "Prof. Pense-AI" aparece imediatamente ao selecionar no menu.
 
 **Spec:** `docs/PROFESSOR_PENSE_AI_SPEC.md`
 
 ---
 
-## Próximo Passo Exato
+## Próximo Passo Exato — BOOT DE AMANHÃ
 
-**Próximo imediato:** Leon roda Escape Hatch → push → Railway deploy → teste manual 3 cenários
+**Próximo:** Brainstorm Super Prova com Leon (PE3) → Fase 5 SaaS
 
-Ordem de execução:
+Ordem de execução completa:
 1. ✅ Brainstorm PROFESSOR_IA com Leon → spec aprovada
 2. ✅ writing-plans → plano detalhado de implementação
 3. ✅ Executar todos os itens técnicos (prompt + fixes + CRON + Qdrant + DB)
-4. ⏳ Push para GitHub (Escape Hatch) → deploy Railway
-5. ⏳ Teste manual 3 cenários (aluno Modo Prompt / Modo Conversa / pai)
-6. ⏳ Brainstorm Super Prova com Leon → spec → implementação
-7. ⏳ Fase 5 SaaS (Landing + Checkout + Onboarding)
+4. ✅ Push + deploy Railway (PROFESSOR_IA em produção)
+5. ✅ Fixes: Supervisor quebrado + header agentes especiais
+6. ✅ Bug #52: cor âmbar PROFESSOR_IA — `gradientFrom: '#B45309', gradientTo: '#3B1A00'`
+7. ✅ Bug #51: Supervisor injeta lista de filhas + histórico Qdrant da filha selecionada + instrução multi-filho no prompt
+8. ⏳ Brainstorm Super Prova com Leon → spec → implementação
+9. ⏳ Fase 5 SaaS (Landing + Checkout + Onboarding)
 
 ---
 
