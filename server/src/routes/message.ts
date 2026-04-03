@@ -27,7 +27,8 @@ import {
   buscarTurnosDaFilha,
   buscarOuCriarSessaoSupervisor,
   salvarTurnoSupervisor,
-  buscarUltimaInteracaoFilha
+  buscarUltimaInteracaoFilha,
+  buscarNomeResponsavel
 } from '../db/persistence.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
@@ -405,19 +406,19 @@ router.post('/message', async (req: Request, res: Response) => {
       // Dados honestos: acessa apenas sessões 'filho' da filha selecionada.
       // Honesty layer: se zero dados, declara explicitamente.
       if (persona === 'SUPERVISOR_EDUCACIONAL') {
-        // 1. Sessão própria do Supervisor (com flush se nova_sessao)
+        // 1. Sessão própria do Supervisor — por família (flush ao entrar, não ao trocar filha)
         const sessaoSupervisor = await buscarOuCriarSessaoSupervisor(
           familia_id,
-          aluno_id,
           nova_sessao === true
         )
 
         // 2. Dados em paralelo
-        const [todasFilhas, turnosDaFilha, memoriaResultados, ultimaInteracao] = await Promise.all([
+        const [todasFilhas, turnosDaFilha, memoriaResultados, ultimaInteracao, nomeResponsavel] = await Promise.all([
           buscarFilhosDaFamilia(familia_id).catch(() => []),
-          buscarTurnosDaFilha(aluno_id, 30).catch(() => []),
+          buscarTurnosDaFilha(aluno_id, 50, 30).catch(() => []),
           buscarContextoLongoPrazo(aluno_id, 'resumo pedagógico semanal do aluno', 3, 'educacional').catch(() => []),
-          buscarUltimaInteracaoFilha(aluno_id).catch(() => null)
+          buscarUltimaInteracaoFilha(aluno_id).catch(() => null),
+          buscarNomeResponsavel(familia_id).catch(() => null)
         ])
 
         const memoriaFilha = memoriaResultados.length > 0
@@ -428,19 +429,16 @@ router.post('/message', async (req: Request, res: Response) => {
         const filhaAtual = todasFilhas.find(f => f.id === aluno_id)
         const nomeFilhaAtual = filhaAtual?.nome || 'filha selecionada'
 
-        // 3. Dados de atividade da filha (com honesty layer)
+        // 3. Dados de atividade da filha
         let secaoDadosFilha: string
         if (turnosDaFilha.length === 0 && !memoriaFilha) {
-          // ZERO DADOS — instrução explícita de honestidade
+          // ZERO DADOS — apenas o fato, sem instrução embutida
           const ultimaStr = ultimaInteracao
-            ? `Última interação registrada: ${new Date(ultimaInteracao).toLocaleDateString('pt-BR')}`
-            : 'Nunca usou a plataforma'
+            ? `Última interação: ${new Date(ultimaInteracao).toLocaleDateString('pt-BR')}`
+            : 'Nenhuma interação registrada'
           secaoDadosFilha =
-            `⚠️ ALERTA DE HONESTIDADE — ZERO DADOS:\n` +
-            `${nomeFilhaAtual} NÃO tem atividades registradas na plataforma esta semana.\n` +
-            `${ultimaStr}.\n` +
-            `INSTRUÇÃO OBRIGATÓRIA: Informe o pai diretamente que não há atividades para relatar.\n` +
-            `NÃO invente, NÃO presuma, NÃO infira atividades a partir desta conversa.\n`
+            `SEM ATIVIDADES REGISTRADAS (${nomeFilhaAtual}):\n` +
+            `${ultimaStr}\n`
         } else {
           // HÁ DADOS — formatar honestamente
           const NOMES_AGENTES: Record<string, string> = {
@@ -466,7 +464,7 @@ router.post('/message', async (req: Request, res: Response) => {
               const entrada = t.entrada.length > 150 ? t.entrada.substring(0, 150) + '...' : t.entrada
               return `  [${data} — ${nomeAgente}] Pergunta: "${entrada}"`
             }).join('\n')
-            partes += `CONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} (últimos 14 dias):\n${turnos}\n`
+            partes += `CONVERSAS RECENTES DE ${nomeFilhaAtual.toUpperCase()} (últimos 30 dias):\n${turnos}\n`
           }
           if (memoriaFilha) {
             partes += `\nHISTÓRICO CONSOLIDADO (${nomeFilhaAtual}):\n${memoriaFilha}\n`
@@ -490,27 +488,23 @@ router.post('/message', async (req: Request, res: Response) => {
             linhas + '\n'
         }
 
-        // 5. Contexto final reconstruído sem turnos do pai
+        // 5. Contexto final — apenas dados, sem instruções embutidas
+        const primeiraMsg = sessaoSupervisor.historico.length === 0
         contextoFinal =
-          `MODO: SUPERVISOR_EDUCACIONAL\n` +
-          `PERFIL DA FILHA SELECIONADA:\n` +
+          (nomeResponsavel ? `RESPONSÁVEL: ${nomeResponsavel}\n` : '') +
+          `\nPERFIL DA FILHA SELECIONADA:\n` +
           `Nome: ${aluno.nome}, ${aluno.idade || '?'} anos, ${aluno.serie}\n` +
           (aluno.perfil ? `Perfil: ${aluno.perfil}\n` : '') +
           (aluno.dificuldades ? `Dificuldades: ${aluno.dificuldades}\n` : '') +
           (aluno.interesses ? `Interesses: ${aluno.interesses}\n` : '') +
-          `\n═══════════════════════════════════════════\n` +
-          `FILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos)'}\n` +
-          `RELATÓRIO PARA: ${nomeFilhaAtual}\n` +
-          `═══════════════════════════════════════════\n` +
-          (sessaoSupervisor.historico.length === 0
-            ? `⚠️ PRIMEIRA MENSAGEM DESTA SESSÃO — Siga o protocolo de abertura do prompt.\n`
-            : '') +
+          `\nFILHAS DESTA FAMÍLIA:\n${listaFilhas || '(sem filhos)'}\n` +
+          `RELATÓRIO ATUAL: ${nomeFilhaAtual}\n` +
+          (primeiraMsg ? `ABERTURA: primeira mensagem desta sessão\n` : '') +
+          `\n` +
           secaoDadosFilha +
-          secaoHistorico +
-          `═══════════════════════════════════════════\n` +
-          `ATENÇÃO: dados acima são da FILHA como aluna. NÃO confunda com conversas do responsável.\n`
+          secaoHistorico
 
-        console.log(`[${aluno_id}] SUPERVISOR: sessao=${sessaoSupervisor.id.slice(0,8)}, historico=${sessaoSupervisor.historico.length} items, filha=${nomeFilhaAtual}, turnos=${turnosDaFilha.length}, memoria=${!!memoriaFilha}, zeroDados=${turnosDaFilha.length === 0 && !memoriaFilha}`)
+        console.log(`[${familia_id}] SUPERVISOR: sessao=${sessaoSupervisor.id.slice(0,8)}, pai=${nomeResponsavel || '?'}, historico=${sessaoSupervisor.historico.length} items, filha=${nomeFilhaAtual}, turnos=${turnosDaFilha.length}, memoria=${!!memoriaFilha}, zeroDados=${turnosDaFilha.length === 0 && !memoriaFilha}`)
       }
 
       // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)

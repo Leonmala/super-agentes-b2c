@@ -1,80 +1,83 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização (Boot do Ralph Loop).
-> **Última atualização:** 2026-04-01 — BUG-51 e BUG-52 resolvidos. Push Railway feito. Próximo: Brainstorm Super Prova com Leon.
+> **Última atualização:** 2026-04-03 — Supervisor 100% funcional. Sessão por família + nome do pai + qualidade de resposta resolvida. Próximo: git push + Brainstorm Super Prova.
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Polimento Pré-Venda — BUG-51 ✅ + BUG-52 ✅ em produção → Próximo: Brainstorm Super Prova → Fase 5 SaaS
-**Status:** Todos os bugs conhecidos resolvidos. Deploy Railway ativo.
+**Fase atual:** Polimento Pré-Venda — SUPERVISOR ✅ 100% completo → Próximo: git push + Brainstorm Super Prova (PE3) → Fase 5 SaaS
+**Status:** Supervisor funcionando com tom PENSE-AI, sessão por família, saudação personalizada com nome do pai.
 **URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo (INÍCIO DA PRÓXIMA SESSÃO):** Brainstorm Super Prova com Leon (PE3)
+**Próximo (INÍCIO DA PRÓXIMA SESSÃO):** git push via Escape Hatch → Brainstorm Super Prova com Leon
 
 ---
 
 ## Último Slice Completado
 
-**Slice:** Professor Pense-AI (2026-03-31) ✅ implementado, aguardando push
-- Migration Supabase: `b2c_qdrant_refs.responsavel_id` adicionada ✅
-- `server/src/personas/PROFESSOR_IA.md` — 203 linhas, prompt completo ✅
-- `message.ts`: PROFESSOR_IA em AGENTES_OVERRIDE_VALIDOS + injeção contexto Qdrant ✅
-- `llm.ts`: instrução formato plain-text PROFESSOR_IA ✅
-- `ChatInput.tsx`: agenteMenu passado como override ✅
-- `qdrant.ts`: `buscarContextoProfessorIA` + `salvarEmbeddingSemanal` com `tipo` ✅
-- `cron.ts`: `processarProfessorIATurnos` + `gerarResumoProfessorIA` + responsavel_id ✅
-- Testes: `cron-professor-ia.test.ts` 6/6 passando ✅
+**Slice:** SUPERVISOR completo (2026-04-03) ✅
+
+### Fixes aplicados (nesta sessão):
+
+**Fix 1 — diasAtras bug (message.ts):**
+- Fix: `buscarTurnosDaFilha(aluno_id, 50, 30)` — busca 30 dias atrás
+
+**Fix 2 — Instruções no contexto (message.ts):**
+- Fix: contexto contém APENAS dados (padrão PROFESSOR_IA)
+
+**Fix 3 — Prompt contradição (SUPERVISOR_EDUCACIONAL.md):**
+- Fix: removida estrutura numerada, substituída por prosa
+
+**Fix 4 — Instrução de formato (llm.ts):**
+- Temperature 0.3, frases proibidas reforçadas
+
+**Fix 5 — Sessão por família (persistence.ts + message.ts):**
+- Bug: `buscarOuCriarSessaoSupervisor` tinha `alunoId` como parâmetro → criava sessão por filha, não por família
+- Fix: removido `alunoId` da função. Sessão é por `familia_id` apenas.
+- Pai pode conversar sobre Layla e depois Maria Paz sem resetar sessão
+- Flush acontece apenas ao entrar no agente (nova_sessao=true do frontend)
+
+**Fix 6 — Nome do responsável no contexto (persistence.ts + message.ts):**
+- Adicionado: `buscarNomeResponsavel(familiaId)` — busca `b2c_responsaveis.nome` por `familia_id`
+- Injeta `RESPONSÁVEL: Leon` no contexto do SUPERVISOR
+- Prompt atualizado para usar o nome na saudação de abertura
+
+### Resultado dos testes (04/04):
+- ✅ "ola" → "Olá, Leon! Tudo bem? Sobre qual das meninas você gostaria de conversar hoje, a Layla ou a Maria Paz?"
+- ✅ "quero saber sobre a Layla" → cita dados reais ("21-01=18...em que mundo isso calculus")
+- ✅ "e sobre a Maria Paz?" (aluno_id trocado, sem nova_sessao) → identifica zero dados, sugere engajamento
+- ✅ Sessão mantida ao trocar de filha — sem flush indevido
+- ✅ Prosa sem listas, sem closings CSR
 
 ---
 
-## Estado do Produto em Produção
+## Estado do Produto (local — aguardando push)
 
 | Bloco | Status | Detalhes |
 |-------|--------|---------|
 | Fases 1-4 (backend, agentes, frontend, infra) | ✅ 100% | Todos os gates passando |
-| Visual Refactor V5 (Bloco D) | ✅ | Plus Jakarta Sans, glassmorphism, design tokens, gradientes heróis |
-| Robustez + UX (Bloco G) | ✅ | useBubbleReveal, TypingDots, timeout 15min, router async |
-| Disjuntores Arquiteturais (Bloco H) | ✅ | response-processor 4 camadas, fallback messages, sinais persistidos |
-| Botão + multimodal (PE1) | ✅ | Compressão, preview, análise de imagem, shimmer — 2026-03-18 |
-| Router fix (PE2) | ✅ | word boundary ≤4 chars, stickiness guard, 306 testes — 2026-03-18 |
-| PROFESSOR_IA | ✅ IMPLEMENTADO | Aguardando push + deploy |
-| Super Prova | ❌ | Brainstorm pendente |
+| PROFESSOR_IA | ✅ Em produção | Google Search grounding ativo |
+| SUPERVISOR qualidade | ✅ RESOLVIDO hoje | diasAtras + contexto limpo + prompt fix |
+| Super Prova (PE3) | ❌ | Brainstorm pendente |
+| Fase 5 SaaS | ❌ | Após Super Prova |
 
 ---
 
-## PROFESSOR_IA — IMPLEMENTADO ✅
+## Arquivos modificados (aguardando git push)
 
-Todos os 5 itens técnicos + Chunk 0 (DB) concluídos:
-1. ✅ `server/src/personas/PROFESSOR_IA.md` — 203 linhas, prompt completo com metodologia PENSE-AI
-2. ✅ `AGENTES_OVERRIDE_VALIDOS` inclui `PROFESSOR_IA`
-3. ✅ `ChatInput.tsx` passa `agenteMenu.toUpperCase()` como override
-4. ✅ `instrucaoFormatoPorPersona['PROFESSOR_IA']` — plain-text, sem JSON
-5. ✅ CRON processa turnos PROFESSOR_IA → Qdrant com responsavel_id para pais
-- ✅ BÔNUS: `buscarContextoProfessorIA` injetado em message.ts (memory loop fechado)
-- ✅ BÔNUS: Migration `b2c_qdrant_refs.responsavel_id` aplicada no Supabase
-- ✅ Google Search grounding: `tools: [{ googleSearch: {} }]` em `chamarLLMStream` para PROFESSOR_IA + SSE `search` event + guardrail no prompt
-- ✅ Fix: Supervisor não funcionava (`'supervisor'.toUpperCase()` → `'SUPERVISOR'` ≠ `'SUPERVISOR_EDUCACIONAL'`) — adicionado mapa explícito `MENU_TO_AGENTE` em `ChatInput.tsx`
-- ✅ Fix: Header não atualizava ao trocar para Supervisor/PROFESSOR_IA — `ChatHeader` agora lê `agenteMenu` e usa `AGENTES_ESPECIAIS` de `constants.ts`. "Prof. Pense-AI" aparece imediatamente ao selecionar no menu.
-
-**Spec:** `docs/PROFESSOR_PENSE_AI_SPEC.md`
+- `server/src/routes/message.ts` — diasAtras fix + contexto sem instruções + sessão por família + nome responsável
+- `server/src/core/llm.ts` — temperature 0.3 SUPERVISOR + frases proibidas
+- `server/src/personas/SUPERVISOR_EDUCACIONAL.md` — removida estrutura numerada + doc RESPONSÁVEL
+- `server/src/db/persistence.ts` — buscarOuCriarSessaoSupervisor sem alunoId + buscarNomeResponsavel
 
 ---
 
 ## Próximo Passo Exato — BOOT DE AMANHÃ
 
-**Próximo:** Brainstorm Super Prova com Leon (PE3) → Fase 5 SaaS
-
-Ordem de execução completa:
-1. ✅ Brainstorm PROFESSOR_IA com Leon → spec aprovada
-2. ✅ writing-plans → plano detalhado de implementação
-3. ✅ Executar todos os itens técnicos (prompt + fixes + CRON + Qdrant + DB)
-4. ✅ Push + deploy Railway (PROFESSOR_IA em produção)
-5. ✅ Fixes: Supervisor quebrado + header agentes especiais
-6. ✅ Bug #52: cor âmbar PROFESSOR_IA — `gradientFrom: '#B45309', gradientTo: '#3B1A00'`
-7. ✅ Bug #51: Supervisor injeta lista de filhas + histórico Qdrant da filha selecionada + instrução multi-filho no prompt
-8. ⏳ Brainstorm Super Prova com Leon → spec → implementação
-9. ⏳ Fase 5 SaaS (Landing + Checkout + Onboarding)
+1. Escape Hatch → git push para Railway (arquivos modificados acima)
+2. Brainstorm Super Prova com Leon (PE3)
+3. Fase 5 SaaS (Landing + Checkout + Onboarding)
 
 ---
 
@@ -84,20 +87,21 @@ Ordem de execução completa:
 - Server backend: porta 3001, TypeScript strict, ESM modules
 - Frontend: Vite 6 + React 18 + Tailwind CSS + Plus Jakarta Sans
 - Testes: Gate 1-5 ✅, Gate Bloco H 16/16 ✅, unitários 9/9 ✅, classificador 306/306 ✅, TypeScript 0 erros ✅
-- Deploy: Railway ATIVO ✅ — PE1 + PE2 em produção
+- Deploy: Railway ATIVO ✅
 - Repo GitHub: `https://github.com/Leonmala/super-agentes-b2c`
 - Família teste: `leon@pense-ai.com` / PIN 3282 (Layla 7ª, Maria Paz 3ª)
-- **Imagens:** Originais em `Imagens/`, servidas de `web/public/` com nomes diferentes. SEMPRE copiar ao atualizar.
-- **LLM SDK:** `@google/generative-ai` NATIVO (não OpenAI-compat). Multimodal = `inlineData`, não `image_url`.
-- **Router (CRÍTICO):** Keywords ≤4 chars usam word boundary. Stickiness guard em decidirPersona — NUNCA remover. NUNCA adicionar preposições ou palavras genéricas a keywords de matéria.
-- **Persona loading:** `carregarPersona(nome)` lê `server/src/personas/${nome}.md` — arquivo deve existir ou lança erro.
-- **agente_override (CRÍTICO):** Só agentes em `AGENTES_OVERRIDE_VALIDOS` são aceitos. PROFESSOR_IA agora está na lista ✅.
+- **LLM SDK:** `@google/generative-ai` NATIVO (não OpenAI-compat).
+- **Router (CRÍTICO):** Keywords ≤4 chars usam word boundary. Stickiness guard em decidirPersona — NUNCA remover.
+- **agente_override (CRÍTICO):** Só agentes em `AGENTES_OVERRIDE_VALIDOS` são aceitos.
 - **Escape Hatch:** Para git push/permissões — montar prompt para Leon rodar no Claude Code CLI local.
+- **b2c_qdrant_refs:** Colunas reais: id, aluno_id, namespace, semana_ref, ponto_ids, resumo_semantico, created_at, responsavel_id. NÃO tem coluna `tipo`.
 
 ---
 
 ## O que NÃO fazer
 
-- ❌ NÃO usar Paperclip (agentes autônomos) — experiência negativa, sem controle, sem visibilidade
-- ❌ NÃO iniciar Fase 5 SaaS antes de PROFESSOR_IA e Super Prova estarem prontos
+- ❌ NÃO usar Paperclip (agentes autônomos) — experiência negativa, sem controle
+- ❌ NÃO criar envelope separado para SUPERVISOR — usar o mesmo GESTOR dos heróis (PROFESSOR_IA é o modelo)
+- ❌ NÃO misturar instruções dentro do contexto — contexto = dados, instruções = persona prompt
+- ❌ NÃO iniciar Fase 5 SaaS antes de Super Prova estar pronto
 - ❌ NÃO fazer brainstorm de features sozinho — sempre com Leon

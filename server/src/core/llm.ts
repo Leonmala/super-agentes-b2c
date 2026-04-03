@@ -133,6 +133,7 @@ export async function chamarLLMStream(
   onSearching?: () => void
 ): Promise<ResultadoStream> {
 
+  const isSupervisor = persona === 'SUPERVISOR_EDUCACIONAL'
   const gestorSystemPrompt = construirEnvelopeGestor(systemPrompt, contexto, persona, mensagemAluno)
 
   // PROFESSOR_IA usa modelo próprio (sempre Gemini, mesmo em produção com Kimi nos heróis)
@@ -142,11 +143,14 @@ export async function chamarLLMStream(
   // O modelo decide quando buscar; não há custo extra de API além do GOOGLE_API_KEY existente
   const usarGrounding = persona === 'PROFESSOR_IA'
 
+  // SUPERVISOR: temperatura baixa para máxima aderência ao prompt de persona
+  const temperature = isSupervisor ? 0.3 : 0.7
+
   const modelConfig: Parameters<typeof genAI.getGenerativeModel>[0] = {
     model: modeloEscolhido,
     systemInstruction: gestorSystemPrompt,
     generationConfig: {
-      temperature: 0.7,
+      temperature,
       topP: 0.95,
       maxOutputTokens: 4000,
     },
@@ -529,9 +533,20 @@ MODO PAI: Se o contexto indicar MODO: PAI, adapte reply_text para o responsável
 
     SUPERVISOR_EDUCACIONAL: `
 ⚠️ INSTRUÇÃO DE FORMATO — SUPERVISOR_EDUCACIONAL:
-Retorne APENAS texto em português brasileiro. SEM JSON. SEM markdown. SEM bullet points com traço. SEM títulos em negrito.
+Retorne APENAS texto em português brasileiro. SEM JSON. SEM markdown. SEM bullet points. SEM listas numeradas (1. 2. 3.). SEM títulos em negrito.
 Texto corrido, como mensagem de WhatsApp — direto, humano, máximo 8 linhas.
-Tom: orientador pedagógico falando com o pai, não relatório de escola.`,
+Tom: orientador pedagógico falando com o pai, não relatório de escola.
+
+FRASES ABSOLUTAMENTE PROIBIDAS (não use jamais):
+❌ "Certo, sobre a [nome]:"
+❌ "Posso te ajudar com mais alguma coisa?"
+❌ "Há algo mais que eu possa te ajudar?"
+❌ "O que consta é que..."
+❌ "Percebemos que..."
+❌ "Os registros mostram que..."
+❌ "Ela demonstrou..."
+
+DADO OBRIGATÓRIO: Sempre cite dados reais e específicos das conversas (ex: nome da matéria, pergunta exata, frase dita pela aluna). Nunca generalize sem citar o dado.`,
 
     PROFESSOR_IA: `
 ⚠️ INSTRUÇÃO DE FORMATO — PROFESSOR_IA:

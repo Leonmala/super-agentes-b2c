@@ -326,21 +326,20 @@ export interface HistoricoSupervisorItem {
 
 /**
  * Cria ou recupera a sessão Supervisor da família.
- * Se nova_sessao=true: limpa o histórico (flush) mas preserva ultima_interacao_pai.
+ * Sessão é POR FAMÍLIA (não por filha) — o pai pode alternar entre filhas
+ * sem reiniciar a sessão. Flush apenas quando o pai sai do agente (nova_sessao=true).
  */
 export async function buscarOuCriarSessaoSupervisor(
   familiaId: string,
-  alunoId: string,
   novaSessao: boolean
 ): Promise<{ id: string; historico: HistoricoSupervisorItem[]; ultima_interacao_pai: string | null }> {
   if (novaSessao) {
-    // UPSERT: garante que existe e limpa o histórico
+    // UPSERT: garante que existe e limpa o histórico (flush ao entrar no agente)
     const { data, error } = await supabase
       .from('b2c_supervisor_sessoes')
       .upsert(
         {
           familia_id: familiaId,
-          aluno_id: alunoId,
           historico: [],
           updated_at: new Date().toISOString()
         },
@@ -369,7 +368,7 @@ export async function buscarOuCriarSessaoSupervisor(
 
   if (!data) {
     // Primeira vez — criar sessão
-    return buscarOuCriarSessaoSupervisor(familiaId, alunoId, true)
+    return buscarOuCriarSessaoSupervisor(familiaId, true)
   }
 
   return {
@@ -377,6 +376,24 @@ export async function buscarOuCriarSessaoSupervisor(
     historico: (data.historico as HistoricoSupervisorItem[]) || [],
     ultima_interacao_pai: (data.ultima_interacao_pai as string) || null
   }
+}
+
+/**
+ * Busca o nome do primeiro responsável da família.
+ * Usado pelo SUPERVISOR para saudação personalizada ("Oi Leon, tudo bem?").
+ */
+export async function buscarNomeResponsavel(familiaId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('b2c_responsaveis')
+    .select('nome')
+    .eq('familia_id', familiaId)
+    .limit(1)
+    .single()
+
+  if (error || !data) return null
+  // Retorna apenas o primeiro nome
+  const nome = data.nome as string
+  return nome ? nome.split(' ')[0] : null
 }
 
 /**
