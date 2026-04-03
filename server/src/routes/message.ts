@@ -490,8 +490,14 @@ router.post('/message', async (req: Request, res: Response) => {
 
         // 5. Contexto final — apenas dados, sem instruções embutidas
         const primeiraMsg = sessaoSupervisor.historico.length === 0
+        const ultimaConversaPai = sessaoSupervisor.ultima_interacao_pai
+          ? new Date(sessaoSupervisor.ultima_interacao_pai).toLocaleDateString('pt-BR', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            })
+          : null
         contextoFinal =
           (nomeResponsavel ? `RESPONSÁVEL: ${nomeResponsavel}\n` : '') +
+          (ultimaConversaPai ? `ÚLTIMA CONVERSA COM O PAI: ${ultimaConversaPai}\n` : '') +
           `\nPERFIL DA FILHA SELECIONADA:\n` +
           `Nome: ${aluno.nome}, ${aluno.idade || '?'} anos, ${aluno.serie}\n` +
           (aluno.perfil ? `Perfil: ${aluno.perfil}\n` : '') +
