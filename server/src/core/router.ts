@@ -530,7 +530,14 @@ export async function decidirPersona(
       console.log(`[stickiness-bypass] intenção explícita de troca → ${temaLLMExplicit}`)
       return decidirComTema(temaLLMExplicit, sessao, ultimosTurnos)
     }
-    // LLM não confirmou outra matéria → manter herói (pode ser falso positivo)
+    // Fix BUG-57: LLM retorna "indefinido" para requisições de navegação ("quero falar com o
+    // professor de história") porque não há conteúdo da matéria na mensagem — só a intenção.
+    // Fallback: verificar se keywords detectam outra matéria na mesma mensagem.
+    if (temaKeywords && temaKeywords !== sessao.tema_atual) {
+      console.log(`[stickiness-bypass] LLM indefinido, keywords detectam '${temaKeywords}' → trocando`)
+      return decidirComTema(temaKeywords, sessao, ultimosTurnos)
+    }
+    // Nenhuma evidência de troca → manter herói (pode ser falso positivo)
     console.log(`[stickiness-bypass] LLM não confirmou troca → mantendo ${sessao.agente_atual}`)
     return { persona: sessao.agente_atual!, temaDetectado: sessao.tema_atual }
   }
