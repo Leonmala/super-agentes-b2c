@@ -1,21 +1,24 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useState } from 'react'
 import { PinModal } from './PinModal'
-import { FILHO_COLORS } from '../constants'
+import { FILHO_COLORS, formatarSerie } from '../constants'
 
 export function ProfileModal() {
   const { filhos, responsavel, selectFilho, perfilAtivo } = useAuth()
   const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
 
   if (perfilAtivo) return null
 
   const handleFilho = async (filhoId: string) => {
     setLoading(true)
+    setErro('')
     try {
       await selectFilho(filhoId)
-    } catch {
-      // handle error
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.'
+      setErro(msg)
     }
     setLoading(false)
   }
@@ -38,6 +41,11 @@ export function ProfileModal() {
             <h1 className="text-3xl font-bold text-white mb-2">Quem vai estudar?</h1>
             <p className="text-sm text-white/60">Selecione o perfil para começar</p>
           </div>
+
+          {/* Erro */}
+          {erro && (
+            <p className="text-red-300 text-sm text-center mb-4">{erro}</p>
+          )}
 
           {/* Cards dos filhos */}
           <div className="space-y-3 mb-6">
@@ -63,7 +71,7 @@ export function ProfileModal() {
                     {/* Nome e série */}
                     <div className="text-left">
                       <p className="font-semibold text-white text-sm">{filho.nome}</p>
-                      <p className="text-xs text-white/60">{filho.serie}</p>
+                      <p className="text-xs text-white/60">{formatarSerie(filho.serie)}</p>
                     </div>
                   </div>
                   {/* Chevron */}

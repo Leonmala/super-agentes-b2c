@@ -333,6 +333,34 @@ const TEMAS_VALIDOS_CLASSIFIER = [
   'geografia', 'fisica', 'quimica', 'ingles', 'espanhol',
 ]
 
+/**
+ * Versão de classificarTema com timeout configurável.
+ * Usada pelo bypass de intenção explícita no stickiness guard (timeout mais generoso).
+ */
+export async function classificarTemaComTimeout(mensagem: string, timeoutMs: number): Promise<string | null> {
+  if (!GOOGLE_API_KEY) return null
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { temperature: 0, maxOutputTokens: 10 },
+    })
+    const prompt = `Classifique a matéria escolar desta mensagem. Responda APENAS com uma palavra: matematica, portugues, ciencias, historia, geografia, fisica, quimica, ingles, espanhol, ou indefinido.\n\nMensagem: "${mensagem.substring(0, 200)}"`
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
+    const classifyPromise = model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    }).then(result => {
+      const resposta = result.response.text().trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      if (TEMAS_VALIDOS_CLASSIFIER.includes(resposta)) return resposta
+      if (resposta === 'indefinido') return 'indefinido'
+      return null
+    })
+    return await Promise.race([classifyPromise, timeoutPromise])
+  } catch {
+    return null
+  }
+}
+
 export async function classificarTema(mensagem: string): Promise<string | null> {
   if (!GOOGLE_API_KEY) {
     return null
@@ -426,12 +454,35 @@ export async function decidirPersona(
   // 2. Detectar tema por keywords
   const temaKeywords = detectarTema(mensagem)
 
-  // Fix 3 — Stickiness Guard:
+  // Fix 3 — Stickiness Guard com bypass de intenção explícita:
   // Se há um herói ativo E as keywords detectaram um tema DIFERENTE do atual,
   // exige confirmação do classificador LLM antes de quebrar o fluxo.
-  // Isso evita que "o próprio 40" (keywords → 'geografia') mate uma sessão de matemática.
-  // Se o LLM confirmar 'indefinido' → manter herói atual (continuidade).
-  // Se o LLM confirmar nova matéria → permitir a troca.
+  // BYPASS: se o usuário expressa intenção explícita de troca ("quero falar com o professor de X",
+  // "agora quero X", etc.), pula o stickiness e vai direto ao LLM com timeout mais generoso.
+  // Também trata o caso onde a mensagem mistura keywords de dois temas (ex: "equação... português").
+  const PADROES_TROCA_EXPLICITA = [
+    'professor de ', 'professora de ', 'quero falar com', 'falar com o',
+    'agora quero', 'agora preciso de ajuda com', 'mudar para', 'trocar para',
+    'me passa para', 'quero o professor', 'quero a professora',
+  ]
+  const temIntentoDeTroca =
+    sessao.agente_atual &&
+    sessao.agente_atual !== 'PSICOPEDAGOGICO' &&
+    sessao.tema_atual !== null &&
+    PADROES_TROCA_EXPLICITA.some(p => mensagem.toLowerCase().includes(p))
+
+  if (temIntentoDeTroca) {
+    // Intenção explícita detectada → classificador LLM com timeout estendido (4s)
+    const temaLLMExplicit = await classificarTemaComTimeout(mensagem, 4000)
+    if (temaLLMExplicit && temaLLMExplicit !== 'indefinido' && temaLLMExplicit !== sessao.tema_atual) {
+      console.log(`[stickiness-bypass] intenção explícita de troca → ${temaLLMExplicit}`)
+      return decidirComTema(temaLLMExplicit, sessao, ultimosTurnos)
+    }
+    // LLM não confirmou outra matéria → manter herói (pode ser falso positivo)
+    console.log(`[stickiness-bypass] LLM não confirmou troca → mantendo ${sessao.agente_atual}`)
+    return { persona: sessao.agente_atual!, temaDetectado: sessao.tema_atual }
+  }
+
   if (
     temaKeywords &&
     temaKeywords !== sessao.tema_atual &&

@@ -108,3 +108,14 @@ export function getProfileColor(tipoUsuario: 'filho' | 'pai', filhoIndex: number
   if (tipoUsuario === 'pai') return PAI_COLOR
   return FILHO_COLORS[filhoIndex % FILHO_COLORS.length]
 }
+
+// Converte série do banco (ex: "7_fund") para label legível (ex: "7º Ano")
+export function formatarSerie(serie: string): string {
+  const map: Record<string, string> = {
+    '1_fund': '1º Ano', '2_fund': '2º Ano', '3_fund': '3º Ano',
+    '4_fund': '4º Ano', '5_fund': '5º Ano', '6_fund': '6º Ano',
+    '7_fund': '7º Ano', '8_fund': '8º Ano', '9_fund': '9º Ano',
+    '1_em': '1º Ensino Médio', '2_em': '2º Ensino Médio', '3_em': '3º Ensino Médio',
+  }
+  return map[serie] ?? serie
+}

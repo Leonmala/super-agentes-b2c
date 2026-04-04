@@ -14,21 +14,21 @@ const EMPTY_FILHO: Record<string, EmptyContent> = {
   super_agentes: {
     titulo: 'Oi, {nome}!',
     subtitulo: 'Tenho 8 professores prontos para te ajudar.',
-    cta: 'Sobre qual materia voce quer estudar hoje? So perguntar!',
+    cta: 'Sobre qual matéria você quer estudar hoje? Só perguntar!',
   },
   professor_ia: {
     titulo: 'Professor de IA',
-    subtitulo: 'Aprenda a usar inteligencia artificial como ferramenta de estudo.',
-    cta: 'Me diga o que voce quer fazer e eu te ensino a promptar!',
+    subtitulo: 'Aprenda a usar inteligência artificial como ferramenta de estudo.',
+    cta: 'Me diga o que você quer fazer e eu te ensino a promptar!',
   },
 }
 
 // Textos para MODO PAI
 const EMPTY_PAI: Record<string, EmptyContent> = {
   super_agentes: {
-    titulo: 'Ola, {nome}!',
-    subtitulo: 'Posso te ajudar a ensinar qualquer materia para seu filho.',
-    cta: 'Qual materia voce quer trabalhar com seu filho hoje?',
+    titulo: 'Olá, {nome}!',
+    subtitulo: 'Posso te ajudar a ensinar qualquer matéria para seu filho.',
+    cta: 'Qual matéria você quer trabalhar com seu filho hoje?',
   },
   professor_ia: {
     titulo: 'Professor de IA',
@@ -38,7 +38,7 @@ const EMPTY_PAI: Record<string, EmptyContent> = {
   supervisor: {
     titulo: 'Supervisor Educacional',
     subtitulo: 'Acompanhe o desenvolvimento do seu filho nos estudos.',
-    cta: 'Pergunte sobre o progresso da semana ou peca um resumo!',
+    cta: 'Pergunte sobre o progresso da semana ou peça um resumo!',
   },
 }
 
