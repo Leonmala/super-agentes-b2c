@@ -73,9 +73,12 @@ export function montarContexto(
     partes.push('═══════════════════════════════════════════')
     partes.push('Você está atendendo o RESPONSÁVEL do aluno.')
     partes.push('Adapte a linguagem para um adulto.')
-    partes.push('Oriente como o pai/mãe pode ensinar este conceito ao filho.')
+    partes.push('Oriente o pai/mãe sobre como pode ensinar ao filho o que ele pedir.')
     partes.push('Foque em estratégias práticas e exemplos que o responsável pode usar.')
     partes.push('Seja apoiador e pedagógico, não passe por cima do responsável.')
+    if (ultimosTurnos.length === 0) {
+      partes.push('PRIMEIRA_INTERACAO_PAI: SIM — o pai ainda não especificou o que precisa. Apresente-se e pergunte antes de ensinar qualquer coisa.')
+    }
   }
 
   return partes.join('\n')

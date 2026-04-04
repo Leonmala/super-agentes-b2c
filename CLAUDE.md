@@ -214,6 +214,49 @@ Ao encontrar bugs ou comportamentos inesperados, usar o skill **superpowers:syst
 
 ---
 
+## QUALIDADE DE QA — O QUE SIGNIFICA APROVADO
+
+> **Funcionar ≠ Estar correto.** "Funcionou" = o sistema retornou uma resposta sem erro. "Está correto" = a resposta faz exatamente o que deve fazer, da maneira certa, para o usuário certo.
+
+### A pergunta certa em cada teste
+
+Não perguntar "retornou resposta?" — perguntar **"esta resposta resolve o problema do usuário da maneira que foi projetado?"**
+
+### Critérios obrigatórios em cada teste QA
+
+Todo teste deve especificar:
+1. **Input real** — mensagem exata enviada (não resumida, não parafraseada)
+2. **Comportamento esperado** — o que o agente DEVE fazer (ex: perguntar antes de ensinar em MODO PAI)
+3. **Comportamento proibido** — o que o agente NÃO DEVE fazer (ex: iniciar explicação sem saber o que o pai precisa)
+4. **Sinal de qualidade** — como avaliar se a resposta é boa (tom, comprimento, pergunta certa, pedagogia correta)
+5. **Transcrição real** — copiar o trecho da resposta que valida ou refuta, não interpretar
+
+### Para cada modo/feature, testar obrigatoriamente
+
+- **Primeira interação (input vago/nulo)**: o agente se comporta corretamente sem contexto? O onboarding está certo?
+- **Primeira interação (input específico)**: o agente responde à altura com contexto fornecido?
+- **Continuidade**: o agente mantém contexto e persona entre turnos?
+- **Edge case de escopo**: recusa corretamente o que está fora do escopo?
+
+### Armadilhas de QA superficial — proibidas
+
+- **Testar só o happy path com input já específico**: se o teste já tem o contexto que o agente precisa, ele sempre "funciona". Testar também inputs vagos e de primeira interação.
+- **Aprovar sem ler o conteúdo real**: sempre transcrever o trecho da resposta. "Respondeu corretamente" sem citar o que disse é aprovação vazia.
+- **Score sem justificativa de gap**: "9.5/10" sem dizer o que faltou para ser 10 é score inútil.
+- **Confundir "menu funciona" com "agente funciona"**: abrir a tela certa não é o mesmo que o agente se comportar corretamente.
+- **Não testar o primeiro turno em modo novo**: o primeiro turno é o mais crítico — define se o usuário fica ou vai embora.
+
+### Quando um score < 8 significa reprovar
+
+Um agente deve ser REPROVADO e o bug registrado se:
+- A primeira mensagem não condiz com o comportamento esperado do modo
+- O tom ou vocabulário está errado para o público (ex: linguagem de aluno no MODO PAI)
+- O agente ensina sem saber o que o usuário precisa
+- O agente dá resposta pronta em vez de construir raciocínio (MODO FILHO)
+- Qualquer "Tive um pequeno problema" ou resposta de fallback chega ao usuário
+
+---
+
 ## ESCAPE HATCH — CLAUDE CODE CLI
 
 > **Regra:** Quando o ambiente Cowork (VM Linux) não conseguir executar uma operação no sistema do usuário (git push, permissão de arquivo, acesso a rede host, etc.), **montar um prompt completo para o Leon rodar no Claude Code CLI** na máquina local dele.
