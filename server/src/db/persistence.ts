@@ -505,3 +505,95 @@ export async function verificarHistoricoAluno(
 
   return (data?.length ?? 0) > 0
 }
+
+// ============================================================
+// FUNÇÕES SUPER PROVA — knowledge base e consulta na sessão
+// ============================================================
+
+/**
+ * Persiste a KNOWLEDGE_BASE gerada pelo Super Prova na sessão atual.
+ * Chamada pelo Hook 1 (fire-and-forget) após acervo gerado/obtido do cache.
+ */
+export async function persistirKnowledgeBase(sessaoId: string, kb: string): Promise<void> {
+  console.log(`[SuperProva:persistence] 💾 Salvando KNOWLEDGE_BASE na sessão ${sessaoId} | ${kb.length} chars`)
+  const { error } = await supabase
+    .from('b2c_sessoes')
+    .update({ super_prova_kb: kb })
+    .eq('id', sessaoId)
+
+  if (error) {
+    console.error(`[SuperProva:persistence] ❌ Erro ao salvar KB: ${error.message}`)
+  } else {
+    console.log(`[SuperProva:persistence] ✅ KNOWLEDGE_BASE salva — disponível no próximo turno`)
+  }
+}
+
+/**
+ * Busca a KNOWLEDGE_BASE da sessão para injetar no contexto do herói.
+ */
+export async function buscarKnowledgeBase(sessaoId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('b2c_sessoes')
+    .select('super_prova_kb')
+    .eq('id', sessaoId)
+    .single()
+
+  if (error || !data) return null
+  const kb = data.super_prova_kb as string | null
+  if (kb) {
+    console.log(`[SuperProva:persistence] 📖 KNOWLEDGE_BASE encontrada (${kb.length} chars) — injetando no contexto`)
+  }
+  return kb ?? null
+}
+
+/**
+ * Persiste o resultado de uma consulta CONSULTAR na sessão (one-shot).
+ * Chamada pelo Hook 2 (fire-and-forget) após consulta respondida.
+ */
+export async function persistirConsultaResultado(sessaoId: string, resultado: string): Promise<void> {
+  console.log(`[SuperProva:persistence] 💾 Salvando CONSULTA_RESULTADO na sessão ${sessaoId} | ${resultado.length} chars`)
+  const { error } = await supabase
+    .from('b2c_sessoes')
+    .update({ super_prova_consulta_resultado: resultado })
+    .eq('id', sessaoId)
+
+  if (error) {
+    console.error(`[SuperProva:persistence] ❌ Erro ao salvar consulta: ${error.message}`)
+  } else {
+    console.log(`[SuperProva:persistence] ✅ CONSULTA_RESULTADO salvo — disponível no próximo turno`)
+  }
+}
+
+/**
+ * Busca o resultado de consulta da sessão para injetar no contexto.
+ */
+export async function buscarConsultaResultado(sessaoId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('b2c_sessoes')
+    .select('super_prova_consulta_resultado')
+    .eq('id', sessaoId)
+    .single()
+
+  if (error || !data) return null
+  const resultado = data.super_prova_consulta_resultado as string | null
+  if (resultado) {
+    console.log(`[SuperProva:persistence] 📨 CONSULTA_RESULTADO encontrado (${resultado.length} chars) — injetando no contexto`)
+  }
+  return resultado ?? null
+}
+
+/**
+ * Limpa o resultado de consulta após uso (one-shot — não deve ser reaproveitado).
+ */
+export async function limparConsultaResultado(sessaoId: string): Promise<void> {
+  const { error } = await supabase
+    .from('b2c_sessoes')
+    .update({ super_prova_consulta_resultado: null })
+    .eq('id', sessaoId)
+
+  if (error) {
+    console.error(`[SuperProva:persistence] ❌ Erro ao limpar consulta: ${error.message}`)
+  } else {
+    console.log(`[SuperProva:persistence] 🧹 CONSULTA_RESULTADO limpo (one-shot consumido)`)
+  }
+}

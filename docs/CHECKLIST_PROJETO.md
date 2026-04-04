@@ -181,7 +181,7 @@
   - [x] Fix 3: Stickiness guard em `decidirPersona()` — LLM confirmation antes de trocar herói
   - [x] 306 testes `router-classificador.test.ts` — 306/306 PASS
   - [x] TypeScript typecheck: 0 erros ✅
-- [ ] **PE3** Brainstorm agente NotebookLM / Super Prova com Leon
+- [x] **PE3** Brainstorm Super Prova — arquitetura CONGELADA ✅ (2026-04-03)
 
 ### Robustez + UX + Testes — Bloco G (2026-03-17)
 
@@ -220,10 +220,41 @@
 - [ ] **PIA-WS4** SSE event `search` → frontend mostra "🔍 buscando sobre X..."
 - [ ] **PIA-WS5** [V2 — IDEIA PERSISTIDA] Glossário auto-evolutivo: quando agente busca termo novo e confiável, salva em b2c_professor_ia_glossario no Supabase. Próximas sessões carregam glossário dinâmico + estático. Aprende com uso real dos usuários.
 
-### Polimento Pré-Venda — Bloco F: Brainstorm Super Prova/Estudo
+### Polimento Pré-Venda — Bloco F: Super Prova
 
-- [ ] **PF1** Sessão de brainstorm com Leon (MCP + NotebookLM)
-- [ ] **PF2** Análise de viabilidade (V1 vs V1.1)
+- [x] **PF1** Brainstorm Super Prova com Leon — arquitetura congelada ✅ (2026-04-03)
+- [x] **PF2** Avaliação de ferramentas: notebooklm-mcp-cli ❌, open-notebook ❌, OpenMAIC ❌, Gemini Grounding ✅ (2026-04-03)
+
+### Super Prova — Implementação ✅ (2026-04-04)
+
+- [x] **SP1** Ler todos os 8 prompts → mapear blocos didáticos de cada herói ✅
+- [x] **SP2** Atualizar prompts: remover AGENTE_BIBLIOTECARIO (legacy n8n) + adicionar seção SUPER_PROVA ✅
+  - 16 arquivos atualizados (8x `Prompts/` + 8x `server/src/personas/`)
+  - Kit de Blocos VERBETTA criado (único herói sem kit — 10 blocos adicionados)
+  - llm.ts: campos `sinal_super_prova` + `super_prova_query` em todos os 8 heróis
+- [x] **SP3** Migration Supabase: tabela `b2c_super_prova_acervo` + colunas `b2c_sessoes` ✅
+  - `b2c_super_prova_acervo(serie, tema_hash, materia, heroi_id, blocos, fontes)`
+  - `b2c_sessoes.super_prova_kb` + `b2c_sessoes.super_prova_consulta_resultado`
+- [x] **SP4** Criar módulo `server/src/super-prova/` — autônomo, fail-silently ✅
+  - [x] **SP4.1** `fontes-por-materia.ts` — 8 matérias + fontes pedagógicas curadas
+  - [x] **SP4.2** `gerar-acervo.ts` — Gemini Google Search Grounding (GOOGLE_API_KEY)
+  - [x] **SP4.3** `hero-blocks-config.ts` — 5-6 blocos por herói (substituiu block-adapter)
+  - [x] **SP4.4** `consultar.ts` — query pontual com grounding
+  - [x] **SP4.5** `gerar-quiz.ts` — 4 questões progressivas via Gemini
+  - [x] **SP4.6** `index.ts` — orquestrador: cache check → gerar → persistir (trail completo de debug logs)
+- [x] **SP5** Hooks em `message.ts`: 3 pontos de integração ✅
+  - Hook 1: fire-and-forget pós-cascata (gerar acervo novo tema)
+  - Hook 2: fire-and-forget sinal CONSULTAR → CONSULTA_RESULTADO (one-shot)
+  - Hook 3: sinal QUIZ → SSE event `quiz` → QuizCard
+  - KB injection: lê `super_prova_kb` + `super_prova_consulta_resultado` antes de montar payload herói
+  - Implementado em CASO A (cascata) e CASO B (continuidade)
+- [x] **SP6** SSE event `quiz` + QuizCard frontend component ✅
+  - `web/src/components/QuizCard.tsx` — modal overlay, progress bar, cor feedback
+  - `web/src/api/chat.ts` — case 'quiz' no switch SSE
+  - `web/src/contexts/ChatContext.tsx` — quizAtivo state + fecharQuiz
+  - `web/src/pages/ChatPage.tsx` — render condicional QuizCard
+  - TypeScript frontend: 0 erros ✅
+- [ ] **SP7** Gate Super Prova: E2E com 3 matérias — **PENDENTE** (aguardando git push + deploy)
 
 ---
 

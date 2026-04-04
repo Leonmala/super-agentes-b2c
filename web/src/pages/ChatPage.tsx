@@ -6,10 +6,11 @@ import { ChatHeader } from '../components/ChatHeader'
 import { ChatMessages } from '../components/ChatMessages'
 import { ChatInput } from '../components/ChatInput'
 import { SlideMenu } from '../components/SlideMenu'
+import { QuizCard } from '../components/QuizCard'
 
 export function ChatPage() {
   const { perfilAtivo } = useAuth()
-  const { erro, limiteMsg, dismissErro, dismissLimite } = useChat()
+  const { erro, limiteMsg, dismissErro, dismissLimite, quizAtivo, fecharQuiz } = useChat()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -39,6 +40,11 @@ export function ChatPage() {
       </div>
 
       <SlideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* Super Prova — QuizCard (overlay modal, aparece quando SSE event 'quiz' chega) */}
+      {quizAtivo && (
+        <QuizCard quiz={quizAtivo} onFechar={fecharQuiz} />
+      )}
     </div>
   )
 }

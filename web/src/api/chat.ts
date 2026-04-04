@@ -1,3 +1,5 @@
+import type { QuizGerado } from '../components/QuizCard'
+
 export interface SendMessageOptions {
   alunoId: string
   mensagem: string
@@ -10,6 +12,7 @@ export interface SendMessageOptions {
   onDone: (data: Record<string, unknown>) => void
   onError: (erro: string) => void
   onLimite: (mensagem: string) => void
+  onQuiz?: (quiz: QuizGerado) => void
 }
 
 export async function sendMessage(opts: SendMessageOptions): Promise<void> {
@@ -79,6 +82,12 @@ export async function sendMessage(opts: SendMessageOptions): Promise<void> {
               break
             case 'limite':
               opts.onLimite(data.mensagem)
+              break
+            case 'quiz':
+              // Quiz gerado pelo Super Prova — lança QuizCard no frontend
+              if (opts.onQuiz) {
+                opts.onQuiz(data as QuizGerado)
+              }
               break
           }
         } catch {

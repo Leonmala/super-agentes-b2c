@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { ChatMessage, HeroId } from '../types'
 import { sendMessage } from '../api/chat'
 import { useAuth } from './AuthContext'
+import type { QuizGerado } from '../components/QuizCard'
 
 interface ChatContextValue {
   mensagens: ChatMessage[]
@@ -13,6 +14,8 @@ interface ChatContextValue {
   limiteMsg: string | null
   agenteMenu: string
   setAgenteMenu: (agente: string) => void
+  quizAtivo: QuizGerado | null
+  fecharQuiz: () => void
   enviar: (texto: string, agenteOverride?: string, imagemBase64?: string) => Promise<void>
   addMessage: (msg: ChatMessage) => void
   clearPendingReveal: () => void
@@ -32,8 +35,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [erro, setErro] = useState<string | null>(null)
   const [limiteMsg, setLimiteMsg] = useState<string | null>(null)
   const [agenteMenu, setAgenteMenu] = useState<string>('super_agentes')
+  const [quizAtivo, setQuizAtivo] = useState<QuizGerado | null>(null)
   const fullTextRef = useRef('')
   const isFirstMessageRef = useRef(true)
+
+  const fecharQuiz = useCallback(() => setQuizAtivo(null), [])
 
   const addMessage = useCallback((msg: ChatMessage) => {
     setMensagens(prev => [...prev, msg])
@@ -108,6 +114,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setStreaming(false)
         fullTextRef.current = ''
       },
+      onQuiz: (quiz) => {
+        // Super Prova emitiu QUIZ — abrir QuizCard
+        setQuizAtivo(quiz)
+      },
     })
   }, [perfilAtivo, streaming])
 
@@ -127,6 +137,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       mensagens, heroiAtivo, streaming,
       pendingReveal,
       erro, limiteMsg, agenteMenu, setAgenteMenu,
+      quizAtivo, fecharQuiz,
       enviar, addMessage, clearPendingReveal,
       limpar, dismissErro, dismissLimite,
     }}>

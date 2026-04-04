@@ -28,8 +28,19 @@ import {
   buscarOuCriarSessaoSupervisor,
   salvarTurnoSupervisor,
   buscarUltimaInteracaoFilha,
-  buscarNomeResponsavel
+  buscarNomeResponsavel,
+  buscarKnowledgeBase,
+  buscarConsultaResultado,
+  limparConsultaResultado,
+  persistirKnowledgeBase,
+  persistirConsultaResultado,
 } from '../db/persistence.js'
+import {
+  obterOuGerarAcervo,
+  formatarKnowledgeBase,
+  processarConsulta,
+  processarQuiz,
+} from '../super-prova/index.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
@@ -74,6 +85,21 @@ const HEROIS_VALIDOS = [
 
 // Agentes acessíveis via agente_override (heróis + SUPERVISOR para pais)
 const AGENTES_OVERRIDE_VALIDOS = [...HEROIS_VALIDOS, 'SUPERVISOR_EDUCACIONAL', 'PROFESSOR_IA']
+
+// Mapa herói → matéria para Super Prova
+const HEROI_MATERIA_MAP: Record<string, string> = {
+  CALCULUS: 'matematica',
+  VERBETTA: 'portugues',
+  NEURON:   'ciencias_biologia',
+  TEMPUS:   'historia',
+  GAIA:     'geografia',
+  VECTOR:   'fisica',
+  ALKA:     'quimica',
+  FLEX:     'idiomas',
+}
+function heroiParaMateria(heroiId: string): string {
+  return HEROI_MATERIA_MAP[heroiId] ?? 'geral'
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/message — SSE endpoint
@@ -294,6 +320,18 @@ router.post('/message', async (req: Request, res: Response) => {
           houveCascata = true
           agenteFinal = heroiEscolhido
 
+          // ── SUPER PROVA Hook 1 (CASO A) ─────────────────────────────────────
+          // Gerar/buscar acervo em background quando tema muda (fire-and-forget)
+          if (temaDetectado && temaDetectado !== sessao.tema_atual) {
+            console.log(`[SuperProva] 🔄 Hook 1 ativado (cascata) | ${heroiEscolhido} | tema: "${temaDetectado}"`)
+            obterOuGerarAcervo(temaDetectado, aluno.serie || '7ano', heroiParaMateria(heroiEscolhido), heroiEscolhido)
+              .then(acervo => {
+                if (acervo) return persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo))
+              })
+              .catch(() => {}) // fail-silently
+          }
+          // ────────────────────────────────────────────────────────────────────
+
           // Extrair plano do pipeline processado (com fallback para JSON original)
           const planoObj = cascata?.plano_atendimento
             || respostaJSON?.plano_atendimento
@@ -314,8 +352,25 @@ router.post('/message', async (req: Request, res: Response) => {
             ? instrucoesRaw
             : JSON.stringify(instrucoesRaw, null, 2)
 
+          // ── SUPER PROVA: injetar KB e resultado de consulta anterior (CASO A) ─
+          const [spKB_A, spConsulta_A] = await Promise.all([
+            buscarKnowledgeBase(sessao.id).catch(() => null),
+            buscarConsultaResultado(sessao.id).catch(() => null),
+          ])
+
           // Montar contexto rico para o herói
           let contextoHeroi = montarContexto(sessao, aluno, ultimosTurnos, tipoUsuario)
+
+          if (spKB_A) {
+            console.log(`[SuperProva] 📖 Injetando KNOWLEDGE_BASE no contexto do ${heroiEscolhido} (${spKB_A.length} chars)`)
+            contextoHeroi += `\n\n${spKB_A}`
+          }
+          if (spConsulta_A) {
+            console.log(`[SuperProva] 📨 Injetando CONSULTA_RESULTADO no contexto do ${heroiEscolhido}`)
+            contextoHeroi += `\n\nCONSULTA_RESULTADO: ${spConsulta_A}`
+            limparConsultaResultado(sessao.id).catch(() => {})
+          }
+
           contextoHeroi += `\n\n═══════════════════════════════════════════════════════════════\n`
           contextoHeroi += `PLANO DE ATENDIMENTO GERADO PELO PSICOPEDAGOGICO:\n`
           contextoHeroi += `═══════════════════════════════════════════════════════════════\n`
@@ -347,6 +402,38 @@ router.post('/message', async (req: Request, res: Response) => {
           if (sinaisHeroi?.sinal_psicopedagogico) {
             console.log(`[${aluno_id}] 🚨 SINAL PSICOPEDAGÓGICO de ${heroiEscolhido}: ${sinaisHeroi.motivo_sinal}`)
           }
+
+          // ── SUPER PROVA Hooks 2+3 (CASO A cascata) ──────────────────────────
+          {
+            const heroJson_A = resultadoHeroi.processed.jsonOriginal
+            const temaAtual_A = temaDetectado || sessao.tema_atual || ''
+            const serie_A = aluno.serie || '7ano'
+            const heroi_A = heroiEscolhido
+
+            if (heroJson_A?.sinal_super_prova === 'CONSULTAR' && heroJson_A?.super_prova_query) {
+              console.log(`[SuperProva] Hook 2 ativado (cascata) | "${heroJson_A.super_prova_query}"`)
+              processarConsulta(heroJson_A.super_prova_query as string, temaAtual_A, serie_A, heroi_A)
+                .then(resultado => {
+                  if (resultado) return persistirConsultaResultado(sessao.id, resultado.resposta)
+                })
+                .catch(() => {})
+            }
+
+            if (heroJson_A?.sinal_super_prova === 'QUIZ') {
+              console.log(`[SuperProva] Hook 3 ativado (cascata) — gerando quiz para ${heroi_A}`)
+              const resumo_A = ultimosTurnos.slice(0, 3)
+                .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
+              processarQuiz(temaAtual_A, serie_A, heroi_A, resumo_A)
+                .then(quiz => {
+                  if (quiz) {
+                    console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)
+                    res.write(`event: quiz\ndata: ${JSON.stringify(quiz)}\n\n`)
+                  }
+                })
+                .catch(() => {})
+            }
+          }
+          // ────────────────────────────────────────────────────────────────────
 
           chamadasMetricas.push({
             persona: heroiEscolhido,
@@ -513,6 +600,35 @@ router.post('/message', async (req: Request, res: Response) => {
         console.log(`[${familia_id}] SUPERVISOR: sessao=${sessaoSupervisor.id.slice(0,8)}, pai=${nomeResponsavel || '?'}, historico=${sessaoSupervisor.historico.length} items, filha=${nomeFilhaAtual}, turnos=${turnosDaFilha.length}, memoria=${!!memoriaFilha}, zeroDados=${turnosDaFilha.length === 0 && !memoriaFilha}`)
       }
 
+      // ── SUPER PROVA Hook 1 (CASO B continuidade) ────────────────────────────
+      // Herói já escolhido — verificar se tema mudou para gerar KB em background
+      if (temaDetectado && temaDetectado !== sessao.tema_atual && HEROIS_VALIDOS.includes(persona)) {
+        console.log(`[SuperProva] 🔄 Hook 1 ativado (continuidade) | ${persona} | tema: "${temaDetectado}"`)
+        obterOuGerarAcervo(temaDetectado, aluno.serie || '7ano', heroiParaMateria(persona), persona)
+          .then(acervo => {
+            if (acervo) return persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo))
+          })
+          .catch(() => {})
+      }
+
+      // ── SUPER PROVA: injetar KB e resultado de consulta anterior (CASO B) ──
+      if (HEROIS_VALIDOS.includes(persona)) {
+        const [spKB_B, spConsulta_B] = await Promise.all([
+          buscarKnowledgeBase(sessao.id).catch(() => null),
+          buscarConsultaResultado(sessao.id).catch(() => null),
+        ])
+        if (spKB_B) {
+          console.log(`[SuperProva] 📖 Injetando KNOWLEDGE_BASE no contexto do ${persona} (${spKB_B.length} chars)`)
+          contextoFinal += `\n\n${spKB_B}`
+        }
+        if (spConsulta_B) {
+          console.log(`[SuperProva] 📨 Injetando CONSULTA_RESULTADO no contexto do ${persona}`)
+          contextoFinal += `\n\nCONSULTA_RESULTADO: ${spConsulta_B}`
+          limparConsultaResultado(sessao.id).catch(() => {})
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       // Callback de busca: emite evento SSE 'search' antes da resposta (apenas PROFESSOR_IA)
       const onSearching = persona === 'PROFESSOR_IA'
         ? () => enviarEvento('search', { texto: '🔍 consultando fontes atualizadas...' })
@@ -545,6 +661,37 @@ router.post('/message', async (req: Request, res: Response) => {
       if (sinaisHeroi?.sinal_psicopedagogico) {
         console.log(`[${aluno_id}] 🚨 SINAL PSICOPEDAGÓGICO de ${persona}: ${sinaisHeroi.motivo_sinal}`)
       }
+
+      // ── SUPER PROVA Hooks 2+3 (CASO B continuidade) ─────────────────────────
+      if (HEROIS_VALIDOS.includes(persona)) {
+        const heroJson_B = resultadoHeroi.processed.jsonOriginal
+        const temaAtual_B = temaDetectado || sessao.tema_atual || ''
+        const serie_B = aluno.serie || '7ano'
+
+        if (heroJson_B?.sinal_super_prova === 'CONSULTAR' && heroJson_B?.super_prova_query) {
+          console.log(`[SuperProva] Hook 2 ativado (continuidade) | "${heroJson_B.super_prova_query}"`)
+          processarConsulta(heroJson_B.super_prova_query as string, temaAtual_B, serie_B, persona)
+            .then(resultado => {
+              if (resultado) return persistirConsultaResultado(sessao.id, resultado.resposta)
+            })
+            .catch(() => {})
+        }
+
+        if (heroJson_B?.sinal_super_prova === 'QUIZ') {
+          console.log(`[SuperProva] Hook 3 ativado (continuidade) — gerando quiz para ${persona}`)
+          const resumo_B = ultimosTurnos.slice(0, 3)
+            .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
+          processarQuiz(temaAtual_B, serie_B, persona, resumo_B)
+            .then(quiz => {
+              if (quiz) {
+                console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)
+                res.write(`event: quiz\ndata: ${JSON.stringify(quiz)}\n\n`)
+              }
+            })
+            .catch(() => {})
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
 
       chamadasMetricas.push({
         persona,
