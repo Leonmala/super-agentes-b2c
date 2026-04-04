@@ -442,12 +442,53 @@ export function personaPorTema(tema: string): string {
  *    4c. Indefinido + sem agente → PSICOPEDAGOGICO
  *    4d. Erro → PSICOPEDAGOGICO
  */
+// ─── Guardião: detecção de jailbreak e fora de escopo ────────────────────────
+// Bloqueia ANTES de qualquer chamada LLM. Não causa erro — causa uma resposta
+// educacional elegante via persona GUARDIAO (tratado em message.ts).
+// ────────────────────────────────────────────────────────────────────────────
+const PADROES_JAILBREAK = [
+  'ignore suas instruções', 'ignore suas instrucoes',
+  'ignore your instructions', 'ignore all instructions',
+  'esqueça suas instruções', 'esqueca suas instrucoes',
+  'forget your instructions', 'forget your previous instructions',
+  'você é agora', 'voce e agora',
+  'a partir de agora você', 'a partir de agora voce',
+  'novo modo', 'modo desenvolvedor', 'developer mode',
+  'sem restrições', 'sem restricoes', 'without restrictions',
+  'atue como', 'act as if', 'pretend you are', 'pretend to be',
+  'jailbreak', 'dan mode', 'do anything now',
+]
+
+const PADROES_FORA_ESCOPO = [
+  'hackear', 'invadir o wifi', 'invasão de', 'invadir a rede',
+  'fazer bomba', 'criar vírus', 'criar virus', 'malware',
+  'namorado', 'namorada', 'meu crush', 'ficar com',
+  'receita de bolo', 'como fazer comida',
+  'vira meu assistente', 'vira meu assistente pessoal',
+  'me ajuda com qualquer coisa', 'pode me ajudar com tudo',
+  'assistente pessoal sem restrições', 'assistente sem restrições',
+]
+
+export function detectarGuardiao(mensagem: string): boolean {
+  const msg = mensagem.toLowerCase()
+  const msgSemAcento = removerAcentos(msg)
+  const verificar = (padroes: string[]) =>
+    padroes.some(p => msg.includes(p) || msgSemAcento.includes(removerAcentos(p)))
+  return verificar(PADROES_JAILBREAK) || verificar(PADROES_FORA_ESCOPO)
+}
+
 export async function decidirPersona(
   mensagem: string,
   sessao: Sessao,
   ultimosTurnos: Turno[],
   novaSessao: boolean = false
 ): Promise<{ persona: string; temaDetectado: string | null }> {
+
+  // 0. Guardião — jailbreak/fora de escopo → resposta elegante sem LLM
+  if (detectarGuardiao(mensagem)) {
+    console.log(`🛡️ Guardião ativado para: "${mensagem.substring(0, 60)}..."`)
+    return { persona: 'GUARDIAO', temaDetectado: null }
+  }
 
   // 1. Checar timeout ou nova sessão
   const agora = Date.now()

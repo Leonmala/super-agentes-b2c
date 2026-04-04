@@ -242,6 +242,21 @@ router.post('/message', async (req: Request, res: Response) => {
       console.log(`[${aluno_id}] Continuidade detectada: mantendo ${persona}`)
     }
 
+    // ─── GUARDIÃO: resposta elegante sem LLM ─────────────────────────────────
+    // Ativado quando detectarGuardiao() flagou jailbreak ou conteúdo fora de escopo.
+    // Não chama nenhum LLM. Retorna mensagem educacional hardcoded e encerra.
+    if (persona === 'GUARDIAO') {
+      const nomeAluno = aluno.nome?.split(' ')[0] || ''
+      const saudacao = nomeAluno ? `${nomeAluno}, ` : ''
+      const msgGuardiao = `Oi, ${saudacao}aqui só consigo te ajudar com matérias escolares! 😊 Matemática, Português, Ciências, História, Geografia, Física, Química, Inglês ou Espanhol — qual você quer explorar hoje?`
+      enviarEvento('agente', { agente: 'PSICOPEDAGOGICO' })
+      enviarEvento('chunk', { texto: msgGuardiao })
+      enviarEvento('done', {})
+      res.end()
+      return
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     console.log(`[${aluno_id}] Persona selecionada: ${persona}`)
 
     // Carregar system prompt e contexto (usar apenas 3 turnos mais recentes no contexto LLM)

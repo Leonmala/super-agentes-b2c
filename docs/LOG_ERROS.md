@@ -110,15 +110,32 @@
 
 ---
 
+## Erros Resolvidos — QA Pré-Famílias (2026-04-04)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 55 | 2026-04-04 | QA | física → TEMPUS (VECTOR nunca ativado). "tenho dúvida em física" e "velocidade média" roteavam para TEMPUS | Envelope PSICOPEDAGOGICO em `llm.ts` tinha only 2 exemplos few-shot (mat→CALCULUS, pt→VERBETTA). Sem mapeamento explícito, LLM associava "velocidade/tempo" → TEMPUS (tempo em latim) | Adicionado MAPEAMENTO OBRIGATÓRIO MATÉRIA→HERÓI no envelope PSICOPEDAGOGICO em `llm.ts` (9 matérias, nomes exatos de heróis). TypeScript: 0 erros. **Pendente push via Escape Hatch** | ⚠️ Fix local, push pendente |
+| 56 | 2026-04-04 | QA | "professora mandou escrever uma história" → TEMPUS em vez de VERBETTA | `KEYWORDS_HISTORIA` inclui `'história'` bare. `ANTI_KEYWORDS_HISTORIA` estava vazia `[]`. Match acontecia antes de VERBETTA (ordem: PORTUGUES → HISTORIA). Mas a mensagem não tinha keywords de PORTUGUES | `ANTI_KEYWORDS_HISTORIA` agora inclui frases de composição narrativa: 'escrever uma história', 'contar uma história', 'inventar uma história', 'criar uma história', 'fazer uma história', 'história inventada', 'história criativa'. TypeScript: 0 erros. **Pendente push via Escape Hatch** | ⚠️ Fix local, push pendente |
+
+## Erros e Gaps — QA Round 2 (2026-04-04)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 57 | 2026-04-04 | QA R2 | **BUG-57: Stickiness muito agressivo** — CALCULUS manteve por 4 turnos com pedidos EXPLÍCITOS de troca. Layla disse "quero falar com o professor de português agora" e CALCULUS respondeu "vou te encaminhar" mas manteve 3x mais | Stickiness guard em `decidirPersona` exige confirmação do LLM antes de trocar. Se `detectarTema()` não detecta keyword do novo tema, LLM classifica e retorna 'indefinido' (contexto não claro) → mantém herói atual. 3 msgs antes do switch | **Fix proposto:** detectar frases de pedido explícito de troca ("quero falar com professor de X", "preciso de ajuda em Y agora") como override direto do stickiness. Bypass do guard nesse caso específico | ⚠️ P1 — Pendente |
+| GAP-01 | 2026-04-04 | QA R2 | **Sem `tempo_resposta_ms` no banco** — impossível medir latência real do LLM. Diffs entre turnos incluem tempo de leitura + digitação do usuário. Continuidade: 39-73s total. Cascata: 67-134s total (inclui PSICO + herói) | Campo nunca foi adicionado a `b2c_turnos`. Backend tem `const inicio = Date.now()` mas não persiste | **Fix:** `ALTER TABLE b2c_turnos ADD COLUMN tempo_resposta_ms integer`. Em `message.ts`: `persistirTurno({ ..., tempo_resposta_ms: Date.now() - inicio })`. Supabase type update | ⚠️ P2 — Pendente |
+| GAP-02 | 2026-04-04 | QA R2 | **Agentes não pedem foto proativamente** — pipeline de imagem funciona perfeitamente (message.ts, inlineData) mas os prompts dos agentes não têm instrução para solicitar foto do exercício. Apenas 5 ocorrências de "imagem/foto" em 4 personas, nenhuma é instrução proativa | Prompts foram escritos antes do feature de imagem ser implementado (PE1). Sem instrução explícita, LLM não sugere o recurso | **Fix:** Adicionar seção `📷 USO DE IMAGEM` em CALCULUS, VECTOR, ALKA, VERBETTA. Instruir: "Se aluno menciona exercício feito no papel, peça foto. Se receber foto, analise e oriente." | ⚠️ P2 — Pendente |
+| GAP-03 | 2026-04-04 | QA R2 | **MODO PAI sem seletor de filha interno** — sessão PAI fica travada à filha selecionada no ProfileModal. Leon conversou sobre "minha filha com frações no 4º ano" (Maria Paz) mas o contexto injetado era de Layla (7_fund). CALCULUS PAI responde genericamente | Sessão é criada com `aluno_id` fixo ao fazer login no perfil. Trocar de filha exige fechar sessão + selecionar outro perfil | **Opção A (MVP):** UX: documentar que para ajudar filha diferente, ir em menu → Trocar Perfil. **Opção B (V2):** Seletor dropdown de filha dentro do MODO PAI sem logout | ℹ️ UX Gap — Documentado |
+| GAP-04 | 2026-04-04 | QA R2 | **Acervo espúrio gerado pelo BUG-56** — `3_fund/historia/TEMPUS` criado quando "professora mandou escrever uma história" foi roteada para TEMPUS erroneamente. Acervo de história para 3_fund foi gerado com conteúdo que pode ser irrelevante | Side effect do BUG-56: PSICO faz cascade → Super Prova gera acervo para o tema detectado (historia) para a série (3_fund) | **Fix:** Quando BUG-56 for corrigido, novos acervos espúrios não serão mais gerados. Opcionalmente: `DELETE FROM b2c_super_prova_acervo WHERE serie='3_fund' AND tema_label='historia'` | ℹ️ Side effect resolvido com BUG-56 fix |
+
+---
+
 ## Erros Pendentes (próxima sessão)
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
 |---|------|------|-----------|------------|-----------|--------|
 | 36 | 2026-03-15 | Deploy | Railway sem env vars → fetch failed no login | .env gitignored | Leon configura no dashboard Railway | ⏳ Pendente |
-| 51 | 2026-03-31 | Supervisor | Supervisor busca dados do responsável (pai) em vez das filhas | `SUPERVISOR_EDUCACIONAL` usa contexto/Qdrant do responsável logado. Deveria buscar histórico das filhas vinculadas. Com múltiplas filhas, deveria perguntar ao pai "de qual filha você quer o relatório?" antes de gerar | A corrigir amanhã | ⏳ Pendente |
-| 52 | 2026-03-31 | Interface | Cor do Prof. Pense-AI no header é teal/verde — deveria ser amarelo | `AGENTES_ESPECIAIS.professor_ia.gradientFrom: '#0F766E'` (teal). Leon quer: PROFESSOR_IA = amarelo, SUPERVISOR = verde (como está) | Fix simples: trocar `#0F766E`/`#042F2E` por amarelo (`#B45309`/`#451A03` ou similar) em `constants.ts` | ⏳ Pendente |
 | 53 | 2026-04-04 | Super Prova | QUIZ SSE event nunca chegava ao frontend | Hook 3 era fire-and-forget (`.then()` sem `await`). `processarQuiz` resolvia após `res.end()` — stream já fechado | Armazenar promise em `quizSsePromise`, `await` antes de `enviarEvento('done')`. TypeScript 0 erros ✅ | ✅ Resolvido |
-| 54 | 2026-04-04 | Super Prova | Acervo gerado com conteúdo errado (Idade Média em vez de WWII) | `temaDetectado` vem de `detectarTema()` que retorna a matéria ("historia"), não o tópico específico ("segunda_guerra_mundial"). Gemini grounding gera conteúdo para 7ª série de História genérico | Fix planejado: extrair tópico específico da mensagem do aluno (ex: últimas 5 palavras-chave > 4 chars, snake_case) antes de chamar `obterOuGerarAcervo`. Registrar em `b2c_super_prova_acervo` com `tema_hash` granular | ⏳ Pendente |
+| 54 | 2026-04-04 | Super Prova | Acervo gerado com conteúdo errado (Idade Média em vez de WWII) | `temaDetectado` vem de `detectarTema()` que retorna a matéria ("historia"), não o tópico específico ("segunda_guerra_mundial"). Gemini grounding gera conteúdo para 7ª série de História genérico | Fix planejado: extrair tópico específico da mensagem do aluno antes de `obterOuGerarAcervo`. Registrar com `tema_hash` granular | ⏳ Pendente |
 
 ---
 

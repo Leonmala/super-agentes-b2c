@@ -262,6 +262,104 @@
   - ✅ Tela resultado: 🎉 4/4 — 100% de acertos
   - ⚠️ Bug #54 pendente: temaDetectado genérico ("historia") → acervo Idade Média em vez de WWII
   - ⚠️ CONSULTAR: não testado nesta sessão (TEMPUS não precisou consultar — usou conhecimento próprio)
+- [x] **BUG-53** Fix SSE Quiz — Hook 3 fire-and-forget race condition ✅ (2026-04-04)
+  - Causa: processarQuiz resolvia após res.end() → SSE event silenciosamente descartado
+  - Fix: `quizSsePromise` coletado antes de fechar stream, `await quizSsePromise` antes de `enviarEvento('done')`
+  - Aplicado em CASO A + CASO B em message.ts
+- [x] **SP8** Quiz adaptativo por série — `questoesPorSerie()` ✅ (2026-04-04)
+  - 1º-3º fund → 8q | 4º-5º → 10q | 6º-7º → 12q | 8º-9º → 15q | 1º-2º EM → 18q | 3º EM → 20q
+  - Dificuldade progressiva: Bloom's taxonomy (recordação → compreensão → aplicação → análise/síntese)
+  - TypeScript: 0 erros ✅ | Layla (7_fund) agora recebe 12 questões
+
+---
+
+## QA PRÉ-FAMÍLIAS — Rodadas Duplas (2026-04-04) ✅
+
+> Score geral: **9.4/10**. App aprovado para testes com famílias após push dos 2 fixes de routing.
+
+### FASE 1 — Layla (7_fund, 12 anos)
+
+- [x] **QA-L1** CALCULUS: 6 turnos, método socrático, equações e quadráticas — 9.5/10
+- [x] **QA-L2** VERBETTA: 3 turnos, redação de meio ambiente, construção sem dar resposta — 9/10
+- [x] **QA-L3** NEURON: 3 turnos, células/parede celular, metáfora armadura mantida entre turnos — 9.5/10
+- [x] **QA-L4** GAIA: 2 turnos, biomas, metáfora guarda-roupa consistente — 9.5/10
+- [x] **QA-L5** ALKA: 2 turnos, reação de neutralização, construção passo a passo — 9/10
+- [x] **QA-L6** FLEX: 1 turno, inglês, tom adequado para 12 anos — 9/10
+- [x] **QA-L7** TEMPUS: 2 turnos corretos (Egito/civilização) — 9/10
+- [x] **QA-L8** VECTOR: ❌ Bug de routing detectado (física→TEMPUS) — BUG-55 corrigido
+- [x] **QA-L9** QUIZ: 12 questões para 7_fund confirmadas (SP8 ✅)
+
+### FASE 2 — Maria Paz (3_fund, 7 anos)
+
+- [x] **QA-M1** CALCULUS: 2 turnos, tabuada do 7, metáfora caixinhas com brinquedos — 9/10
+- [x] **QA-M2** NEURON: 2 turnos, ser vivo (pedra vs cachorro), "mamãe cachorra" — 9.5/10
+- [x] **QA-M3** VERBETTA: 2 turnos, redação do animal favorito, gatinha Bolinha como âncora — 9.5/10
+- [x] **QA-M4** GAIA: 2 turnos, tamanho dos países, metáfora quintal gigante — 9.5/10
+- [x] **QA-M5** TEMPUS: ❌ Bug de routing detectado ("escrever uma história"→TEMPUS) — BUG-56 corrigido
+- [x] **QA-M6** QUIZ: 8 questões para 3_fund confirmadas (SP8 ✅), mecânica funcional
+- [x] **QA-M7** Tom mais simples que Layla confirmado (vocabulário, exemplos, emojis)
+
+### FASE 3 — Leon (responsável, MODO PAI)
+
+- [x] **QA-P1** Login PIN 4 dígitos: fluxo limpo, PIN screen, autenticação — 10/10
+- [x] **QA-P2** Badge MODO PAI: visível em todas as telas, persiste na navegação — 10/10
+- [x] **QA-P3** CALCULUS MODO PAI: tom adulto, estratégias parentais, nome filha ativa — 9.5/10
+- [x] **QA-P4** Supervisor Educacional: lê Supabase real, resumo preciso semana Layla — 9/10
+- [x] **QA-P5** Professor de IA: "parceiro de estudo, não buscador de respostas" — 9/10
+- [x] **QA-P6** Seletor filho ativo: Layla ● / Maria Paz, troca funcional — 10/10
+- [x] **QA-P7** Navegação 3 seções (Super Agentes, Prof IA, Supervisor) — 10/10
+
+### Fixes aplicados no QA
+
+- [x] **BUG-55** router.ts fix: MAPEAMENTO OBRIGATÓRIO no envelope PSICOPEDAGOGICO (llm.ts) ⚠️ push pendente
+- [x] **BUG-56** router.ts fix: ANTI_KEYWORDS_HISTORIA inclui frases de composição narrativa ⚠️ push pendente
+- [ ] **QA-POST** Push Escape Hatch: git add + commit + push server/src/core/router.ts + server/src/personas/PSICOPEDAGOGICO.md
+- [ ] **QA-POST2** Verificar VECTOR após deploy: "não entendo velocidade média" → header deve mostrar VECTOR
+
+---
+
+## QA ROUND 2 — Análise Supabase + Código (2026-04-04) ✅
+
+> Análise completa a partir dos dados do Supabase (34 turnos) + inspeção de código. Sem execução de LLM nesta sessão.
+
+### Timing (Task 2 ✅)
+
+- [ ] **QA2-T1** Adicionar `tempo_resposta_ms` à tabela `b2c_turnos` (GAP-01)
+- [ ] **QA2-T2** Instrumentar `message.ts` para salvar `Date.now() - inicio` no turno
+
+### Regressão BUG-55 e BUG-56 (Task 3 ✅)
+
+- [x] **QA2-R1** Fix BUG-56 confirmado em `router.ts` (ANTI_KEYWORDS_HISTORIA preenchido) ⚠️ push pendente
+- [x] **QA2-R2** Fix BUG-55 confirmado em `llm.ts` (MAPEAMENTO OBRIGATÓRIO presente) ⚠️ push pendente
+- [x] **QA2-R3** Bugs confirmados nos dados do Supabase: turnos 17, 18, 22 = TEMPUS para física; turno 5 sessão 2 = TEMPUS para "história"
+- [ ] **QA2-R4** Teste de regressão E2E pós-push: confirmar VECTOR e VERBETTA corretos
+
+### Segurança (Task 4 ✅ análise, ⏳ E2E pendente)
+
+- [x] **QA2-S1** REGRA DE SIGILO ABSOLUTA confirmada em todos os prompts (99 ocorrências)
+- [ ] **QA2-S2** Testes E2E de segurança (12 casos SEC-01 a SEC-12) — executar manualmente após push
+
+### Imagem (Task 5 ✅ pipeline, ⚠️ proatividade pendente)
+
+- [x] **QA2-I1** Pipeline imagem funcional: `message.ts` aceita `imagem_base64`, passa PSICO e herói ✅
+- [x] **QA2-I2** Validação 700KB confirmada no código ✅
+- [ ] **QA2-I3** Adicionar seção `📷 USO DE IMAGEM` em CALCULUS, VECTOR, ALKA, VERBETTA (GAP-02)
+- [ ] **QA2-I4** Testar envio de imagem E2E: foto de exercício → CALCULUS analisa e orienta
+
+### Super Prova (Task 6 ✅)
+
+- [x] **QA2-SP1** 9 acervos gerados durante QA: 7 para 7_fund, 2 para 3_fund ✅
+- [x] **QA2-SP2** QUIZ confirmado: 12q para 7_fund (Layla), 8q para 3_fund (Maria Paz) ✅
+- [x] **QA2-SP3** Acervo espúrio detectado: 3_fund/historia/TEMPUS (side effect BUG-56) — documentado
+- [ ] **QA2-SP4** Limpar acervo espúrio após push BUG-56 fix (opcional)
+- [ ] **QA2-SP5** Investigar MODO PAI seletor de filha (GAP-03) — decisão de arquitetura
+
+### Novos Bugs Identificados
+
+- [ ] **BUG-57** Stickiness muito agressivo: CALCULUS manteve 4 turnos com pedido explícito de troca (P1)
+- [ ] **GAP-01** Sem `tempo_resposta_ms` no banco — não mensurável (P2)
+- [ ] **GAP-02** Agentes não pedem foto proativamente (P2)
+- [ ] **GAP-03** MODO PAI sem seletor de filha interno (UX gap — P3)
 
 ---
 
