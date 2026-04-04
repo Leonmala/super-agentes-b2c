@@ -252,6 +252,7 @@ router.post('/message', async (req: Request, res: Response) => {
     const chamadasMetricas: MetricasChamada[] = []
     let houveCascata = false
     let agenteFinal: string = persona
+    let quizSsePromise: Promise<void> | null = null  // Hook 3: QUIZ precisa ser aguardado antes de res.end()
     let respostaFinal: string = ''
     let plano: string | null = null
     let sinaisHeroi: SinaisPedagogicos | null = null
@@ -423,7 +424,8 @@ router.post('/message', async (req: Request, res: Response) => {
               console.log(`[SuperProva] Hook 3 ativado (cascata) — gerando quiz para ${heroi_A}`)
               const resumo_A = ultimosTurnos.slice(0, 3)
                 .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
-              processarQuiz(temaAtual_A, serie_A, heroi_A, resumo_A)
+              // QUIZ precisa ser aguardado antes de res.end() — armazena promise para await posterior
+              quizSsePromise = processarQuiz(temaAtual_A, serie_A, heroi_A, resumo_A)
                 .then(quiz => {
                   if (quiz) {
                     console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)
@@ -681,7 +683,8 @@ router.post('/message', async (req: Request, res: Response) => {
           console.log(`[SuperProva] Hook 3 ativado (continuidade) — gerando quiz para ${persona}`)
           const resumo_B = ultimosTurnos.slice(0, 3)
             .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
-          processarQuiz(temaAtual_B, serie_B, persona, resumo_B)
+          // QUIZ precisa ser aguardado antes de res.end() — armazena promise para await posterior
+          quizSsePromise = processarQuiz(temaAtual_B, serie_B, persona, resumo_B)
             .then(quiz => {
               if (quiz) {
                 console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)
@@ -709,6 +712,13 @@ router.post('/message', async (req: Request, res: Response) => {
     logMetricas(metricas)
 
     console.log(`[${aluno_id}] Resposta final (${agenteFinal}) em ${metricas.tempo_total_ms}ms`)
+
+    // Aguardar QUIZ SSE antes de fechar stream (Hook 3 precisa escrever antes de res.end())
+    if (quizSsePromise) {
+      console.log('[SuperProva] ⏳ Aguardando geração do quiz antes de fechar SSE...')
+      await quizSsePromise
+      console.log('[SuperProva] ✅ Quiz SSE enviado — fechando stream')
+    }
 
     // Enviar evento de conclusão
     enviarEvento('done', {
