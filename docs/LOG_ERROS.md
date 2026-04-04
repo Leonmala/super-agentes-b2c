@@ -99,11 +99,26 @@
 | 45 | 2026-03-18 | Router | 'potência'/'potencia' adicionados a MATEMATICA causavam "energia potencial" → MATEMATICA | 'potencia' é substring de 'potencial'. MATEMATICA checada antes de FISICA → falso positivo | Removidos 'potência'/'potencia' de MATEMATICA (já cobertos por FISICA keywords) | ✅ Resolvido |
 | 46 | 2026-03-18 | Router | 'média'/'media' em MATEMATICA causava "idade média" → matematica (em vez de historia) | Keyword correta para estatística, mas "idade média" é período histórico medieval | Adicionados 'idade média', 'idade media' em ANTI_KEYWORDS_MATEMATICA | ✅ Resolvido |
 
-## Erros Pendentes
+## Erros Resolvidos (PROFESSOR_IA + Bugs Interface — 2026-03-31)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 47 | 2026-03-31 | Produção | JWT expirado → login silencioso falha (filhas + PIN) | Token válido por 7 dias, sem renovação. `ProfileModal.tsx` swallava o erro silenciosamente (`catch { // handle error }`) | `client.ts`: 401 → limpar localStorage + redirect para `/`. `ProfileModal.tsx`: estado de erro + display visual do erro | ✅ Resolvido |
+| 48 | 2026-03-31 | PROFESSOR_IA | Agente não sabia o que era MCP ("não é um termo comum", chutou MLP) | Prompt não tinha definição de MCP. Sem regra de honestidade epistemológica | Adicionado: definição completa MCP (Anthropic, nov/2024), Agentic AI, honestidade epistemológica ("Nunca chute — diga 'não sei, mas vou verificar'") | ✅ Resolvido |
+| 49 | 2026-03-31 | PROFESSOR_IA | Supervisor não funcionava (sem resposta) | `'supervisor'.toUpperCase()` → `'SUPERVISOR'` ≠ `'SUPERVISOR_EDUCACIONAL'` esperado no backend | `ChatInput.tsx`: mapa explícito `MENU_TO_AGENTE = { supervisor: 'SUPERVISOR_EDUCACIONAL', professor_ia: 'PROFESSOR_IA' }` | ✅ Resolvido |
+| 50 | 2026-03-31 | Interface | Header não atualizava ao trocar para Supervisor/PROFESSOR_IA no menu | `ChatHeader` só lia `heroiAtivo` (setado por SSE). `HEROES` não tinha entrada para agentes especiais → fallback "Super Agentes" | `constants.ts`: `AGENTES_ESPECIAIS` com metadata. `ChatHeader`: lê `agenteMenu` com prioridade sobre `heroiAtivo` | ✅ Resolvido |
+
+---
+
+## Erros Pendentes (próxima sessão)
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
 |---|------|------|-----------|------------|-----------|--------|
 | 36 | 2026-03-15 | Deploy | Railway sem env vars → fetch failed no login | .env gitignored | Leon configura no dashboard Railway | ⏳ Pendente |
+| 51 | 2026-03-31 | Supervisor | Supervisor busca dados do responsável (pai) em vez das filhas | `SUPERVISOR_EDUCACIONAL` usa contexto/Qdrant do responsável logado. Deveria buscar histórico das filhas vinculadas. Com múltiplas filhas, deveria perguntar ao pai "de qual filha você quer o relatório?" antes de gerar | A corrigir amanhã | ⏳ Pendente |
+| 52 | 2026-03-31 | Interface | Cor do Prof. Pense-AI no header é teal/verde — deveria ser amarelo | `AGENTES_ESPECIAIS.professor_ia.gradientFrom: '#0F766E'` (teal). Leon quer: PROFESSOR_IA = amarelo, SUPERVISOR = verde (como está) | Fix simples: trocar `#0F766E`/`#042F2E` por amarelo (`#B45309`/`#451A03` ou similar) em `constants.ts` | ⏳ Pendente |
+| 53 | 2026-04-04 | Super Prova | QUIZ SSE event nunca chegava ao frontend | Hook 3 era fire-and-forget (`.then()` sem `await`). `processarQuiz` resolvia após `res.end()` — stream já fechado | Armazenar promise em `quizSsePromise`, `await` antes de `enviarEvento('done')`. TypeScript 0 erros ✅ | ✅ Resolvido |
+| 54 | 2026-04-04 | Super Prova | Acervo gerado com conteúdo errado (Idade Média em vez de WWII) | `temaDetectado` vem de `detectarTema()` que retorna a matéria ("historia"), não o tópico específico ("segunda_guerra_mundial"). Gemini grounding gera conteúdo para 7ª série de História genérico | Fix planejado: extrair tópico específico da mensagem do aluno (ex: últimas 5 palavras-chave > 4 chars, snake_case) antes de chamar `obterOuGerarAcervo`. Registrar em `b2c_super_prova_acervo` com `tema_hash` granular | ⏳ Pendente |
 
 ---
 

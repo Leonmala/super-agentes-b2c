@@ -10,7 +10,7 @@
 **Fase atual:** Super Prova — Fases A, B, C implementadas ✅ → Pendente: git push + E2E (SP7) → Fase 5 SaaS
 **Status:** Todo o código está nos arquivos. TypeScript frontend e backend: 0 erros. Commits Fase B e C não puderam ser feitos no VM (git lock no mount). Precisa do Escape Hatch.
 **URL Railway:** `https://independent-eagerness-production-7da9.up.railway.app`
-**Próximo (INÍCIO DA PRÓXIMA SESSÃO):** 1) Escape Hatch git push (Fases A+B+C) 2) Validar deploy Railway 3) E2E Gate SP7 (Layla → TEMPUS → CONSULTAR → QUIZ) 4) Fase 5 SaaS
+**Próximo (INÍCIO DA PRÓXIMA SESSÃO):** 1) Escape Hatch git push (fix SSE Quiz — message.ts) 2) Fix bug #54 (temaDetectado genérico → extrair tópico específico da mensagem) 3) Fase 5 SaaS (Landing + Checkout + Onboarding)
 
 ---
 
@@ -71,17 +71,16 @@ ALTER TABLE b2c_sessoes ADD COLUMN super_prova_kb text, super_prova_consulta_res
 
 ---
 
-## Estado do Produto (local — aguardando push)
+## Estado do Produto
 
 | Bloco | Status | Detalhes |
 |-------|--------|---------|
 | Fases 1-4 (backend, agentes, frontend, infra) | ✅ 100% | Todos os gates passando |
 | PROFESSOR_IA | ✅ Em produção | Google Search grounding ativo |
 | SUPERVISOR qualidade | ✅ Em produção | Fixes 1-6 aplicados |
-| Super Prova — código | ✅ Implementado | Fases A+B+C completas, TypeScript OK |
-| Super Prova — deploy | ⏳ Aguardando | Escape Hatch → git push → Railway |
-| Super Prova — E2E SP7 | ⏳ Aguardando | Após deploy |
-| Fase 5 SaaS | ❌ | Após SP7 Gate passar |
+| Super Prova — Fases A+B+C | ✅ Em produção | Commits cea2974 + 6d1e72d + fix SSE |
+| Super Prova — Gate SP7 | ✅ APROVADO | E2E Layla→TEMPUS→QUIZ 4/4 100% |
+| Fase 5 SaaS | ❌ | Próxima fase |
 
 ---
 
@@ -116,7 +115,7 @@ ALTER TABLE b2c_sessoes ADD COLUMN super_prova_kb text, super_prova_consulta_res
 
 ## Próximo Passo Exato — BOOT DE AMANHÃ
 
-**1. Escape Hatch git push:**
+**1. Escape Hatch git push (fix SSE Quiz — message.ts):**
 ```
 cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
 git add server/src/super-prova/ server/src/db/persistence.ts server/src/routes/message.ts server/src/core/llm.ts web/src/components/QuizCard.tsx web/src/api/chat.ts web/src/contexts/ChatContext.tsx web/src/pages/ChatPage.tsx

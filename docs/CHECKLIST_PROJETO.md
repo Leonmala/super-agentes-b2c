@@ -254,7 +254,14 @@
   - `web/src/contexts/ChatContext.tsx` — quizAtivo state + fecharQuiz
   - `web/src/pages/ChatPage.tsx` — render condicional QuizCard
   - TypeScript frontend: 0 erros ✅
-- [ ] **SP7** Gate Super Prova: E2E com 3 matérias — **PENDENTE** (aguardando git push + deploy)
+- [x] **SP7** Gate Super Prova: E2E TEMPUS/WWII ✅ (2026-04-04) — QuizCard 4/4 100% acertos
+  - ✅ Hook 1: acervo criado em background (b2c_super_prova_acervo em 15s)
+  - ✅ TEMPUS resposta pedagogicamente correta
+  - ✅ Sinal QUIZ emitido → SSE event entregue → QuizCard renderizado
+  - ✅ 4 questões progressivas com feedback + explicação
+  - ✅ Tela resultado: 🎉 4/4 — 100% de acertos
+  - ⚠️ Bug #54 pendente: temaDetectado genérico ("historia") → acervo Idade Média em vez de WWII
+  - ⚠️ CONSULTAR: não testado nesta sessão (TEMPUS não precisou consultar — usou conhecimento próprio)
 
 ---
 

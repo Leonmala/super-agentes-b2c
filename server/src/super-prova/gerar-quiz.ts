@@ -19,13 +19,25 @@ export interface QuizGerado {
   questoes: QuizQuestion[]
 }
 
+// Número de questões varia com a série: alunos mais velhos recebem quizzes maiores
+function questoesPorSerie(serie: string): number {
+  const s = serie.toLowerCase()
+  if (s.includes('3_em'))                       return 20  // 3º EM
+  if (s.includes('2_em') || s.includes('1_em')) return 18  // 1º-2º EM
+  if (s.includes('9_fund') || s.includes('8_fund')) return 15  // 8º-9º ano
+  if (s.includes('7_fund') || s.includes('6_fund')) return 12  // 6º-7º ano
+  if (s.includes('5_fund') || s.includes('4_fund')) return 10  // 4º-5º ano
+  return 8  // 1º-3º ano (padrão mínimo)
+}
+
 export async function gerarQuiz(
   tema: string,
   serie: string,
   materia: string,
   resumoConversa: string
 ): Promise<QuizGerado> {
-  console.log(`[SuperProva:gerar-quiz] 🎯 Sinal QUIZ recebido | tema: "${tema}" | série: ${serie} | matéria: ${materia}`)
+  const nQuestoes = questoesPorSerie(serie)
+  console.log(`[SuperProva:gerar-quiz] 🎯 Sinal QUIZ recebido | tema: "${tema}" | série: ${serie} | matéria: ${materia} | questões: ${nQuestoes}`)
   console.log(`[SuperProva:gerar-quiz] 📝 Resumo da conversa (${resumoConversa.length} chars)`)
 
   const model = genAI.getGenerativeModel({
@@ -36,7 +48,7 @@ export async function gerarQuiz(
 
 Contexto da conversa que aconteceu: ${resumoConversa}
 
-Gere exatamente 4 questões de múltipla escolha.
+Gere exatamente ${nQuestoes} questões de múltipla escolha.
 
 Retorne um JSON com este formato EXATO:
 {
@@ -57,7 +69,7 @@ Retorne um JSON com este formato EXATO:
 }
 
 Regras:
-- 4 questões, dificuldade progressiva (fácil → médio → médio → difícil)
+- ${nQuestoes} questões com dificuldade progressiva: primeiras questões fáceis (recordação e identificação), meio do quiz com nível médio (compreensão e aplicação), últimas questões difíceis (análise e síntese)
 - 4 alternativas por questão, somente 1 resposta correta
 - Explicação de 1-2 frases
 - Linguagem adequada ao ${serie}
