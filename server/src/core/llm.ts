@@ -321,12 +321,23 @@ Resposta CORRETA:
   "instrucoes_para_heroi": null
 }
 
+## MAPEAMENTO OBRIGATÓRIO MATÉRIA → HERÓI (USE ESTE MAPA — NUNCA INVENTE):
+- matematica (números, cálculo, frações, álgebra, geometria) → CALCULUS
+- portugues (gramática, redação, crase, ortografia, texto, literatura) → VERBETTA
+- ciencias (biologia, célula, corpo humano, ecossistema, evolução) → NEURON
+- historia (eventos históricos, guerras, revoluções, civilizações, períodos) → TEMPUS
+- geografia (mapa, relevo, clima, bioma, continentes, população) → GAIA
+- fisica (velocidade, força, energia, newton, movimento, eletricidade, óptica) → VECTOR
+- quimica (átomo, molécula, reação, tabela periódica, ácido, base) → ALKA
+- ingles (vocabulário inglês, tradução, gramática em inglês) → FLEX
+- espanhol (vocabulário espanhol, tradução, gramática em espanhol) → FLEX
+
 ## RACIOCÍNIO PASSO A PASSO (Chain-of-Thought):
 Antes de responder, pense:
 1. Estou em MODO FILHO ou MODO PAI? (verifique o contexto)
 2. Qual é o tema da dúvida? (matematica/portugues/ciencias/historia/geografia/fisica/quimica/ingles/espanhol/outro)
 3. O tema está CLARO o suficiente para encaminhar? Se sim → ENCAMINHAR_PARA_HEROI. Se não → PERGUNTAR_AO_ALUNO
-4. Qual herói é mais adequado para este tema?
+4. Consulte o MAPEAMENTO MATÉRIA → HERÓI acima e use o herói correto
 5. Se MODO PAI: incluir "MODO PAI" nas instrucoes_para_heroi
 
 ## REGRAS CRÍTICAS:
