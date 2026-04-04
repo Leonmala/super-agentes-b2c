@@ -136,7 +136,18 @@ const ANTI_KEYWORDS_PORTUGUES: string[] = [
   'em espanhol', 'de espanhol', 'en español', 'em inglês', 'de inglês', 'em ingles', 'de ingles',
   'verbos em espanhol', 'verbos en español', 'verbos em inglês', 'verbos em ingles',
 ]
-const ANTI_KEYWORDS_HISTORIA: string[] = []
+const ANTI_KEYWORDS_HISTORIA: string[] = [
+  // "história" no sentido de narrativa/redação (não matéria de história)
+  'escrever uma história', 'escrever uma historia',
+  'escrever minha história', 'escrever minha historia',
+  'contar uma história', 'contar uma historia',
+  'inventar uma história', 'inventar uma historia',
+  'criar uma história', 'criar uma historia',
+  'fazer uma história', 'fazer uma historia',
+  'história de mentira', 'historia de mentira',
+  'história inventada', 'historia inventada',
+  'história criativa', 'historia criativa',
+]
 const ANTI_KEYWORDS_CIENCIAS: string[] = []
 const ANTI_KEYWORDS_GEOGRAFIA: string[] = []
 
