@@ -14,7 +14,7 @@ const EMPTY_FILHO: Record<string, EmptyContent> = {
   super_agentes: {
     titulo: 'Oi, {nome}!',
     subtitulo: 'Tenho 8 professores prontos para te ajudar.',
-    cta: 'Sobre qual matéria você quer estudar hoje? Só perguntar!',
+    cta: 'Pode digitar sua dúvida aqui embaixo, ou toca numa matéria para começar.',
   },
   professor_ia: {
     titulo: 'Professor de IA',
@@ -28,7 +28,7 @@ const EMPTY_PAI: Record<string, EmptyContent> = {
   super_agentes: {
     titulo: 'Olá, {nome}!',
     subtitulo: 'Posso te ajudar a ensinar qualquer matéria para seu filho.',
-    cta: 'Qual matéria você quer trabalhar com seu filho hoje?',
+    cta: 'Pode digitar uma dúvida ou escolha a matéria diretamente.',
   },
   professor_ia: {
     titulo: 'Professor de IA',
@@ -42,20 +42,23 @@ const EMPTY_PAI: Record<string, EmptyContent> = {
   },
 }
 
-const MATERIAS = [
-  'Matemática',
-  'Português',
-  'Ciências',
-  'História',
-  'Geografia',
-  'Física',
-  'Química',
-  'Idiomas',
-]
+// Mapeamento matéria → mensagem enviada ao backend + nome do herói (para storytelling)
+const MATERIA_CONFIG: Record<string, { mensagem: string; heroNome: string }> = {
+  'Matemática': { mensagem: 'Ativar Matemática',  heroNome: 'Cálculus' },
+  'Português':  { mensagem: 'Ativar Português',   heroNome: 'Verbetta' },
+  'Ciências':   { mensagem: 'Ativar Ciências',    heroNome: 'Neuron'   },
+  'História':   { mensagem: 'Ativar História',    heroNome: 'Tempus'   },
+  'Geografia':  { mensagem: 'Ativar Geografia',   heroNome: 'Gaia'     },
+  'Física':     { mensagem: 'Ativar Física',      heroNome: 'Vector'   },
+  'Química':    { mensagem: 'Ativar Química',     heroNome: 'Alka'     },
+  'Idiomas':    { mensagem: 'Ativar Idiomas',     heroNome: 'Flex'     },
+}
+
+const MATERIAS = Object.keys(MATERIA_CONFIG)
 
 export function EmptyState() {
   const { perfilAtivo } = useAuth()
-  const { agenteMenu, heroiAtivo } = useChat()
+  const { agenteMenu, heroiAtivo, enviar } = useChat()
   const nome = perfilAtivo?.nome || 'aluno'
   const isPai = perfilAtivo?.tipoUsuario === 'pai'
 
@@ -66,6 +69,14 @@ export function EmptyState() {
   const heroData = heroiAtivo ? HEROES[heroiAtivo as HeroId] : null
   const avatarSrc = heroData?.avatar || '/logo-buble.png'
   const accentColor = heroData?.accent || '#3B6BA8'
+
+  const handleMateriaClick = (materia: string) => {
+    const config = MATERIA_CONFIG[materia]
+    if (!config) return
+
+    // Disparar envio → adiciona user bubble + seta streaming=true → TypingDots automáticos
+    void enviar(config.mensagem)
+  }
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
@@ -111,19 +122,23 @@ export function EmptyState() {
         {content.cta}
       </p>
 
-      {/* Subject pills - only show when agenteMenu === 'super_agentes' */}
+      {/* Subject buttons — only when agenteMenu === 'super_agentes' */}
       {agenteMenu === 'super_agentes' && (
-        <div className="flex flex-wrap justify-center gap-2 max-w-[320px]">
+        <div className="flex flex-wrap justify-center gap-3 max-w-[340px]">
           {MATERIAS.map((materia) => (
-            <div
+            <button
               key={materia}
-              className="px-4 py-2 rounded-full bg-white text-[var(--text-secondary)] text-xs font-semibold border border-black/[0.04] transition-all hover:-translate-y-0.5"
+              onClick={() => handleMateriaClick(materia)}
+              className="px-5 py-3 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
               style={{
+                backgroundColor: '#FFFBEB',
+                border: '1px solid rgba(251, 191, 36, 0.5)',
+                color: '#92400E',
                 boxShadow: 'var(--shadow-soft)',
               }}
             >
               {materia}
-            </div>
+            </button>
           ))}
         </div>
       )}
