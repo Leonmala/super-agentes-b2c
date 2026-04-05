@@ -564,6 +564,13 @@ export async function decidirPersona(
     return decidirComTema(temaKeywords, sessao, ultimosTurnos)
   }
 
+  // 3b. Sem keywords E herói ativo → skip LLM, continuidade direta
+  // Caso típico: resposta curta do aluno ("2", "sim", "letra c") sem palavra-chave de matéria.
+  if (!temaKeywords && sessao.agente_atual && sessao.agente_atual !== 'PSICOPEDAGOGICO' && sessao.tema_atual) {
+    console.log(`➡️ Continuidade (sem keywords, herói ativo): ${sessao.agente_atual}`)
+    return { persona: sessao.agente_atual, temaDetectado: sessao.tema_atual }
+  }
+
   // 4. Keywords falharam → classificador LLM (SEMPRE)
   const temaLLM = await classificarTema(mensagem)
 
@@ -572,10 +579,10 @@ export async function decidirPersona(
     return decidirComTema(temaLLM, sessao, ultimosTurnos)
   }
 
-  if (temaLLM === 'indefinido') {
-    // 4b. Indefinido — continuidade se agente ativo
+  if (!temaLLM || temaLLM === 'indefinido') {
+    // 4b. Indefinido ou timeout (null) — continuidade se agente ativo
     if (sessao.agente_atual && sessao.agente_atual !== 'PSICOPEDAGOGICO' && sessao.tema_atual) {
-      console.log(`➡️ Continuidade (classificador indefinido): ${sessao.agente_atual}`)
+      console.log(`➡️ Continuidade (classificador ${temaLLM ?? 'null/timeout'}): ${sessao.agente_atual}`)
       return { persona: sessao.agente_atual, temaDetectado: sessao.tema_atual }
     }
   }
