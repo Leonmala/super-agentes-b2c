@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { supabase } from '../db/supabase.js'
 
-const LIMITE_DISPOSITIVOS_V1 = 6 // QA TEMP: aumentado para 6 para suportar 5 agentes paralelos — reverter para 3 após QA
+const LIMITE_DISPOSITIVOS_V1 = 3 // V1: hardcode máximo plano Familiar
 const TIMEOUT_INATIVO_MS = 5 * 60 * 1000 // 5 minutos
 const TIMEOUT_CLEANUP_MS = 10 * 60 * 1000 // 10 minutos
 
