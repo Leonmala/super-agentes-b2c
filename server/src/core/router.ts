@@ -524,6 +524,27 @@ export async function decidirPersona(
     PADROES_TROCA_EXPLICITA.some(p => mensagem.toLowerCase().includes(p))
 
   if (temIntentoDeTroca) {
+    // Detecção por nome explícito de herói (ex: "quero falar com o GAIA")
+    const HEROI_NOME_TEMA: Record<string, string> = {
+      'calculus': 'matematica',
+      'verbetta': 'portugues',
+      'neuron': 'ciencias',
+      'tempus': 'historia',
+      'gaia': 'geografia',
+      'vector': 'fisica',
+      'alka': 'quimica',
+      'flex': 'ingles',
+    }
+    const msgLowerTroca = mensagem.toLowerCase()
+    const temaNomeHeroi = Object.entries(HEROI_NOME_TEMA)
+      .find(([nome]) => msgLowerTroca.includes(nome))?.[1] ?? null
+
+    if (temaNomeHeroi && temaNomeHeroi !== sessao.tema_atual) {
+      const heroiAlvo = personaPorTema(temaNomeHeroi)
+      console.log(`[stickiness-bypass] herói nomeado explicitamente → direto para ${heroiAlvo}`)
+      return { persona: heroiAlvo, temaDetectado: temaNomeHeroi }
+    }
+
     // Intenção explícita detectada → classificador LLM com timeout estendido (4s)
     const temaLLMExplicit = await classificarTemaComTimeout(mensagem, 4000)
     if (temaLLMExplicit && temaLLMExplicit !== 'indefinido' && temaLLMExplicit !== sessao.tema_atual) {

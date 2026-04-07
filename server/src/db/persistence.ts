@@ -85,6 +85,16 @@ export async function resetarSessaoAgente(sessaoId: string): Promise<void> {
   if (error) {
     console.error('❌ Erro ao resetar sessão agente:', error)
   }
+
+  // NOVO: limpar turnos da sessão para evitar context carry-over
+  const { error: errorTurnos } = await supabase
+    .from('b2c_turnos')
+    .delete()
+    .eq('sessao_id', sessaoId)
+
+  if (errorTurnos) {
+    console.error('Erro ao limpar turnos na sessão reset:', errorTurnos)
+  }
 }
 
 export async function buscarOuCriarSessao(
