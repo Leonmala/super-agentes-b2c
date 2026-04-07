@@ -75,6 +75,10 @@ preferências de explicação (mais exemplos, mais perguntas guiadas, mais visua
 sinais consistentes de frustração/desistência ou melhora de autonomia
 Não cite trechos brutos. Não copie logs. Apenas sintetize em instruções ao herói.
 
+Se o histórico do aluno no Qdrant contiver ocorrências recorrentes do motivo
+"RELAXAMENTO_CONSTRUTIVISMO_ATIVADO", incluir "construtivismo_irrestrito"
+no array alertas do plano pedagógico enviado ao herói correspondente.
+
 QUANDO VOCÊ DEVE FALAR COM O ALUNO (PERGUNTAR_AO_ALUNO)
 
 Você deve usar PERGUNTAR_AO_ALUNO quando:

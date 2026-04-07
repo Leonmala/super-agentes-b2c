@@ -43,6 +43,14 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ erro: 'Erro desconhecido' }))
+
+    // Sessão expirada — limpar localStorage e redirecionar para login
+    if (res.status === 401 && path !== '/auth/login') {
+      localStorage.removeItem('sa_token')
+      localStorage.removeItem('sa_familia_data')
+      window.location.href = '/'
+    }
+
     throw new ApiError(res.status, body.erro || `HTTP ${res.status}`)
   }
 

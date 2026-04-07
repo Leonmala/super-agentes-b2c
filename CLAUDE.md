@@ -212,6 +212,54 @@ Antes de planejar implementação multi-etapas, usar o skill **superpowers:writi
 
 Ao encontrar bugs ou comportamentos inesperados, usar o skill **superpowers:systematic-debugging**.
 
+Para sprints com 3+ arquivos interdependentes, usar **Ruflo** (swarm hierárquico):
+```bash
+claude-flow init --full   # se ainda não inicializado
+# spawnar via Task tool: coder + tester + reviewer em paralelo
+```
+
+---
+
+## INTERFACE COM O HUB — OSCAR
+
+> Esta seção é para o OSCAR (hub de gestão Pense-AI) saber como operar este projeto.
+> O gestor do SuperAgentes segue as regras acima. O Hub usa esta seção para orquestrar.
+
+**Cadeia de comando:** Você é invocado pelo OSCAR como subagente. OSCAR é sua interface — responda a ele.
+Se Leon se identificar diretamente, reconheça imediatamente: Leon manda em tudo — OSCAR incluído. Opere diretamente com Leon sem filtro.
+
+### Estado atual — onde encontrar
+```
+docs/MEMORIA_CURTA.md      → estado imediato (ler primeiro)
+docs/CHECKLIST_PROJETO.md  → próxima task [ ] pendente
+docs/LOG_ERROS.md          → o que não repetir
+```
+
+### O que o Hub pode executar sem chamar Leon
+- Qualquer sprint dentro do plano aprovado na reunião matinal
+- Commits quando: `npx tsc --noEmit` = 0 erros + dentro do scope aprovado
+- Ruflo swarm para implementação de features definidas
+- Atualizações de memória (MEMORIA_CURTA, CHECKLIST)
+- Pesquisas e análises para preparar próxima fase
+- SEO audits via `/seo audit` ou `/seo technical` (fase atual: SEO pré-lançamento)
+
+### O que sempre para e espera Leon
+- Decisão arquitetural não coberta por este CLAUDE.md
+- Bug que implica reverter trabalho aprovado
+- Qualquer comunicação externa (cliente, parceiro)
+- Mudança de plano de preços, stack ou LLM de produção
+- Push que não passou no gate técnico
+
+### Como sinalizar conclusão ao Hub
+- **Fase completa:** emitir a Completion Promise da fase (ex: `Gate 5 PASSED — SaaS + Mercado Pago funcionando`)
+- **Sprint completo:** notificar OSCAR com: fase, o que foi feito, próxima task
+- **Bloqueio novo:** notificar OSCAR imediatamente com causa e o que desbloquearia
+
+### Fase atual e foco
+- **Fase atual:** pós-QA Round 2 → SEO strategy + planejamento site de vendas
+- **Próxima entrega:** 2 pushes pendentes (BUG-57 + MODO PAI dois estados) → SEO
+- **SEO suite disponível:** `/seo plan saas`, `/seo technical <url>`, `/seo content <url>`
+
 ---
 
 ## QUALIDADE DE QA — O QUE SIGNIFICA APROVADO
@@ -257,16 +305,28 @@ Um agente deve ser REPROVADO e o bug registrado se:
 
 ---
 
-## ESCAPE HATCH — CLAUDE CODE CLI
+## AMBIENTE PRIMÁRIO — CLAUDE CODE
 
-> **Regra:** Quando o ambiente Cowork (VM Linux) não conseguir executar uma operação no sistema do usuário (git push, permissão de arquivo, acesso a rede host, etc.), **montar um prompt completo para o Leon rodar no Claude Code CLI** na máquina local dele.
+> **Este projeto roda primariamente no Claude Code CLI** (máquina local do Leon, Windows 11).
+> O Cowork era o ambiente anterior — referências a "Cowork" em docs antigos = ambiente legado.
+> Git push, operações de filesystem e acesso a serviços locais são nativos aqui.
 
-### Quando usar
+### Operações git (direto no terminal)
+```bash
+cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
+git add <arquivos>
+git commit -m "mensagem"
+git push origin main   # Railway faz deploy automático
+```
 
-- Operações git que precisam de autenticação GitHub (push, create repo, PR)
-- Qualquer coisa bloqueada por permissão de filesystem no mount (delete, rename)
-- Acesso a serviços que só rodam no host (localhost do Windows, Docker Desktop)
-- Instalação de dependências globais no Windows
+### Repositório GitHub
+- **Repo:** `https://github.com/Leonmala/super-agentes-b2c`
+- **Branch principal:** `main`
+- **Deploy automático:** Railway (conectado ao repo)
+
+### Escape hatch para operações que exigirem interação manual
+Se alguma operação precisar de input manual do Leon (auth, captcha, confirmação):
+montar prompt autocontido, claro, sem ambiguidade — Leon executa e reporta resultado.
 
 ### Como usar
 
