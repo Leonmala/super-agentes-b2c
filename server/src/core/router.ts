@@ -572,8 +572,8 @@ export async function decidirPersona(
   ) {
     const temaLLMConfirm = await classificarTema(mensagem)
     if (!temaLLMConfirm || temaLLMConfirm === 'indefinido') {
-      console.log(`[stickiness] keywords='${temaKeywords}' mas LLM='indefinido' → mantendo ${sessao.agente_atual}`)
-      return { persona: sessao.agente_atual, temaDetectado: sessao.tema_atual }
+      console.log(`[stickiness] keywords='${temaKeywords}' LLM timeout/indefinido → confiando em keywords → trocando`)
+      return decidirComTema(temaKeywords, sessao, ultimosTurnos)
     }
     // LLM confirma nova matéria → permitir troca
     console.log(`[stickiness] LLM='${temaLLMConfirm}' confirma troca de ${sessao.tema_atual} → ${temaLLMConfirm}`)
