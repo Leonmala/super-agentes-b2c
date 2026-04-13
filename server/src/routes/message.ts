@@ -374,6 +374,10 @@ router.post('/message', async (req: Request, res: Response) => {
             buscarConsultaResultado(sessao.id).catch(() => null),
           ])
 
+          // Atualizar tema e agente na sessão local antes de montar contexto (evita contexto stale)
+          if (temaDetectado) sessao.tema_atual = temaDetectado
+          sessao.agente_atual = heroiEscolhido
+
           // Montar contexto rico para o herói
           let contextoHeroi = montarContexto(sessao, aluno, ultimosTurnos, tipoUsuario)
 
@@ -437,10 +441,14 @@ router.post('/message', async (req: Request, res: Response) => {
 
             if (heroJson_A?.sinal_super_prova === 'QUIZ') {
               console.log(`[SuperProva] Hook 3 ativado (cascata) — gerando quiz para ${heroi_A}`)
-              const resumo_A = ultimosTurnos.slice(0, 3)
-                .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
+              // Monta resumo da sessão completa: entrada do aluno + resposta do herói (10 turnos × 400 chars)
+              // super_prova_query do herói carrega os tópicos do plano_universal ("frações, equações")
+              const temaQuiz_A = (heroJson_A?.super_prova_query as string | undefined) || temaAtual_A
+              const resumo_A = ultimosTurnos
+                .map(t => `[${t.agente}] Aluno: ${t.entrada.slice(0, 200)} | Herói: ${t.resposta.slice(0, 400)}`)
+                .join('\n')
               // QUIZ precisa ser aguardado antes de res.end() — armazena promise para await posterior
-              quizSsePromise = processarQuiz(temaAtual_A, serie_A, heroi_A, resumo_A)
+              quizSsePromise = processarQuiz(temaQuiz_A, serie_A, heroi_A, resumo_A)
                 .then(quiz => {
                   if (quiz) {
                     console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)
@@ -696,10 +704,14 @@ router.post('/message', async (req: Request, res: Response) => {
 
         if (heroJson_B?.sinal_super_prova === 'QUIZ') {
           console.log(`[SuperProva] Hook 3 ativado (continuidade) — gerando quiz para ${persona}`)
-          const resumo_B = ultimosTurnos.slice(0, 3)
-            .map(t => `${t.agente}: ${t.resposta.slice(0, 100)}`).join(' | ')
+          // Monta resumo da sessão completa: entrada do aluno + resposta do herói (10 turnos × 400 chars)
+          // super_prova_query do herói carrega os tópicos do plano_universal ("frações, equações")
+          const temaQuiz_B = (heroJson_B?.super_prova_query as string | undefined) || temaAtual_B
+          const resumo_B = ultimosTurnos
+            .map(t => `[${t.agente}] Aluno: ${t.entrada.slice(0, 200)} | Herói: ${t.resposta.slice(0, 400)}`)
+            .join('\n')
           // QUIZ precisa ser aguardado antes de res.end() — armazena promise para await posterior
-          quizSsePromise = processarQuiz(temaAtual_B, serie_B, persona, resumo_B)
+          quizSsePromise = processarQuiz(temaQuiz_B, serie_B, persona, resumo_B)
             .then(quiz => {
               if (quiz) {
                 console.log(`[SuperProva] 🎯 Enviando SSE event 'quiz' — ${quiz.questoes.length} questões`)

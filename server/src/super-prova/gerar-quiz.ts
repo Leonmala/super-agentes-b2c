@@ -46,7 +46,12 @@ export async function gerarQuiz(
 
   const prompt = `Crie um quiz educacional sobre "${tema}" para alunos do ${serie} (matéria: ${materia}).
 
-Contexto da conversa que aconteceu: ${resumoConversa}
+CONTEXTO DA SESSÃO (o que o aluno e o professor estudaram juntos agora):
+${resumoConversa}
+
+INSTRUÇÃO IMPORTANTE: As questões devem ser baseadas DIRETAMENTE no que foi estudado na sessão acima.
+Não faça questões genéricas sobre ${materia} — faça questões sobre os exemplos, exercícios e conceitos
+que aparecem no contexto da sessão. O aluno deve reconhecer o conteúdo.
 
 Gere exatamente ${nQuestoes} questões de múltipla escolha.
 

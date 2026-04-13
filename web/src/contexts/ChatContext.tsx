@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { ChatMessage, HeroId } from '../types'
 import { sendMessage } from '../api/chat'
 import { useAuth } from './AuthContext'
-import type { QuizGerado } from '../components/QuizCard'
+import type { QuizGerado, QuizResultado } from '../components/QuizCard'
 
 interface ChatContextValue {
   mensagens: ChatMessage[]
@@ -15,7 +15,7 @@ interface ChatContextValue {
   agenteMenu: string
   setAgenteMenu: (agente: string) => void
   quizAtivo: QuizGerado | null
-  fecharQuiz: () => void
+  fecharQuiz: (resultado?: QuizResultado) => void
   enviar: (texto: string, agenteOverride?: string, imagemBase64?: string) => Promise<void>
   addMessage: (msg: ChatMessage) => void
   clearPendingReveal: () => void
@@ -39,7 +39,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const fullTextRef = useRef('')
   const isFirstMessageRef = useRef(true)
 
-  const fecharQuiz = useCallback(() => setQuizAtivo(null), [])
+  // Ref para enviar — permite fecharQuiz chamar enviar sem deps circulares
+  const enviarRef = useRef<((texto: string) => Promise<void>) | null>(null)
+
+  const fecharQuiz = useCallback((resultado?: QuizResultado) => {
+    setQuizAtivo(null)
+    if (resultado) {
+      // Monta mensagem estruturada que o herói ativo recebe para fechamento pedagógico
+      const { acertos, total, questoesErradas } = resultado
+      const pct = Math.round((acertos / total) * 100)
+      const linhaErros = questoesErradas.length > 0
+        ? ` Errei as questões: ${questoesErradas.join(', ')}.`
+        : ' Acertei todas!'
+      const msg = `[Quiz concluído] ${acertos}/${total} acertos (${pct}%).${linhaErros}`
+      // Pequeno delay para garantir que o overlay fechou antes do novo turno
+      setTimeout(() => {
+        void enviarRef.current?.(msg)
+      }, 300)
+    }
+  }, [])
 
   const addMessage = useCallback((msg: ChatMessage) => {
     setMensagens(prev => [...prev, msg])
@@ -120,6 +138,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       },
     })
   }, [perfilAtivo, streaming])
+
+  // Manter ref sincronizado a cada render — permite fecharQuiz usar enviar sem deps circulares
+  enviarRef.current = enviar
 
   const limpar = useCallback(() => {
     setMensagens([])

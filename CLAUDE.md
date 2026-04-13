@@ -551,4 +551,9 @@ Leia os seguintes arquivos na ordem:
 Continue a execução de onde parou. A próxima task [ ] não marcada no checklist
 é seu alvo. Execute o Ralph Loop: Boot → Execute → Persist → Decide.
 ```
-
+
+
+## Sessão ativa
+Se existir um arquivo `SESSION.md` nesta pasta, leia-o antes de começar.
+Ele contém seu papel, conexões e workspace para a sessão de hoje.
+Sem SESSION.md = sessão normal sem INTERCON ativo.

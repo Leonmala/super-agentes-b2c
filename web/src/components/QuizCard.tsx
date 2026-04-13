@@ -16,9 +16,16 @@ export interface QuizGerado {
   questoes: QuizQuestion[]
 }
 
+// Resultado transmitido ao herói ativo para fechamento pedagógico
+export interface QuizResultado {
+  acertos: number
+  total: number
+  questoesErradas: number[]  // números 1-based das questões erradas
+}
+
 interface QuizCardProps {
   quiz: QuizGerado
-  onFechar: () => void
+  onFechar: (resultado?: QuizResultado) => void
 }
 
 export function QuizCard({ quiz, onFechar }: QuizCardProps) {
@@ -27,6 +34,7 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
   const [selecionada, setSelecionada] = useState<string | null>(null)
   const [mostrarGabarito, setMostrarGabarito] = useState(false)
   const [pontos, setPontos] = useState(0)
+  const [erradas, setErradas] = useState<number[]>([])  // 1-based question numbers
   const [finalizado, setFinalizado] = useState(false)
 
   const questao = questoes[atual]
@@ -34,7 +42,11 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
 
   function confirmar() {
     if (!selecionada) return
-    if (isCorreta) setPontos(p => p + 1)
+    if (isCorreta) {
+      setPontos(p => p + 1)
+    } else {
+      setErradas(prev => [...prev, atual + 1])  // 1-based
+    }
     setMostrarGabarito(true)
   }
 
@@ -52,6 +64,11 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
   if (finalizado) {
     const pct = Math.round((pontos / questoes.length) * 100)
     const emoji = pct >= 75 ? '🎉' : pct >= 50 ? '👍' : '📖'
+
+    function handleContinuar() {
+      onFechar({ acertos: pontos, total: questoes.length, questoesErradas: erradas })
+    }
+
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
@@ -63,7 +80,7 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
           </p>
           <p className="text-sm text-gray-500 mb-6">{pct}% de acertos</p>
           <button
-            onClick={onFechar}
+            onClick={handleContinuar}
             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-semibold transition-colors"
           >
             Continuar estudando

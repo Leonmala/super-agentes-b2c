@@ -318,6 +318,97 @@
 
 ---
 
+## Trabalho em Produção — Sessão Real Layla (2026-04-12)
+
+### Router Fixes — commit fb4e84a ✅
+
+- [x] **RF1** Fix 1: `!temaLLM || temaLLM === 'indefinido'` — captura null do timeout ✅ (router.ts)
+- [x] **RF2** Fix 2: Sem keywords + herói ativo → skip LLM, continuidade direta ✅ (router.ts)
+- [x] **RF3** Fix 3: PSICO detecta resposta curta após exercício como continuidade ✅ (ambos PSICO.md)
+- [ ] **RF-PUSH** Push Router Fixes + PSICO via Escape Hatch (pendente execução Leon)
+
+### EmptyState — Botões Reais ✅ (push pendente)
+
+- [x] **ES1** `EmptyState.tsx` reescrito: pills pseudo-clicáveis → `<button>` reais âmbar ✅
+- [x] **ES2** `MATERIA_CONFIG` mapeia 8 matérias → herói + mensagem de ativação ✅
+- [x] **ES3** `handleMateriaClick` → `enviar()` → PSICO cascade → TypingDots automáticos ✅
+- [x] **ES4** CTAs diferenciados: filho vs pai ✅
+- [ ] **ES-PUSH** Push EmptyState via Escape Hatch (pendente execução Leon)
+
+### Identidade + Documentação ✅
+
+- [x] **ID1** CLAUDE.md: seção "QUEM VOCÊ É — LUCAS PESSOA" adicionada no início ✅
+- [x] **ID2** CLAUDE.md: tabela de especialidades técnicas preenchida ✅
+- [x] **ID3** CLAUDE.md: organograma Pense-AI (Leon → Oscar → Lucas) ✅
+- [ ] **ID-PUSH** Push CLAUDE.md via Escape Hatch (pendente execução Leon)
+
+### Documentos Entregues ✅
+
+- [x] **DOC1** `LaylaEstudaPortugues.md` — 88 turnos reais, análise Verbetta, 1 anomalia BUG-ROUTING-12abr ✅
+- [x] **DOC2** `SuperAgentes_B2C_Arquitetura_Caio.md` — arquitetura DB b2c_ + ENV completo + guia acesso Supabase ✅
+
+### Bugs Identificados na Sessão Real
+
+- [ ] **BUG-ROUTING-12abr** Calculus falso positivo em sessão de Português (turno 6 Layla) — investigar keywords CALCULUS vs "crônica"
+
+---
+
+## Universal Method + Router Audit + Super Prova Session-Aware (2026-04-13)
+
+> Plano completo: `docs/superpowers/plans/2026-04-13-universal-method-router-quiz.md`
+> Root cause das 3 intrusões CALCULUS: stickiness guard timeout (500ms) → troca em vez de manter herói + keywords perigosas
+
+### Chunk 1: Router — Falsos Positivos CALCULUS
+
+- [x] **UM-R1** Fix stickiness guard: LLM timeout/null → mantém herói ativo (não troca) — `router.ts:573-576`
+- [x] **UM-R2** Timeout LLM classificador: 500ms → 2000ms (reduce falsos timeouts)
+- [x] **UM-R3** Remover `'-'`, `'+'`, `'='` de KEYWORDS_MATEMATICA (causa principal de T6/T50/T79)
+- [x] **UM-R4** Anti-keywords para `área`, `número`, `metade` em contextos não-matemáticos
+- [x] **UM-R5** Criar `router.test.manual.ts` com casos de regressão documentados
+
+### Chunk 2: PSICO — Universal Method + Qualificação de Tópicos
+
+- [x] **UM-P1** Protocolo de qualificação: PSICO pergunta tópicos quando matéria clara mas tema vago
+- [x] **UM-P2** `plano_universal` JSON no output ENCAMINHAR_PARA_HEROI (topicos, topico_atual_id, fechar_com_quiz)
+- [x] **UM-P3** Instrução Universal Method em `instrucoes_para_agente.o_que_fazer`
+- [x] **UM-P4** Tipos TypeScript: `PsicoPlanoUniversal`, `TopicoPlano`
+- [x] **UM-P5** Replicar PSICO em ambos: `server/src/personas/` + `Prompts/`
+
+### Chunk 3: Patch Universal para 8 Heróis
+
+- [x] **UM-H1** CALCULUS: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H2** VERBETTA: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H3** NEURON: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H4** TEMPUS: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H5** GAIA: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H6** VECTOR: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H7** ALKA: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+- [x] **UM-H8** FLEX: patch Anti-Drift + Resumos=Consolidação + Universal Method Protocol
+
+### Chunk 4: Super Prova Session-Aware
+
+- [x] **UM-SP1** Patch heróis: instrução `sinal_super_prova: 'QUIZ'` + `super_prova_query` (sinal SSE, não quiz inline) ✅
+- [x] **UM-SP2** `message.ts`: quiz usa 10 turnos + 400 chars + entrada+resposta + `super_prova_query` como tema ✅
+- [x] **UM-SP3** `gerar-quiz.ts`: instrução explícita para usar conteúdo da sessão, não acervo genérico ✅
+
+### Chunk 4.5: Quiz Result Feedback Loop ← NOVO (2026-04-13)
+
+- [x] **UM-QR1** `QuizCard.tsx`: novo tipo `QuizResultado { acertos, total, questoesErradas }` + `onFechar(resultado?)` ✅
+- [x] **UM-QR2** `QuizCard.tsx`: track erradas por número de questão (1-based), button "Continuar" passa resultado ✅
+- [x] **UM-QR3** `ChatContext.tsx`: `fecharQuiz(resultado?)` → monta `[Quiz concluído] X/Y acertos (Z%)...` + envia via `enviarRef` ✅
+- [x] **UM-QR4** 8 heróis (16 arquivos): seção `FECHAMENTO PEDAGÓGICO PÓS-QUIZ` — herói reconhece, revisa erros, fecha sessão ✅
+- [x] **UM-QR5** TypeCheck 0 erros server + web ✅
+
+### Chunk 5: Verificação Final
+
+- [x] **UM-V1** `npx tsc --noEmit` = 0 erros (server + web)
+- [x] **UM-V2** `router.test.manual.ts` todos os casos passando
+- [x] **UM-V3** Grep confirma 16 arquivos de herói com "MÉTODO UNIVERSAL"
+- [x] **UM-V4** Grep confirma 16 arquivos de herói com "FECHAMENTO PEDAGÓGICO PÓS-QUIZ" ✅
+- [ ] **UM-PUSH** Push Escape Hatch: todo o Universal Method para main
+
+---
+
 ## QA ROUND 2 — Análise Supabase + Código (2026-04-04) ✅
 
 > Análise completa a partir dos dados do Supabase (34 turnos) + inspeção de código. Sem execução de LLM nesta sessão.

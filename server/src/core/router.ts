@@ -24,9 +24,10 @@ const KEYWORDS_MATEMATICA = [
   '1/2', '1/3', '1/4', '1/5', '1/6', '1/8',
   '2/3', '3/4', '2/5', '3/5', '4/5',
   'metade', 'terço', 'terco', 'quarto',
-  // Operadores aritméticos — úteis para "2+3=5" mas raramente em texto corrido
-  '+', '-', '=',
-  // 'vezes' mantido mas com anti-keyword para "às vezes"
+  // Operadores aritméticos REMOVIDOS — causam falsos positivos em texto corrido:
+  // '-' = marcador de lista ("- ele entendeu o conceito"), '+'/'=' pouco frequentes sozinhos
+  // O classificador LLM lida corretamente com "2+3=?" sem precisar de keywords isoladas.
+  // 'vezes' mantido mas com anti-keywords expandidas para "às vezes", "quantas vezes", etc.
   'vezes',
   // Verbos matemáticos específicos
   'subtrai', 'divide', 'multiplica',
@@ -128,8 +129,23 @@ const ANTI_KEYWORDS_MATEMATICA: string[] = [
   // 'vezes' no sentido de frequência/às vezes → NÃO é matemática
   'às vezes', 'as vezes', 'umas vezes', 'outras vezes', 'algumas vezes',
   'muitas vezes', 'poucas vezes', 'várias vezes', 'varias vezes',
+  'quantas vezes', 'várias vezes que', 'mais vezes', 'tantas vezes',
   // 'média' no sentido de Idade Média (história) → NÃO é matemática
   'idade média', 'idade media',
+  // 'área' em contextos não-matemáticos (profissional, estudo, cotidiano)
+  'nessa área', 'nesta área', 'essa área', 'esta área', 'minha área',
+  'área de concentração', 'área de concentracao',
+  'área de estudo', 'área de estudos',
+  'área profissional', 'área de trabalho', 'área de atuação', 'área de atuacao',
+  'mesma área', 'outra área', 'qualquer área',
+  // 'número' em contextos não-matemáticos
+  'número de páginas', 'numero de paginas',
+  'número de capítulos', 'numero de capitulos',
+  'número do', 'número da', 'número de telefone',
+  'número de whatsapp', 'número de pessoas', 'número de alunos',
+  // 'metade' em contextos de texto/tempo (não divisão matemática)
+  'metade do texto', 'metade da aula', 'metade do livro',
+  'metade do tempo', 'metade da turma', 'metade das matérias', 'metade das materias',
 ]
 const ANTI_KEYWORDS_PORTUGUES: string[] = [
   // 'verbo' detectado quando o contexto é ESPANHOL ou INGLÊS
@@ -385,9 +401,9 @@ export async function classificarTema(mensagem: string): Promise<string | null> 
 
     const prompt = `Classifique a matéria escolar desta mensagem. Responda APENAS com uma palavra: matematica, portugues, ciencias, historia, geografia, fisica, quimica, ingles, espanhol, ou indefinido.\n\nMensagem: "${mensagem.substring(0, 200)}"`
 
-    // Promise.race com timeout de 500ms
+    // Promise.race com timeout de 2000ms (500ms era muito curto — Gemini 2.5 Flash pode demorar 800-1200ms)
     const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), 500)
+      setTimeout(() => resolve(null), 2000)
     })
 
     const classifyPromise = model.generateContent({
@@ -572,8 +588,11 @@ export async function decidirPersona(
   ) {
     const temaLLMConfirm = await classificarTema(mensagem)
     if (!temaLLMConfirm || temaLLMConfirm === 'indefinido') {
-      console.log(`[stickiness] keywords='${temaKeywords}' LLM timeout/indefinido → confiando em keywords → trocando`)
-      return decidirComTema(temaKeywords, sessao, ultimosTurnos)
+      // FIX BUG-ROUTING-12abr: LLM timeout/indefinido → MANTÉM herói ativo.
+      // Comportamento anterior (errado): trusting keywords → trocava para CALCULUS.
+      // Comportamento correto: sem confirmação LLM = keywords são falso positivo → ignorar.
+      console.log(`[stickiness] LLM timeout/indefinido com keywords='${temaKeywords}' → mantendo ${sessao.agente_atual}`)
+      return { persona: sessao.agente_atual!, temaDetectado: sessao.tema_atual }
     }
     // LLM confirma nova matéria → permitir troca
     console.log(`[stickiness] LLM='${temaLLMConfirm}' confirma troca de ${sessao.tema_atual} → ${temaLLMConfirm}`)

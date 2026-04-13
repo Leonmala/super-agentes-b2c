@@ -10,6 +10,30 @@ if (!supabaseUrl || !supabaseKey) {
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ============================================================
+// TIPOS — UNIVERSAL METHOD (PSICO → HERÓI)
+// ============================================================
+
+export interface TopicoPlano {
+  id: number
+  nome: string
+  status: 'pendente' | 'em_progresso' | 'concluido'
+}
+
+export interface PsicoPlanoUniversal {
+  ativo: boolean
+  topicos: TopicoPlano[]
+  topico_atual_id: number
+  total: number
+  fechar_com_quiz: boolean
+}
+
+export interface QuizResultado {
+  total: number
+  acertos: number
+  erros: Array<{ questao: number; topico: string }>
+}
+
+// ============================================================
 // INTERFACES DE DADOS
 // ============================================================
 

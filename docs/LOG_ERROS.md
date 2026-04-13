@@ -135,6 +135,16 @@
 
 ---
 
+## Erros Identificados — Sessão Real Layla (2026-04-12)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 59 | 2026-04-12 | Produção | **BUG-ROUTING-12abr: CALCULUS ativado no turno 6 de sessão 100% de Português** — Layla estava na sessão de Português com VERBETTA, mencionou "crônica" e CALCULUS respondeu em vez do VERBETTA | Causa provável: keyword de CALCULUS tem falso positivo com "crônica" OU o classificador LLM associou "crônica" com algum contexto matemático. Não reproduzido em ambiente controlado ainda | **Investigar:** (1) checar KEYWORDS_MATEMATICA para overlap com "crônica"; (2) verificar ANTI_KEYWORDS_MATEMATICA; (3) reler turno 6 no `LaylaEstudaPortugues.md` para ver o input exato. Fix: adicionar 'crônica', 'cronica' em ANTI_KEYWORDS_MATEMATICA se for keyword match | ⚠️ Pendente — P1 |
+| 60 | 2026-04-12 | Router | **Router: null do timeout LLM não capturado pelo stickiness guard** — `classificarTema()` retorna `null` por timeout (500ms). Guard só verificava `=== 'indefinido'`. Resultado: stickiness guard não disparava, herói podia ser resetado após mensagem curta do aluno | Condição incompleta: `if (temaLLM === 'indefinido')` não captura `null` (timeout) | **Fix aplicado (commit fb4e84a):** Condição corrigida para `if (!temaLLM \|\| temaLLM === 'indefinido')`. Log melhorado com `temaLLM ?? 'null/timeout'`. TypeScript 0 erros ✅. Push pendente | ⚠️ Fix local — push pendente |
+| 61 | 2026-04-12 | Router | **LLM chamado desnecessariamente para respostas curtas sem keywords** — "2", "sim", "letra c" com herói ativo disparavam classificador LLM (500ms timeout) sem necessidade | Fluxo: `temaKeywords=null` → `classificarTema(mensagem)` sempre. Sem atalho para "sem keywords + herói ativo" | **Fix aplicado (commit fb4e84a):** Novo bloco entre passo 3 e passo 4: se `!temaKeywords && sessao.agente_atual ativo → return continuidade direto`. Elimina chamada LLM inteira. TypeScript 0 erros ✅. Push pendente | ⚠️ Fix local — push pendente |
+
+---
+
 ## Erros Pendentes (próxima sessão)
 
 | # | Data | Fase | Descrição | Causa Raiz | Tentativa | Status |
@@ -176,3 +186,38 @@ _(Atualizar conforme erros se repetem)_
 - **TypeScript:** Nenhum até agora
 - **SSE:** Nenhum até agora
 - **Testes:** Isolamento de estado entre suites é crítico — usar alunos/sessões dedicados por suite
+
+---
+
+## Decisões Arquiteturais — 2026-04-13
+
+### BUG-ROUTING-12abr: Root Cause Completo — Intrusões CALCULUS
+
+**Data:** 2026-04-13
+**Contexto:** 3 intrusões de CALCULUS na sessão real de Layla (2026-04-12): T6, T50, T79-81.
+**Root cause (stickiness guard):** `router.ts:573-576` — quando classificador LLM tem timeout (500ms era muito curto para Gemini 2.5 Flash que demora 800-1200ms), retornava `null`. O branch `if (!temaLLMConfirm)` então **trocava para CALCULUS** em vez de manter VERBETTA. Comportamento exatamente invertido do esperado.
+**Fix aplicado:** null/timeout → mantém herói ativo. Timeout LLM: 500ms → 2000ms.
+
+**Keywords perigosas removidas:** `'-'`, `'+'`, `'='` de KEYWORDS_MATEMATICA.
+- `'-'` era o gatilho em T6: Layla escreveu `- ele entendeu o conceito` (marcador de lista) → keyword `-` disparou → stickiness LLM timeout → CALCULUS tomou.
+- `'+'`, `'='` causam falso positivo em frases cotidianas tipo "bom + barato".
+
+**Anti-keywords adicionadas:** `área`, `número`, `metade` em contextos não-matemáticos.
+
+**Lição:** Operadores aritméticos isolados NÃO devem ser keywords. O classificador LLM lida melhor com "2+3=?" do que keywords isoladas. Keywords = termos técnicos/expressões compostas.
+
+### Super Prova: Acervo Estático → Quiz Session-Aware
+
+**Contexto:** `b2c_super_prova_acervo` tem 1 entrada VERBETTA 7_fund criada em 2026-04-04, genérica ("portugues"). Quiz enviado para Layla não refletia a sessão real. VERBETTA nunca viu resultados.
+
+**Decisão:** Quiz é agora responsabilidade do herói — gerado inline ao final da sessão quando `plano_universal.fechar_com_quiz = true`. O herói usa o conteúdo da sessão, não acervo.
+
+**b2c_super_prova_acervo:** Mantida (não deletar). Pode ser útil futuramente para exportação ou quizzes offline. Não popular mais com conteúdo genérico.
+
+### Método Universal — Por que implementar agora
+
+**Observação:** Layla ficou 30 turnos sobre verbos. O Universal Method resolveria o mesmo conteúdo em 8 turnos máx (abertura + 3 itens × 2 turnos + fechamento).
+
+**Princípio:** Sessão sem estrutura = conversa aberta = aluno se perde. PSICO deve qualificar tópicos antes de encaminhar ao herói quando o subtema está indefinido.
+
+**CUIDADO:** A qualificação de tópicos não deve ser burocrática. 1 pergunta curta e direta. Se o aluno trouxe enunciado específico, pular direto para o herói.
