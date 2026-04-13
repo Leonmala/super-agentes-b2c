@@ -45,6 +45,7 @@ export async function atualizarSessao(
     instrucoes_pendentes?: string | null
     agente_destino?: string | null
     transicao_pendente?: boolean
+    link_pendente?: string | null  // Hook 0 — Link Guardian
   }
 ): Promise<void> {
   const { error } = await supabase

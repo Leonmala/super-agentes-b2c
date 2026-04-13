@@ -521,6 +521,42 @@
 
 ---
 
+## Hook 0 — Link Guardian (2026-04-13)
+
+> Spec: `docs/superpowers/specs/2026-04-13-link-guardian-design.md`
+> Plano: `docs/superpowers/plans/2026-04-13-link-guardian.md`
+> Quando aluno envia URL → Super Prova lê o link + injeta KB → herói responde com conhecimento do conteúdo
+
+### Chunk 1: DB + Tipos
+
+- [x] **LG-1** `server/src/db/supabase.ts`: `link_pendente: string | null` adicionado à interface `Sessao` ✅
+- [x] **LG-2** `server/src/db/persistence.ts`: `link_pendente?: string | null` adicionado ao tipo `updates` em `atualizarSessao` ✅
+- [ ] **LG-3** Migration SQL Supabase (via Escape Hatch Leon): `ALTER TABLE b2c_sessoes ADD COLUMN IF NOT EXISTS link_pendente TEXT DEFAULT NULL;`
+
+### Chunk 2: Detecção de URL
+
+- [x] **LG-4** `server/src/utils/detect-url.ts` criado — `detectarURL()` pura, regex `https?://` apenas, threshold 10 chars ✅
+- [x] **LG-5** TypeCheck 0 erros ✅
+
+### Chunk 3: investigarLink
+
+- [x] **LG-6** `server/src/super-prova/investigar-link.ts` criado — Gemini lê URL, KB formatada, fail-silently ✅
+- [x] **LG-7** `server/src/super-prova/index.ts` re-exporta `investigarLink` ✅
+
+### Chunk 4: Hook 0 em message.ts
+
+- [x] **LG-8** `message.ts`: imports `detectarURL` + `investigarLink` adicionados ✅
+- [x] **LG-9** `message.ts`: Hook 0 inserido após `resetarSessaoAgente`, antes de `decidirPersona` ✅
+  - Branch A: link sem contexto → pergunta + salva `link_pendente` + `res.end()`
+  - Branch B: link+contexto ou `link_pendente`+contexto → SSE 'search' + `await investigarLink` + KB + limpa `link_pendente`
+
+### Chunk 5: Verificação
+
+- [x] **LG-10** TypeCheck server: 0 erros ✅
+- [ ] **LG-PUSH** Push via Escape Hatch Leon (incluindo SQL migration no Supabase)
+
+---
+
 ## FASE 5: Site SaaS — Landing, Checkout, Onboarding
 
 - [ ] **5.1** Landing page (apresentação + planos)

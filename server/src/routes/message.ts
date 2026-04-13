@@ -40,7 +40,9 @@ import {
   formatarKnowledgeBase,
   processarConsulta,
   processarQuiz,
+  investigarLink,
 } from '../super-prova/index.js'
+import { detectarURL } from '../utils/detect-url.js'
 import { incrementarUso, verificarLimiteAtingido, incrementarTurnoCompleto } from '../db/usage-queries.js'
 import { buscarContextoProfessorIA, buscarContextoLongoPrazo } from '../db/qdrant.js'
 import { MetricasChamada, calcularMetricasRequest, logMetricas } from '../core/metrics.js'
@@ -213,6 +215,45 @@ router.post('/message', async (req: Request, res: Response) => {
     if (nova_sessao === true) {
       await resetarSessaoAgente(sessao.id)
     }
+
+    // ── HOOK 0 — LINK GUARDIAN ─────────────────────────────────────────────────
+    // Intercepta URLs antes do roteamento. "Quadrado dentro do círculo":
+    // quando termina, o fluxo normal (decidirPersona → herói → SSE) continua intacto.
+    {
+      const linkDetectado = detectarURL(mensagem)
+      const linkParaInvestigar = linkDetectado?.url ?? sessao.link_pendente ?? null
+      const temContextoLink    = linkDetectado?.temContexto || !!sessao.link_pendente
+
+      if (linkParaInvestigar && !temContextoLink) {
+        // Branch A: link sem contexto → pedir explicação, salvar link_pendente, encerrar
+        const nomeAluno = aluno.nome?.split(' ')[0] ?? ''
+        await atualizarSessao(sessao.id, { link_pendente: linkParaInvestigar })
+        enviarEvento('agente', { agente: sessao.agente_atual || 'PSICOPEDAGOGICO' })
+        enviarEvento('chunk', {
+          texto: `Oi, ${nomeAluno}! Antes de eu abrir esse link, me conta: do que ele trata e o que a gente vai estudar com ele?`
+        })
+        enviarEvento('done', {})
+        res.end()
+        return
+      }
+
+      if (linkParaInvestigar && temContextoLink) {
+        // Branch B: link + contexto (ou link_pendente + contexto novo) → Super Prova investiga
+        enviarEvento('search', { texto: '🔍 analisando conteúdo do link...' })
+        const kbLink = await investigarLink(
+          linkParaInvestigar,
+          mensagem,
+          aluno.serie ?? '7ano',
+          sessao.agente_atual ?? 'GAIA'
+        ).catch(() => null)
+        if (kbLink) {
+          await persistirKnowledgeBase(sessao.id, kbLink).catch(() => {})
+        }
+        await atualizarSessao(sessao.id, { link_pendente: null })
+        // ← continua para decidirPersona() normalmente
+      }
+    }
+    // ── FIM HOOK 0 ────────────────────────────────────────────────────────────
 
     let { persona, temaDetectado } = await decidirPersona(
       mensagem, sessao, ultimosTurnos, nova_sessao === true

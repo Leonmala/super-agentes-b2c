@@ -1,18 +1,56 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização.  
-> **Última atualização:** 2026-04-13 — 3 fixes implementados + TypeCheck 0 erros ✅ Push pendente.
+> **Última atualização:** 2026-04-13 — Link Guardian completo + TypeCheck 0 erros ✅ Push pendente.
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** 3 fixes da sessão Layla/GAIA implementados: (1) nova_sessao preserva turnos, (2) quiz proativo nos 16 arquivos de heróis, (3) Super Prova KB específico via `super_prova_query`. TypeCheck 0 erros. Push pendente via Escape Hatch no Windows.
+**Fase atual:** Hook 0 — Link Guardian totalmente implementado. Quando aluno envia URL → sistema pede contexto (Branch A) ou Super Prova investiga link via Gemini e injeta KB para o herói (Branch B). TypeCheck server 0 erros. Push + SQL migration pendentes via Escape Hatch.
 
-**Próxima ação:** Push via Escape Hatch → QA sessão real com Layla → validar:
-1. Reconexão não perde contexto (GAIA tem turnos anteriores disponíveis)
-2. GAIA oferece quiz proativamente quando entende compreensão do aluno
-3. KB gerada com tema específico (ex: "quilombos_atualidade") em vez de "geografia"
+**Próxima ação:**
+1. Push via Escape Hatch (inclui SQL migration no Supabase)
+2. QA com Layla: enviar link solto → sistema pede contexto; enviar link+contexto → herói responde com conhecimento do conteúdo
+3. QA 3 fixes anteriores: reconexão preserva contexto, quiz proativo, KB específica
+
+---
+
+## O QUE FOI FEITO HOJE (2026-04-13 — Sessão 4)
+
+### Hook 0 — Link Guardian — IMPLEMENTADO ✅
+
+**Motivação:** Layla mandou um link de texto do professor → GAIA funcionou (Gemini lê URL). Mas quando heróis migrarem para Kimi K2.5 (sem Google Search), URLs irão quebrar silenciosamente. Além disso, link solto sem contexto não deveria ser processado direto.
+
+**Arquitetura:** "Quadrado dentro do círculo" — Hook 0 roda após `resetarSessaoAgente`, antes de `decidirPersona()`. Quando termina, fluxo existente continua intacto.
+
+**Branch A — Link sem contexto:**
+- `detectarURL()` encontra URL, `textoAlem.length < 10`
+- Salva `link_pendente` na sessão
+- Responde: "Oi [nome]! Antes de eu abrir esse link, me conta: do que ele trata e o que a gente vai estudar com ele?"
+- `res.end()` — fluxo encerra aqui
+
+**Branch B — Link + contexto (ou `link_pendente` + qualquer resposta):**
+- Emite SSE `'search'` → "🔍 analisando conteúdo do link..."
+- `await investigarLink(url, mensagem, serie, heroiId)` — Gemini lê URL, retorna KB estruturada
+- `persistirKnowledgeBase()` — KB injetada para o herói
+- `atualizarSessao({ link_pendente: null })` — estado limpo
+- Fluxo continua para `decidirPersona()` normalmente
+
+**Arquivos criados/modificados:**
+- `server/src/utils/detect-url.ts` — função pura `detectarURL()`, regex `https?://` apenas
+- `server/src/super-prova/investigar-link.ts` — Gemini lê URL, falha silenciosamente
+- `server/src/super-prova/index.ts` — re-exporta `investigarLink`
+- `server/src/routes/message.ts` — imports + Hook 0 inserido
+- `server/src/db/supabase.ts` — `link_pendente: string | null` na interface `Sessao`
+- `server/src/db/persistence.ts` — `link_pendente?: string | null` em `atualizarSessao`
+
+**TypeCheck:** 0 erros ✅
+
+**Migration SQL pendente (Escape Hatch):**
+```sql
+ALTER TABLE b2c_sessoes ADD COLUMN IF NOT EXISTS link_pendente TEXT DEFAULT NULL;
+```
 
 ---
 
@@ -84,11 +122,18 @@ herói recebe → fechamento pedagógico → Método Universal completo ✅
 
 ## PUSHES PENDENTES (acumulados)
 
-**Escape Hatch para push completo (copiar e colar no Claude Code CLI local):**
+**Escape Hatch completo (copiar e colar no Claude Code CLI local):**
+
+**PASSO 1 — SQL migration no Supabase (rodar uma vez):**
+```sql
+ALTER TABLE b2c_sessoes ADD COLUMN IF NOT EXISTS link_pendente TEXT DEFAULT NULL;
+```
+
+**PASSO 2 — Git push:**
 ```bash
 cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
 git add -A
-git commit -m "fix: nova_sessao preserva turnos + quiz proativo + superprova tema especifico + universal method"
+git commit -m "feat: Link Guardian (Hook 0) + fix nova_sessao turnos + quiz proativo + superprova KB especifico"
 git push origin main
 ```
 
@@ -102,6 +147,7 @@ git push origin main
 | Fix nova_sessao turnos | `server/src/db/persistence.ts` | Push pendente |
 | Quiz proativo 16 arquivos | 8 heróis × 2 pastas | Push pendente |
 | Super Prova KB específico | `message.ts` + `response-processor.ts` | Push pendente |
+| Link Guardian (Hook 0) | `detect-url.ts` + `investigar-link.ts` + `message.ts` + `supabase.ts` + `persistence.ts` | Push pendente + SQL migration |
 
 ---
 

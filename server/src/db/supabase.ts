@@ -88,6 +88,7 @@ export interface Sessao {
   created_at: string
   updated_at: string
   ultimo_turno_at: string
+  link_pendente: string | null  // URL aguardando contexto do aluno (Hook 0 — Link Guardian)
 }
 
 export interface Turno {
