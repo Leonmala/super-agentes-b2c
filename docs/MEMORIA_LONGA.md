@@ -1,14 +1,14 @@
 # MEMÓRIA LONGA — Super Agentes V1.0
 
 > **Propósito:** Banco de memória persistente com TUDO que aconteceu no projeto. Lido no início de cada sessão nova para restaurar contexto completo.
-> **Última atualização:** 2026-04-04 — Sessão 16 concluída. GUARDIÃO Segurança em produção ✅. BLOCO 4 MODO PAI aprovado ✅. MODO PAI dois estados implementado (bug crítico de primeira interação). BUG-57 corrigido. 2 pushes pendentes. Segunda: testes ESTADO A + Super Prova com Prof. Pense-AI.
+> **Última atualização:** 2026-04-13 — Sessões 17+18 concluídas. Universal Method completo: router fix (stickiness guard) + PSICO protocolo tópicos + patch 8 heróis (anti-drift, resumos=consolidação, método universal) + Super Prova session-aware + Quiz Result Feedback Loop. TypeCheck 0 erros. Push pendente (Escape Hatch).
 
 ---
 
 ## 1. Estado Atual do Projeto
 
-**Fase:** QA Round 2 + BLOCO 4 MODO PAI + GUARDIÃO CONCLUÍDOS → 2 pushes pendentes → Segunda: testes reais MODO PAI ESTADO A + integração Super Prova/Prof. Pense-AI
-**Próximo passo:** 0) Leon push dos 2 fixes (Escape Hatch CLI) → 1) Teste MODO PAI ESTADO A em produção → 2) Investigar Super Prova + Prof. Pense-AI → 3) Brainstorm Fase 5 SaaS
+**Fase:** Universal Method completo (Sessões 17+18) → push pendente → QA sessão real com Layla → Fase 5 SaaS
+**Próximo passo:** 1) Leon push via Escape Hatch (git add -A + commit + push) → 2) QA Layla: validar loop completo (PSICO → herói → quiz → resultado → fechamento) → 3) Monitorar logs Railway → 4) Brainstorm Fase 5 SaaS
 **Bloqueios:** git.lock no VM mount impede push — precisa do Escape Hatch no Claude Code CLI local.
 
 ### Progresso por Fase
@@ -867,3 +867,93 @@ git add server/src/core/context.ts server/src/personas/VERBETTA.md server/src/pe
 git commit -m "fix: MODO PAI dois estados — herói pergunta antes de ensinar na primeira interação"
 git push origin main
 ```
+
+---
+
+## Sessão 17 — 2026-04-13: Universal Method + Router Audit + Super Prova Session-Aware
+
+**Contexto:** Re-análise honesta da sessão Layla (88 turnos, LaylaEstudaPortugues.md). Score corrigido de 9.2 → **6.0/10** com Leon. 4 problemas sistêmicos identificados que abriram o plano de redesenho pedagógico completo.
+
+### Problemas identificados (root cause)
+
+1. **3 intrusões de CALCULUS** (T6, T50, T79-81): stickiness guard + LLM timeout 500ms retornava `null` → guard invertia lógica e TROCAVA herói em vez de manter. Agravado por keywords perigosas (`-`, `+`, `=`) com contextos não-matemáticos.
+2. **VERBETTA recusando resumos** (T32-T47): tratou consolidação pedagógica como "resposta pronta". Erro de design no prompt.
+3. **Topic drift sistemático** (30 turnos sobre verbos): sem protocolo de foco. VERBETTA saía do tópico para corrigir erros ortográficos laterais.
+4. **Super Prova desconectada da sessão**: quiz genérico do acervo, não do conteúdo estudado. Herói nunca recebia os resultados — loop incompleto.
+
+### Plano implementado (Universal Method)
+
+**Chunk 1 — Router fixes cirúrgicos:**
+- Stickiness guard: LLM timeout/null → mantém herói ativo (fix invertido)
+- Timeout LLM: 500ms → 2000ms
+- KEYWORDS_MATEMATICA: removidos `'-'`, `'+'`, `'='`
+- ANTI_KEYWORDS_MATEMATICA: `área`, `número`, `metade` em contextos não-matemáticos
+- `router.test.manual.ts`: 26 casos de regressão documentados
+
+**Chunk 2 — PSICO Protocolo de Qualificação:**
+- PSICO agora pergunta tópicos quando matéria clara mas tema vago (ex: "quero estudar matemática")
+- Novo campo `plano_universal` no JSON `ENCAMINHAR_PARA_HEROI`:
+```json
+{ "ativo": true, "topicos": [{id, nome, status}], "topico_atual_id": 1, "total": N, "fechar_com_quiz": true/false }
+```
+- Tipos TypeScript: `PsicoPlanoUniversal`, `TopicoPlano`, `QuizResultado`
+
+**Chunk 3 — Patch universal 8 heróis (16 arquivos):**
+- Seção `MÉTODO UNIVERSAL DE ESTUDO`: ciclo por tópico (abertura → construção guiada → validação → fechamento)
+- Seção `ANTI-DRIFT`: guardião do ritmo, tópico só fecha com proficiência demonstrada
+- Seção `RESUMOS SÃO CONSOLIDAÇÃO, NÃO COLA`: nunca recusar resumo de conteúdo já estudado
+
+**Chunk 4 — Super Prova session-aware:**
+- Heróis emitem `sinal_super_prova: 'QUIZ'` + `super_prova_query: '[tópicos da sessão]'` (não mais quiz inline)
+- `message.ts`: quiz usa 10 turnos + 400 chars + entrada+resposta + `super_prova_query` como tema
+- `gerar-quiz.ts`: instrução explícita para questionar conteúdo da sessão, não acervo genérico
+
+**TypeCheck: 0 erros server + web ✅ | Push pendente via Escape Hatch**
+
+---
+
+## Sessão 18 — 2026-04-13: Quiz Result Feedback Loop
+
+**Contexto:** Implementar a peça final do Método Universal — resultado do QuizCard deve retornar ao herói ativo para fechamento pedagógico. Sem isso, o ciclo estudar → quiz → revisar estava incompleto.
+
+**Design (plano aprovado):** PSICO define plano → herói executa tópicos → herói sinaliza QUIZ → Super Prova gera quiz → QuizCard roda → **resultado volta ao herói** → herói fecha pedagogicamente. PSICO não envolvido no fechamento.
+
+### Implementação
+
+**`web/src/components/QuizCard.tsx`:**
+- Novo tipo exportado: `QuizResultado { acertos: number, total: number, questoesErradas: number[] }`
+- Estado `erradas: number[]` — track de questões erradas por número 1-based durante o quiz
+- `onFechar` prop: `(resultado?: QuizResultado) => void` — quebra de contrato intencional para compatibilidade (× fecha sem resultado)
+- "Continuar estudando" passa `{ acertos: pontos, total, questoesErradas: erradas }` — resultado completo
+
+**`web/src/contexts/ChatContext.tsx`:**
+- `fecharQuiz: (resultado?: QuizResultado) => void` (interface atualizada)
+- Ref pattern `enviarRef` para chamar `enviar` sem dependência circular no `useCallback`
+- Mensagem formatada: `[Quiz concluído] 4/12 acertos (33%). Errei as questões: 2, 7, 9.`
+- Delay 300ms via `setTimeout` para overlay fechar antes do novo turno iniciar
+
+**16 arquivos de heróis (8 × server/personas + Prompts):**
+- Seção `FECHAMENTO PEDAGÓGICO PÓS-QUIZ` adicionada a todos
+- 3 partes obrigatórias: Reconhecimento (específico com %) + Revisão pontual (só se errou) + Fechamento da sessão
+- Regras: PSICO não envolvido, não refazer quiz, texto corrido 6-8 linhas
+
+**TypeCheck: 0 erros server + web ✅**
+
+### Loop completo do Método Universal
+```
+PSICO plano → herói executa tópicos → herói emite sinal QUIZ →
+Super Prova gera quiz (conteúdo da sessão) → QuizCard roda →
+resultado: [Quiz concluído] X/Y (Z%), questões erradas →
+herói recebe → fechamento pedagógico → ciclo completo ✅
+```
+
+### Push pendente (Escape Hatch único para todas as mudanças 2026-04-13)
+```bash
+cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
+git add -A
+git commit -m "feat: Universal Method completo — router fix + PSICO tópicos + 8 heróis + Super Prova session-aware + Quiz feedback loop"
+git push origin main
+```
+
+### Próximo passo após push
+**QA sessão real com Layla** — validar o ciclo completo: PSICO qualifica → herói executa → quiz gerado do conteúdo → resultado volta → herói fecha.
