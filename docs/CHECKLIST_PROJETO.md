@@ -409,6 +409,36 @@
 
 ---
 
+## Sessão Layla Geografia (GAIA) + 3 Fixes (2026-04-13)
+
+> Plano: `docs/superpowers/plans/2026-04-13-nova-sessao-fix-quiz-proativo-superprova-kb.md`
+> Investigação: Layla estudou quilombos com GAIA, saiu e voltou → GAIA perdeu contexto → "papo esquisito"
+> Root causes identificados: (1) DELETE de turnos no resetarSessaoAgente, (2) KB genérica por tema genérico
+
+### Fix 1: Bug nova_sessao destrói turnos
+
+- [x] **NS-F1** `persistence.ts`: Removido bloco DELETE de `resetarSessaoAgente` — turnos são memória permanente ✅
+- [x] **NS-F2** `persistence.ts`: Removido `tema_atual: null` — PSICO preserva tema para oferecer continuidade ✅
+- [x] **NS-F3** TypeCheck 0 erros ✅
+
+### Fix 2: Oferta proativa de quiz (16 arquivos)
+
+- [x] **QP-F1** 8 heróis em `server/src/personas/`: seção `OFERTA PROATIVA DE QUIZ` adicionada antes de FECHAMENTO PÓS-QUIZ ✅
+- [x] **QP-F2** 8 heróis em `Prompts/`: mesma seção replicada ✅
+- [x] **QP-F3** Regra: oferta gentil quando compreensão detectada, máx 1x por tópico, respeitar recusa ✅
+
+### Fix 3: Super Prova KB específico
+
+- [x] **SP-KB1** `response-processor.ts`: campo `super_prova_query: string | null` adicionado ao tipo `IntencaoCascata` ✅
+- [x] **SP-KB2** `response-processor.ts`: `extrairCascata` popula `super_prova_query` do JSON do PSICO ✅
+- [x] **SP-KB3** `message.ts` Hook 1 Caso A: `temaEspecifico_A` prioriza `cascata.super_prova_query` → fallback para `temaDetectado` ✅
+- [x] **SP-KB4** `message.ts`: `sessao.tema_atual` persistido com tema específico (não genérico) ✅
+- [x] **SP-KB5** `message.ts` Hook 1 Caso B: `temaEspecifico_B` usa `temaDetectado || sessao.tema_atual` ✅
+- [x] **SP-KB6** TypeCheck server + web: 0 erros ✅
+- [ ] **SP-KB-PUSH** Push via Escape Hatch (pendente execução Leon)
+
+---
+
 ## QA ROUND 2 — Análise Supabase + Código (2026-04-04) ✅
 
 > Análise completa a partir dos dados do Supabase (34 turnos) + inspeção de código. Sem execução de LLM nesta sessão.

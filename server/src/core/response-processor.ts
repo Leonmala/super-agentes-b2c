@@ -21,6 +21,7 @@ export interface IntencaoCascata {
   plano_atendimento: Record<string, unknown> | null
   instrucoes_para_heroi: string | null
   resposta_para_aluno: string | null
+  super_prova_query: string | null  // Tópico específico para Super Prova (ex: "quilombos_atualidade")
 }
 
 export interface ProcessedResponse {
@@ -147,7 +148,8 @@ function extrairCascata(json: Record<string, unknown>): IntencaoCascata | null {
     heroi_escolhido: (json.heroi_escolhido ?? json.agente_destino ?? json.heroi ?? json.agente ?? null) as string | null,
     plano_atendimento: (json.plano_atendimento ?? json.plano_pedagogico ?? json.plano ?? null) as Record<string, unknown> | null,
     instrucoes_para_heroi: (json.instrucoes_para_heroi ?? json.instrucoes_para_agente ?? json.instrucoes ?? null) as string | null,
-    resposta_para_aluno: (json.resposta_para_aluno ?? null) as string | null
+    resposta_para_aluno: (json.resposta_para_aluno ?? null) as string | null,
+    super_prova_query: (json.super_prova_query ?? null) as string | null
   }
 }
 
@@ -197,7 +199,8 @@ function extrairPorRegex(raw: string): { texto: string | null; sinais: SinaisPed
       heroi_escolhido: heroiMatch ? heroiMatch[1] : null,
       plano_atendimento: null, // Muito complexo para regex
       instrucoes_para_heroi: instrucoesMatch ? instrucoesMatch[1] : null,
-      resposta_para_aluno: respostaMatch ? respostaMatch[1]?.replace(/\\n/g, '\n').replace(/\\"/g, '"') : null
+      resposta_para_aluno: respostaMatch ? respostaMatch[1]?.replace(/\\n/g, '\n').replace(/\\"/g, '"') : null,
+      super_prova_query: null  // Regex fallback não extrai super_prova_query
     }
 
     // Se temos resposta_para_aluno na cascata, pode ser o texto

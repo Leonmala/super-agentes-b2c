@@ -73,27 +73,19 @@ export async function atualizarUltimoTurno(sessaoId: string): Promise<void> {
 }
 
 export async function resetarSessaoAgente(sessaoId: string): Promise<void> {
+  // Apenas reseta o agente para PSICOPEDAGOGICO — preserva turnos e tema_atual.
+  // Turnos são memória permanente: deletá-los aqui causaria perda de contexto na reconexão.
+  // tema_atual é preservado para PSICO poder oferecer continuidade ("quer continuar com X?").
   const { error } = await supabase
     .from('b2c_sessoes')
     .update({
       agente_atual: 'PSICOPEDAGOGICO',
-      tema_atual: null,
       ultimo_turno_at: new Date().toISOString(),
     })
     .eq('id', sessaoId)
 
   if (error) {
     console.error('❌ Erro ao resetar sessão agente:', error)
-  }
-
-  // NOVO: limpar turnos da sessão para evitar context carry-over
-  const { error: errorTurnos } = await supabase
-    .from('b2c_turnos')
-    .delete()
-    .eq('sessao_id', sessaoId)
-
-  if (errorTurnos) {
-    console.error('Erro ao limpar turnos na sessão reset:', errorTurnos)
   }
 }
 

@@ -1,178 +1,107 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização.  
-> **Última atualização:** 2026-04-13 — Universal Method completo + Quiz Result Feedback Loop implementado ✅
+> **Última atualização:** 2026-04-13 — 3 fixes implementados + TypeCheck 0 erros ✅ Push pendente.
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Universal Method + Router + Super Prova + Quiz Feedback Loop — TODOS IMPLEMENTADOS. TypeCheck: 0 erros. Push pendente (git lock no Linux VM — usar Escape Hatch no Windows).
+**Fase atual:** 3 fixes da sessão Layla/GAIA implementados: (1) nova_sessao preserva turnos, (2) quiz proativo nos 16 arquivos de heróis, (3) Super Prova KB específico via `super_prova_query`. TypeCheck 0 erros. Push pendente via Escape Hatch no Windows.
 
-**Próxima ação:** Push via Escape Hatch → QA sessão real com Layla → validar loop completo: PSICO qualifica → herói executa tópicos → herói sinaliza QUIZ → QuizCard roda → resultado volta ao herói → herói fecha pedagogicamente.
+**Próxima ação:** Push via Escape Hatch → QA sessão real com Layla → validar:
+1. Reconexão não perde contexto (GAIA tem turnos anteriores disponíveis)
+2. GAIA oferece quiz proativamente quando entende compreensão do aluno
+3. KB gerada com tema específico (ex: "quilombos_atualidade") em vez de "geografia"
 
 ---
 
-## O QUE FOI FEITO HOJE (2026-04-13)
+## O QUE FOI FEITO HOJE (2026-04-13 — Sessão 3)
 
-### 5. Quiz Result Feedback Loop — IMPLEMENTADO ✅
+### Fix 1: Bug nova_sessao destrói turnos — IMPLEMENTADO ✅
 
-**Problema:** QuizCard fechava mas resultado nunca chegava ao herói ativo. Loop do Método Universal estava incompleto.
+**Problema:** `resetarSessaoAgente` em `persistence.ts` deletava TODOS os turnos da sessão quando `nova_sessao === true` (primeira mensagem após abrir/reabrir página). Layla saiu sem querer e voltou → 6 turnos de quilombos deletados → GAIA sem contexto → "papo esquisito".
 
-**Solução implementada:**
-- `web/src/components/QuizCard.tsx`: novo tipo `QuizResultado { acertos, total, questoesErradas }`. Callback `onFechar(resultado?)` agora carrega o resultado. Botão "Continuar estudando" passa `{ acertos: pontos, total, questoesErradas: erradas }`. Botão × (saída precoce) não passa resultado.
-- `web/src/contexts/ChatContext.tsx`: `fecharQuiz` atualizada para `(resultado?: QuizResultado) => void`. Quando resultado presente: monta mensagem `[Quiz concluído] X/Y acertos (Z%). Errei as questões: N1, N2.` e envia via `enviarRef.current` (ref pattern para evitar dependência circular). Delay de 300ms para overlay fechar antes do novo turno.
-- `server/src/personas/*.md` + `Prompts/*.md` (16 arquivos, 8 heróis): seção `FECHAMENTO PEDAGÓGICO PÓS-QUIZ` adicionada — instrui herói a reconhecer resultado, revisar brevemente conceitos errados, fechar sessão com calor. PSICO nunca é envolvido.
+**Solução cirúrgica:**
+- `server/src/db/persistence.ts`: Removido bloco DELETE de b2c_turnos (linhas 89-97 originais)
+- `server/src/db/persistence.ts`: Removido `tema_atual: null` do update — PSICO agora preserva tema para oferecer continuidade ("quer continuar estudando quilombos?")
+- Função agora apenas reseta `agente_atual` para PSICOPEDAGOGICO + `ultimo_turno_at`
+
+### Fix 2: Oferta Proativa de Quiz — IMPLEMENTADO ✅ (16 arquivos)
+
+**Problema:** Heróis só emitiam QUIZ quando aluno pedia ou quando `fechar_com_quiz: true` no Universal Method. Nenhuma oferta proativa.
+
+**Solução:**
+- Seção `OFERTA PROATIVA DE QUIZ` adicionada em todos os 8 heróis × 2 pastas (16 arquivos)
+- Regra: quando herói detecta compreensão real → oferece gentilmente ("Quer fazer um quiz rápido?")
+- Máximo 1 oferta por tópico. Respeitar recusa. Não oferecer enquanto ainda há dificuldade.
+- Inserida imediatamente antes de `FECHAMENTO PEDAGÓGICO PÓS-QUIZ`
+
+### Fix 3: Super Prova KB Específico — IMPLEMENTADO ✅
+
+**Problema:** Hook 1 do Super Prova usava `temaDetectado` genérico ("geografia") para gerar KB. Todas as sessões de geografia compartilhavam o mesmo acervo genérico, independente do tópico específico.
+
+**Solução:**
+- `server/src/core/response-processor.ts`: Campo `super_prova_query: string | null` adicionado ao tipo `IntencaoCascata` + `extrairCascata` popula o campo do JSON do PSICO
+- `server/src/routes/message.ts` Hook 1 Caso A: `temaEspecifico_A` = `cascata.super_prova_query || respostaJSON.super_prova_query || temaDetectado`
+- `server/src/routes/message.ts`: `sessao.tema_atual` persistido com tema específico (não genérico)
+- `server/src/routes/message.ts` Hook 1 Caso B: `temaEspecifico_B` = `temaDetectado || sessao.tema_atual`
+
+**Resultado esperado:** PSICO emite `super_prova_query: "quilombos_atualidade"` → KB gerada sobre quilombos, não sobre "geografia" genérica.
 
 **TypeCheck:** server 0 erros, web 0 erros ✅
 
-**Loop completo agora:**
+---
+
+## O QUE FOI FEITO HOJE (2026-04-13 — Sessões 1 e 2)
+
+### Quiz Result Feedback Loop — IMPLEMENTADO ✅
+
+**Loop completo:**
 ```
 PSICO plano → herói executa tópicos → herói emite sinal QUIZ → Super Prova gera quiz →
 QuizCard roda → resultado → ChatContext.fecharQuiz → enviar "[Quiz concluído]" →
 herói recebe → fechamento pedagógico → Método Universal completo ✅
 ```
 
----
+### Universal Method + Router + Super Prova Session-Aware — IMPLEMENTADOS ✅
 
-### 1. Análise profunda da sessão Layla (re-análise honesta) ✅
-
-Score corrigido de 9.2 → **6.0/10** após re-leitura com Leon.
-
-Problemas identificados:
-- **3 intrusões de CALCULUS** (T6, T50, T79-81) — root cause: stickiness guard + LLM timeout 500ms + keywords perigosas
-- **Momentos de frustração escalantes**: T32-33 (2x mal-entendidos), T36 (perdida no histórico), T47 (crítica estrutural), T48 (ameaça de churn para ChatGPT), T55/T59/T60 (redirecionamentos repetidos)
-- **Verbetta recusando resumos** (tratou consolidação como "resposta pronta")
-- **Topic drift**: Verbetta saía do tópico principal para corrigir erros ortográficos laterais
-- **30 turnos sobre verbos** quando o Universal Method resolveria em 8 máx
-- **Super Prova acervo genérico**: quiz enviado sem relação com a sessão, Verbetta nunca soube dos resultados
-
-### 2. Plano de implementação Universal Method escrito ✅
-
-Arquivo: `docs/superpowers/plans/2026-04-13-universal-method-router-quiz.md`
-
-5 chunks:
-- Chunk 1: Router audit + 2 fixes cirúrgicos (stickiness guard + keywords perigosas)
-- Chunk 2: PSICO — protocolo de qualificação de tópicos + plano_universal JSON
-- Chunk 3: Patch universal para 8 heróis (anti-drift + resumos = consolidação + Universal Method)
-- Chunk 4: Super Prova session-aware (quiz gerado pelo herói do conteúdo da sessão)
-- Chunk 5: Verificação final + atualização de memórias
+(ver MEMORIA_LONGA.md Sessões 17-18 para detalhes completos)
 
 ---
 
-## O QUE FOI FEITO HOJE (2026-04-12)
+## ANÁLISE ROOT CAUSE — SESSÃO LAYLA GAIA (2026-04-13)
 
-### 1. Router Fixes — 3 layers — commit fb4e84a ✅
+**Bug confirmado:** `b2c_uso_diario` mostrava 11 interações hoje vs 5 turnos em `b2c_turnos` → 6 turnos deletados.
+**Causa:** `resetarSessaoAgente` em `persistence.ts` tinha bloco DELETE que apagava todos os turnos da sessão.
+**Gatilho:** Frontend envia `nova_sessao: true` na primeira mensagem de cada conexão → `message.ts` linha 213-215 chama `resetarSessaoAgente`.
 
-**Fix 1:** `null` do timeout do classificador LLM não estava sendo capturado pelo stickiness guard.
-- Antes: `if (temaLLM === 'indefinido')`
-- Depois: `if (!temaLLM || temaLLM === 'indefinido')`
-- Arquivo: `server/src/core/router.ts`
+**BUG-CRON:** CRON NUNCA FOI IMPLEMENTADO. Foi planejado para n8n, Leon rejeitou n8n, está em checklist futuro para implementar no mesmo ambiente. Qualquer referência a "CRON rodou domingo" é incorreta.
 
-**Fix 2:** Quando herói ativo + sem keywords → skip do LLM completamente.
-- Novo bloco entre `if (temaKeywords)` e `// 4. Keywords falharam`
-- Evita a chamada LLM inteira para respostas curtas do aluno (ex: "2", "sim", "letra c")
-- Arquivo: `server/src/core/router.ts`
-
-**Fix 3:** PSICO agora detecta resposta curta após exercício como continuidade.
-- Seção "DETECÇÃO DE CONTINUIDADE — RESPOSTA CURTA APÓS EXERCÍCIO" adicionada
-- Explica como usar campo `agente` do `CARREGAR_MEMORIA_CONVERSA` para detectar herói anterior
-- Arquivos: `server/src/personas/PSICOPEDAGOGICO.md` + `Prompts/PSICOPEDAGOGICO.md`
-
-### 2. EmptyState — Botões reais com amber styling ✅ (push pendente)
-
-- `web/src/components/EmptyState.tsx` reescrito
-- Pills pseudo-clicáveis → `<button>` reais com styling âmbar (`#FFFBEB`, borda âmbar, texto âmbar escuro)
-- `MATERIA_CONFIG` mapeia 8 matérias → herói + mensagem de ativação
-- `handleMateriaClick` chama `enviar(config.mensagem)` → usuário vê bubble + streaming automático via TypingDots
-- Sem setTimeout (race condition eliminada — TypingDots cuidam do loading state)
-- CTA filho: "Pode digitar sua dúvida aqui embaixo, ou toca numa matéria para começar."
-- CTA pai: "Pode digitar uma dúvida ou escolha a matéria diretamente."
-
-### 3. CLAUDE.md — Lucas Pessoa + Oscar ✅
-
-- Seção "QUEM VOCÊ É — LUCAS PESSOA" adicionada no início do arquivo
-  - Formação acadêmica (UNICAMP CC + Psicologia Cognitiva interrompida + leituras Vygotsky/Piaget/Freire)
-  - Trajetória: CPqD → Descomplica → Take Blip (lição: O GESTOR é O agente) → Educa.ai → consultoria
-  - Filosofia técnica pessoal em 6 pontos
-- Tabela de especialidades técnicas preenchida
-- Organograma Pense-AI adicionado: Leon (CEO) → Oscar (COO) → Lucas (Arquiteto)
-- Seção "INTERFACE COM O HUB — OSCAR" atualizada com regras de cadeia de comando
-
-### 4. Especificações visuais entregues para parceiro web
-
-Entregues os valores exatos de:
-- Cores, gradientes, accent por herói (de `web/src/constants.ts`)
-- Fórmula de gradiente para agent bubble: `linear-gradient(135deg, {accent}0F, {accent}1A)`
-- User bubble: gradiente do herói ativo ou cor do perfil quando sem herói
-- Fontes, background, variáveis CSS globais
-
-### 5. Limite diário Layla — Zerado 3x ✅
-
-Layla testou o sistema intensamente (sessão real, não QA controlado).
-Limite zerado manualmente via Supabase MCP 3 vezes.
-**Resultado: 88 turnos reais acumulados — dados para análise.**
-
-### 6. LaylaEstudaPortugues.md ✅
-
-- 88 turnos transcritos integralmente
-- VERBETTA: 81 turnos — funcionamento excelente, construtivismo puro, tom adequado 7º ano
-- CALCULUS: 5 turnos — **1 anomalia identificada no turno 6** (Calculus respondeu sobre crônica quando VERBETTA deveria estar ativo)
-- PSICOPEDAGOGICO: 2 turnos (onboarding)
-- Sinais psicopedagógicos: 5 disparados
-- Score geral da sessão: **9.2/10 — Aprovado com ressalva menor**
-- Arquivo: `LaylaEstudaPortugues.md` (workspace)
-
-### 7. SuperAgentes_B2C_Arquitetura_Caio.md ✅
-
-Documento completo para handoff ao Caio (novo parceiro de sites):
-- Visão geral do produto e stack
-- Todas as 10 tabelas `b2c_` documentadas com cada coluna, tipo, nullable, default, propósito
-- Diagrama de relacionamentos entre tabelas
-- CRON semanal documentado
-- ENV completo: dev (valores reais) + prod (estrutura + o que obter com Leon)
-- Endpoints principais do backend
-- Estrutura de pastas do repositório
-- Como acessar o banco: Supabase Studio (visual) + MCP Claude (passo a passo com PAT)
-- Queries SQL úteis prontas para o dia a dia
-- IDs de referência das alunas (Layla + Maria Paz)
+**Super Prova KB genérica:** `temaDetectado` no router é sempre a matéria genérica (keywords → "historia", "geografia"). O tema específico vem do PSICO via `super_prova_query`, que não estava sendo usado no Hook 1. Fix implementado na sessão de hoje.
 
 ---
 
-## ANÁLISE ROOT CAUSE CALCULUS (documentada)
+## PUSHES PENDENTES (acumulados)
 
-**Bug principal (stickiness guard):** `router.ts:573-576` — quando LLM timeout (500ms) retorna `null`, guard inverte e TROCA para CALCULUS em vez de manter herói ativo. Fix: null → mantém herói.
-**Keywords perigosas removidas:** `'-'`, `'+'`, `'='` de KEYWORDS_MATEMATICA.
-**Anti-keywords adicionadas:** `área`, `número`, `metade` em contextos não-matemáticos.
-**Timeout LLM:** 500ms → 2000ms para reduzir falsos timeouts.
-
----
-
-## PUSHES PENDENTES (ainda não foram executados)
-
-| Item | Arquivos | Status |
-|------|----------|--------|
-| BUG-57 + Router Fixes (fb4e84a) | `server/src/core/router.ts` + ambos PSICO.md | ✅ Commitado, push pendente |
-| EmptyState buttons | `web/src/components/EmptyState.tsx` | Push pendente |
-| MODO PAI dois estados | `server/src/core/context.ts` + 16 personas .md | Push pendente |
-| CLAUDE.md organogram | `CLAUDE.md` | Push pendente |
-
-**Escape Hatch para push (copiar e colar no Claude Code CLI local):**
+**Escape Hatch para push completo (copiar e colar no Claude Code CLI local):**
 ```bash
 cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
-git add server/src/core/router.ts server/src/personas/PSICOPEDAGOGICO.md Prompts/PSICOPEDAGOGICO.md web/src/components/EmptyState.tsx CLAUDE.md
-git commit -m "fix: router null timeout + skip LLM + empty state buttons + CLAUDE.md organogram"
+git add -A
+git commit -m "fix: nova_sessao preserva turnos + quiz proativo + superprova tema especifico + universal method"
 git push origin main
 ```
 
----
-
-## BUG IDENTIFICADO HOJE — Pendente correção
-
-**BUG-ROUTING-12abr:** CALCULUS ativado no turno 6 da sessão de Layla quando VERBETTA estava ativo e o tema era crônica literária.
-- **Causa provável:** Router classificou "crônica" com falso positivo para Matemática ou a keyword de Matemática tem overlap
-- **Impacto:** Baixo (conteúdo pedagogicamente válido, mas quebrou continuidade de persona)
-- **Ação:** Investigar keywords de CALCULUS para falso positivo com "crônica" + analisar turno 6 no LaylaEstudaPortugues.md
+| Item | Arquivos | Status |
+|------|----------|--------|
+| Router Fixes (fb4e84a) | `server/src/core/router.ts` + PSICO.md | Commitado, push pendente |
+| EmptyState buttons | `web/src/components/EmptyState.tsx` | Push pendente |
+| MODO PAI dois estados | `server/src/core/context.ts` + 16 personas | Push pendente |
+| CLAUDE.md organogram | `CLAUDE.md` | Push pendente |
+| Universal Method completo | 16+ arquivos personas + message.ts + QuizCard + ChatContext | Push pendente |
+| Fix nova_sessao turnos | `server/src/db/persistence.ts` | Push pendente |
+| Quiz proativo 16 arquivos | 8 heróis × 2 pastas | Push pendente |
+| Super Prova KB específico | `message.ts` + `response-processor.ts` | Push pendente |
 
 ---
 
@@ -186,22 +115,15 @@ git push origin main
 - Repo: `https://github.com/Leonmala/super-agentes-b2c`
 - LLM dev: Gemini 2.5 Flash (`GOOGLE_API_KEY`)
 - LLM prod: Kimi K2.5 (Moonshot AI)
-- Novo parceiro web: **Caio** — recebe `SuperAgentes_B2C_Arquitetura_Caio.md` amanhã
 
 ---
 
 ## AGENDA SUGERIDA — 2026-04-14 (Terça)
 
-1. **Push geral** (todos os commits: BUG-57 + router fixes + patch heróis + Universal Method) via Escape Hatch
-2. **QA sessão real com Layla** — validar Universal Method: CALCULUS não intrude, PSICO qualifica tópicos, herói segue sequência
-3. **Monitorar logs** (Railway) por 15min após push — confirmar zero intrusões CALCULUS
-4. **Alinhar com Caio** se necessário (documento já entregue)
-5. **SEO + site de vendas** — retomar planejamento (pendente desde 2026-04-07)
-
-**Escape Hatch para push completo (copiar e colar no Claude Code CLI local):**
-```bash
-cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
-git add -A
-git commit -m "feat: Universal Method + router fix stickiness + patch 8 heróis + Super Prova session-aware"
-git push origin main
-```
+1. **Push geral** (todos os commits acumulados) via Escape Hatch no Windows
+2. **QA sessão real com Layla** — validar os 3 fixes:
+   - Reconexão: GAIA mantém contexto (turnos preservados)
+   - Quiz proativo: GAIA oferece quiz quando percebe compreensão
+   - KB específica: logs Railway devem mostrar tema específico no Hook 1
+3. **Monitorar logs** (Railway) por 15min após push
+4. **SEO + site de vendas** — retomar planejamento (pendente desde 2026-04-07)

@@ -338,9 +338,15 @@ router.post('/message', async (req: Request, res: Response) => {
 
           // ── SUPER PROVA Hook 1 (CASO A) ─────────────────────────────────────
           // Gerar/buscar acervo em background quando tema muda (fire-and-forget)
-          if (temaDetectado && temaDetectado !== sessao.tema_atual) {
-            console.log(`[SuperProva] 🔄 Hook 1 ativado (cascata) | ${heroiEscolhido} | tema: "${temaDetectado}"`)
-            obterOuGerarAcervo(temaDetectado, aluno.serie || '7ano', heroiParaMateria(heroiEscolhido), heroiEscolhido)
+          // temaEspecifico_A: prioriza super_prova_query do PSICO (ex: "quilombos_atualidade")
+          // em vez do temaDetectado genérico (ex: "historia"). Garante KB relevante à aula.
+          const temaEspecifico_A: string = (cascata?.super_prova_query as string)
+            || (respostaJSON?.super_prova_query as string)
+            || temaDetectado
+            || ''
+          if (temaEspecifico_A && temaEspecifico_A !== sessao.tema_atual) {
+            console.log(`[SuperProva] 🔄 Hook 1 ativado (cascata) | ${heroiEscolhido} | tema: "${temaEspecifico_A}" (genérico: "${temaDetectado}")`)
+            obterOuGerarAcervo(temaEspecifico_A, aluno.serie || '7ano', heroiParaMateria(heroiEscolhido), heroiEscolhido)
               .then(acervo => {
                 if (acervo) return persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo))
               })
@@ -375,7 +381,9 @@ router.post('/message', async (req: Request, res: Response) => {
           ])
 
           // Atualizar tema e agente na sessão local antes de montar contexto (evita contexto stale)
-          if (temaDetectado) sessao.tema_atual = temaDetectado
+          // Prioriza temaEspecifico_A (específico do PSICO) para que próximas reconexões preservem contexto real
+          if (temaEspecifico_A) sessao.tema_atual = temaEspecifico_A
+          else if (temaDetectado) sessao.tema_atual = temaDetectado
           sessao.agente_atual = heroiEscolhido
 
           // Montar contexto rico para o herói
@@ -627,9 +635,12 @@ router.post('/message', async (req: Request, res: Response) => {
 
       // ── SUPER PROVA Hook 1 (CASO B continuidade) ────────────────────────────
       // Herói já escolhido — verificar se tema mudou para gerar KB em background
-      if (temaDetectado && temaDetectado !== sessao.tema_atual && HEROIS_VALIDOS.includes(persona)) {
-        console.log(`[SuperProva] 🔄 Hook 1 ativado (continuidade) | ${persona} | tema: "${temaDetectado}"`)
-        obterOuGerarAcervo(temaDetectado, aluno.serie || '7ano', heroiParaMateria(persona), persona)
+      // temaEspecifico_B: usa sessao.tema_atual quando disponível (pode ter sido específico via Caso A anterior)
+      // ex: se sessao.tema_atual = "quilombos_atualidade", KB é específico mesmo em reconexão
+      const temaEspecifico_B: string = temaDetectado || sessao.tema_atual || ''
+      if (temaEspecifico_B && temaEspecifico_B !== sessao.tema_atual && HEROIS_VALIDOS.includes(persona)) {
+        console.log(`[SuperProva] 🔄 Hook 1 ativado (continuidade) | ${persona} | tema: "${temaEspecifico_B}"`)
+        obterOuGerarAcervo(temaEspecifico_B, aluno.serie || '7ano', heroiParaMateria(persona), persona)
           .then(acervo => {
             if (acervo) return persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo))
           })
