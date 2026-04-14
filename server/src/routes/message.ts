@@ -216,10 +216,9 @@ router.post('/message', async (req: Request, res: Response) => {
       await resetarSessaoAgente(sessao.id)
     }
 
-    // ── HOOK 0 — LINK GUARDIAN ─────────────────────────────────────────────────
-    // Intercepta URLs antes do roteamento. "Quadrado dentro do círculo":
-    // quando termina, o fluxo normal (decidirPersona → herói → SSE) continua intacto.
-    {
+    // ── HOOK 0 — LINK GUARDIAN (DESATIVADO — em correção) ────────────────────────
+    const LINK_GUARDIAN_ATIVO = false  // ← mudar para true quando corrigido
+    if (LINK_GUARDIAN_ATIVO) {
       const linkDetectado = detectarURL(mensagem)
       const linkParaInvestigar = linkDetectado?.url ?? sessao.link_pendente ?? null
       const temContextoLink    = linkDetectado?.temContexto || !!sessao.link_pendente
