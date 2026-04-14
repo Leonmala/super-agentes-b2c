@@ -216,22 +216,32 @@ router.post('/message', async (req: Request, res: Response) => {
       await resetarSessaoAgente(sessao.id)
     }
 
-    // ── HOOK 0 — LINK GUARDIAN (DESATIVADO — em correção) ────────────────────────
-    const LINK_GUARDIAN_ATIVO = false  // ← mudar para true quando corrigido
+    // ── HOOK 0 — LINK GUARDIAN ────────────────────────────────────────────────────
+    let linkKbSalvaNesteTurno = false  // flag: impede Hook 1 de sobrescrever KB do link
+    const LINK_GUARDIAN_ATIVO = true   // ← ativado após correção completa
     if (LINK_GUARDIAN_ATIVO) {
       const linkDetectado = detectarURL(mensagem)
       const linkParaInvestigar = linkDetectado?.url ?? sessao.link_pendente ?? null
       const temContextoLink    = linkDetectado?.temContexto || !!sessao.link_pendente
 
       if (linkParaInvestigar && !temContextoLink) {
-        // Branch A: link sem contexto → pedir explicação, salvar link_pendente, encerrar
+        // Branch A: link sem contexto → PSICO pede explicação, salva link_pendente, encerra
         const nomeAluno = aluno.nome?.split(' ')[0] ?? ''
         await atualizarSessao(sessao.id, { link_pendente: linkParaInvestigar })
-        enviarEvento('agente', { agente: sessao.agente_atual || 'PSICOPEDAGOGICO' })
-        enviarEvento('chunk', {
-          texto: `Oi, ${nomeAluno}! Antes de eu abrir esse link, me conta: do que ele trata e o que a gente vai estudar com ele?`
-        })
+        const textoResposta = `Oi, ${nomeAluno}! Antes de eu abrir esse link, me conta: do que ele trata e o que a gente vai estudar com ele?`
+        enviarEvento('agente', { agente: 'PSICOPEDAGOGICO' })
+        enviarEvento('chunk', { texto: textoResposta })
         enviarEvento('done', {})
+        // Persistir interação no banco (turno PAUSA — aguardando contexto do link)
+        persistirTurno(
+          sessao.id,
+          sessao.turno_atual + 1,
+          'PSICOPEDAGOGICO',
+          mensagem,
+          textoResposta,
+          'PAUSA',
+          null
+        ).catch(() => {})
         res.end()
         return
       }
@@ -247,9 +257,10 @@ router.post('/message', async (req: Request, res: Response) => {
         ).catch(() => null)
         if (kbLink) {
           await persistirKnowledgeBase(sessao.id, kbLink).catch(() => {})
+          linkKbSalvaNesteTurno = true  // protege KB: Hook 1 não pode sobrescrever
         }
         await atualizarSessao(sessao.id, { link_pendente: null })
-        // ← continua para decidirPersona() normalmente
+        // ← continua para decidirPersona(), mas agente_override será ignorado (forçará PSICO cascade)
       }
     }
     // ── FIM HOOK 0 ────────────────────────────────────────────────────────────
@@ -259,7 +270,8 @@ router.post('/message', async (req: Request, res: Response) => {
     )
 
     // Se agente_override fornecido (para SUPERVISOR_EDUCACIONAL, PROFESSOR_IA, ou herói direto)
-    if (agente_override) {
+    // Ignorar quando KB do link foi salva neste turno — forçar PSICO cascade para montar plano pedagógico
+    if (agente_override && !linkKbSalvaNesteTurno) {
       if (!AGENTES_OVERRIDE_VALIDOS.includes(agente_override)) {
         enviarEvento('error', { erro: 'Agente inválido' })
         res.end()
@@ -684,7 +696,7 @@ router.post('/message', async (req: Request, res: Response) => {
       // temaEspecifico_B: usa sessao.tema_atual quando disponível (pode ter sido específico via Caso A anterior)
       // ex: se sessao.tema_atual = "quilombos_atualidade", KB é específico mesmo em reconexão
       const temaEspecifico_B: string = temaDetectado || sessao.tema_atual || ''
-      if (temaEspecifico_B && temaEspecifico_B !== sessao.tema_atual && HEROIS_VALIDOS.includes(persona)) {
+      if (temaEspecifico_B && temaEspecifico_B !== sessao.tema_atual && HEROIS_VALIDOS.includes(persona) && !linkKbSalvaNesteTurno) {
         console.log(`[SuperProva] 🔄 Hook 1 ativado (continuidade) | ${persona} | tema: "${temaEspecifico_B}"`)
         obterOuGerarAcervo(temaEspecifico_B, aluno.serie || '7ano', heroiParaMateria(persona), persona)
           .then(acervo => {
