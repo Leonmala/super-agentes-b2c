@@ -426,6 +426,12 @@ router.post('/message', async (req: Request, res: Response) => {
           else if (temaDetectado) sessao.tema_atual = temaDetectado
           sessao.agente_atual = heroiEscolhido
 
+          // Persistir tema específico no banco para que CASO B em reconexão use tema correto
+          // Sem isso, reconexão retorna tema genérico do banco ("historia") e Hook 1 gera acervo irrelevante
+          if (temaEspecifico_A) {
+            atualizarSessao(sessao.id, { tema_atual: temaEspecifico_A }).catch(() => {})
+          }
+
           // Montar contexto rico para o herói
           let contextoHeroi = montarContexto(sessao, aluno, ultimosTurnos, tipoUsuario)
 
