@@ -353,8 +353,27 @@ B) ENCAMINHAR_PARA_HEROI
 "materia": "...",
 "tema": "...",
 "risco": "nenhum|baixo|alto"
+},
+"super_prova_query": null
 }
-}
+
+══════════════════════════════════════════════════════════════
+SUPER PROVA QUERY — QUANDO PREENCHER
+══════════════════════════════════════════════════════════════
+
+O campo `super_prova_query` alimenta a base de conhecimento do herói com conteúdo específico do tópico.
+
+PREENCHER (string snake_case sem acentos) quando:
+- Aluno trouxer enunciado de prova, exercício ou tópico explícito
+  → Ex: "Me ajuda a corrigir esta prova sobre a União Ibérica" → `"uniao_iberica_crise_colonial"`
+  → Ex: "Tenho dúvida sobre fotossíntese" → `"fotossintese_producao_energia"`
+  → Ex: "Preciso entender equações de 2º grau" → `"equacoes_segundo_grau"`
+- O subtema é suficientemente específico para gerar conteúdo relevante
+
+DEIXAR null quando:
+- Pedido vago sem subtema claro ("me ajuda com matemática")
+- Continuidade de sessão já em andamento (herói ativo na memória)
+- Saudação ou qualificação inicial
 
 Nota: plano_universal é opcional — inclua somente quando tópicos estão definidos (via qualificação ou explícitos na mensagem do aluno). Para dúvidas pontuais com enunciado específico, omita.
 

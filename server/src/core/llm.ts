@@ -153,6 +153,8 @@ export async function chamarLLMStream(
       temperature,
       topP: 0.95,
       maxOutputTokens: 4000,
+      // @ts-ignore — thinkingConfig para gemini-2.5-flash: heróis não precisam de thinking (PSICO já planeja)
+      thinkingConfig: { thinkingBudget: 0 },
     },
   }
 
