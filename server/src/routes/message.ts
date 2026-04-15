@@ -258,6 +258,11 @@ router.post('/message', async (req: Request, res: Response) => {
         if (kbLink) {
           await persistirKnowledgeBase(sessao.id, kbLink).catch(() => {})
           linkKbSalvaNesteTurno = true  // protege KB: Hook 1 não pode sobrescrever
+        } else {
+          // F1: fallback quando fetch/Gemini falham — instrui herói a pedir o trecho ao aluno
+          const kbFallback = `LINK_GUARDIAN: o aluno enviou o link ${linkParaInvestigar} mas o conteúdo não pôde ser acessado automaticamente (site bloqueado, conteúdo dinâmico ou link inválido).\nINTENÇÃO DO ALUNO: "${mensagem}"\nINSTRUÇÃO PARA O HERÓI: Informe o aluno de forma natural que não conseguiu abrir o link diretamente, e peça que cole no chat o trecho ou parágrafo principal do conteúdo que quer estudar.`
+          await persistirKnowledgeBase(sessao.id, kbFallback).catch(() => {})
+          linkKbSalvaNesteTurno = true  // protege KB: Hook 1 não pode sobrescrever
         }
         await atualizarSessao(sessao.id, { link_pendente: null })
         // ← continua para decidirPersona(), mas agente_override será ignorado (forçará PSICO cascade)
