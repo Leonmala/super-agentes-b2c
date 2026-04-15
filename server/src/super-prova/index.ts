@@ -10,9 +10,9 @@ import { supabase } from '../db/supabase.js'
 import { gerarAcervo, AcervoGerado } from './gerar-acervo.js'
 import { consultarKnowledgeBase, ResultadoConsulta } from './consultar.js'
 import { gerarQuiz, QuizGerado } from './gerar-quiz.js'
-import { investigarLink } from './investigar-link.js'
+import { investigarLinkComFallback } from './investigar-link.js'
 
-export { AcervoGerado, ResultadoConsulta, QuizGerado, investigarLink }
+export { AcervoGerado, ResultadoConsulta, QuizGerado, investigarLinkComFallback as investigarLink }
 
 // Mapa de heroiId → materia (usado internamente)
 const HEROI_MATERIA: Record<string, string> = {

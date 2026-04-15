@@ -1,5 +1,6 @@
 // server/src/super-prova/investigar-link.ts
 // Hook 0 — Link Guardian: faz fetch direto do URL, extrai texto, resume via Gemini
+// Fallback: se fetch falhar, tenta Google Search grounding
 // Fail-silently: retorna null em qualquer falha (URL inacessível, erro Gemini, etc.)
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
@@ -128,4 +129,74 @@ Se o conteúdo não for relevante ou não tiver informação suficiente, retorne
     console.error('[SuperProva:investigarLink] ❌ Falha no Gemini (fail-silently):', err)
     return null
   }
+}
+
+/**
+ * Fallback via Google Search grounding — usado quando fetch() direto falha.
+ * Cobre sites bem indexados que bloqueiam requisições diretas.
+ */
+async function investigarLinkViaSearch(
+  url: string,
+  contexto: string,
+  serie: string,
+  heroiId: string
+): Promise<string | null> {
+  console.log(`[SuperProva:investigarLink] 🔄 Fallback: tentando Google Search para ${url}`)
+  try {
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      // @ts-ignore — googleSearch não está no tipo oficial mas funciona na API
+      tools: [{ googleSearch: {} }],
+    })
+
+    const prompt = `Você é um assistente pedagógico. O professor ${heroiId} precisa extrair o conteúdo do link abaixo para ajudar um aluno do ${serie}.
+
+LINK: ${url}
+INTENÇÃO DO ALUNO: "${contexto}"
+
+Acesse o conteúdo do link e retorne um resumo pedagógico estruturado no seguinte formato exato (sem JSON, sem markdown, só texto plano):
+
+CONTEÚDO DO LINK: ${url}
+TEMA CENTRAL: [1 frase resumindo o assunto principal]
+RESUMO: [3 a 5 parágrafos do conteúdo principal, adaptados para o ${serie}]
+CONCEITOS-CHAVE: [lista dos termos e conceitos importantes separados por vírgula]
+INTENÇÃO DO ALUNO: [o que o aluno quer estudar ou aprender com este conteúdo]
+
+Se o link estiver inacessível ou não tiver conteúdo relevante, retorne apenas: ERRO_LINK_INACESSIVEL`
+
+    const inicio = Date.now()
+    const result = await model.generateContent(prompt)
+    const texto = result.response.text().trim()
+    const tempoMs = Date.now() - inicio
+
+    if (!texto || texto === 'ERRO_LINK_INACESSIVEL') {
+      console.warn(`[SuperProva:investigarLink] ⚠️ Fallback Search: sem conteúdo relevante`)
+      return null
+    }
+
+    console.log(`[SuperProva:investigarLink] ✅ KB via fallback Search em ${tempoMs}ms | ${texto.length} chars`)
+    return texto
+
+  } catch (err) {
+    console.error('[SuperProva:investigarLink] ❌ Fallback Search falhou (fail-silently):', err)
+    return null
+  }
+}
+
+/**
+ * Investigação com fallback automático:
+ * 1. fetch() direto + Gemini (sem tools) — funciona para maioria dos sites
+ * 2. Google Search grounding — fallback para sites bem indexados que bloqueiam fetch
+ */
+export async function investigarLinkComFallback(
+  url: string,
+  contexto: string,
+  serie: string,
+  heroiId: string
+): Promise<string | null> {
+  const resultFetch = await investigarLink(url, contexto, serie, heroiId)
+  if (resultFetch !== null) return resultFetch
+
+  console.log(`[SuperProva:investigarLink] ⚠️ fetch direto falhou — ativando fallback Search`)
+  return investigarLinkViaSearch(url, contexto, serie, heroiId)
 }
