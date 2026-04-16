@@ -70,8 +70,8 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
     }
 
     return (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+      <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl my-auto">
           <div className="text-5xl mb-3">{emoji}</div>
           <h3 className="text-xl font-bold text-gray-800 mb-1">Quiz concluído!</h3>
           <p className="text-sm text-gray-500 mb-4">{tema}</p>
@@ -92,8 +92,8 @@ export function QuizCard({ quiz, onFechar }: QuizCardProps) {
 
   // ─── Questão atual ─────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl my-auto">
 
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
