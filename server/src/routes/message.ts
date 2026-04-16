@@ -394,20 +394,20 @@ router.post('/message', async (req: Request, res: Response) => {
           agenteFinal = heroiEscolhido
 
           // ── SUPER PROVA Hook 1 (CASO A) ─────────────────────────────────────
-          // Gerar/buscar acervo em background quando tema muda (fire-and-forget)
+          // Gerar/buscar acervo em PARALELO (não fire-and-forget)
           // temaEspecifico_A: prioriza super_prova_query do PSICO (ex: "quilombos_atualidade")
           // em vez do temaDetectado genérico (ex: "historia"). Garante KB relevante à aula.
           const temaEspecifico_A: string = (cascata?.super_prova_query as string)
             || (respostaJSON?.super_prova_query as string)
             || temaDetectado
             || ''
+          // Iniciar geração imediatamente após detectar tema — await antes de buscarKnowledgeBase
+          // Cache HIT retorna <100ms; MISS pode demorar mais → timeout de 4s protege latência
+          let acervoPromise_A: Promise<Awaited<ReturnType<typeof obterOuGerarAcervo>> | null> = Promise.resolve(null)
           if (temaEspecifico_A && temaEspecifico_A !== sessao.tema_atual) {
-            console.log(`[SuperProva] 🔄 Hook 1 ativado (cascata) | ${heroiEscolhido} | tema: "${temaEspecifico_A}" (genérico: "${temaDetectado}")`)
-            obterOuGerarAcervo(temaEspecifico_A, aluno.serie || '7ano', heroiParaMateria(heroiEscolhido), heroiEscolhido)
-              .then(acervo => {
-                if (acervo) return persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo))
-              })
-              .catch(() => {}) // fail-silently
+            console.log(`[SuperProva] 🔄 Hook 1 iniciado em paralelo | ${heroiEscolhido} | tema: "${temaEspecifico_A}"`)
+            acervoPromise_A = obterOuGerarAcervo(temaEspecifico_A, aluno.serie || '7ano', heroiParaMateria(heroiEscolhido), heroiEscolhido)
+              .catch((): null => null)
           }
           // ────────────────────────────────────────────────────────────────────
 
@@ -432,10 +432,21 @@ router.post('/message', async (req: Request, res: Response) => {
             : JSON.stringify(instrucoesRaw, null, 2)
 
           // ── SUPER PROVA: injetar KB e resultado de consulta anterior (CASO A) ─
+          // Aguardar acervo com timeout 4s — garante KB disponível quando herói for chamado
+          // Cache HIT (<100ms): KB sempre disponível. MISS/lento (>4s): degrada sem KB silenciosamente.
+          const acervo_A = await Promise.race([
+            acervoPromise_A,
+            new Promise<null>(resolve => setTimeout(() => resolve(null), 4000))
+          ])
+          if (acervo_A) {
+            await persistirKnowledgeBase(sessao.id, formatarKnowledgeBase(acervo_A)).catch(() => {})
+          }
+
           const [spKB_A, spConsulta_A] = await Promise.all([
             buscarKnowledgeBase(sessao.id).catch(() => null),
             buscarConsultaResultado(sessao.id).catch(() => null),
           ])
+          console.log(`[SuperProva] DIAGNÓSTICO Caso A | sessão=${sessao.id.slice(0,8)} | tema="${temaEspecifico_A}" | acervo=${acervo_A ? 'HIT' : 'MISS/TIMEOUT'} | KB=${spKB_A ? spKB_A.length + 'chars' : 'NULL'}`)
 
           // Atualizar tema e agente na sessão local antes de montar contexto (evita contexto stale)
           // Prioriza temaEspecifico_A (específico do PSICO) para que próximas reconexões preservem contexto real
@@ -716,6 +727,7 @@ router.post('/message', async (req: Request, res: Response) => {
           buscarKnowledgeBase(sessao.id).catch(() => null),
           buscarConsultaResultado(sessao.id).catch(() => null),
         ])
+        console.log(`[SuperProva] DIAGNÓSTICO Caso B | sessão=${sessao.id.slice(0,8)} | tema="${temaEspecifico_B}" | KB=${spKB_B ? spKB_B.length + 'chars' : 'NULL'}`)
         if (spKB_B) {
           console.log(`[SuperProva] 📖 Injetando KNOWLEDGE_BASE no contexto do ${persona} (${spKB_B.length} chars)`)
           contextoFinal += `\n\n${spKB_B}`
