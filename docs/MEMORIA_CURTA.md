@@ -1,153 +1,82 @@
 # MEMÓRIA CURTA — Última Atividade (Ralph Loop Snapshot)
 
 > **Propósito:** Snapshot do estado imediato. Lido PRIMEIRO em qualquer reinicialização.  
-> **Última atualização:** 2026-04-13 — Link Guardian completo + TypeCheck 0 erros ✅ Push pendente.
+> **Última atualização:** 2026-04-15 — Sessão de hoje: TEMPUS truncation fix + investigarLink rewrite + F1 fallback + ANTIRESPOSTA 7 heróis + fallback googleSearch.
 
 ---
 
 ## Estado Imediato
 
-**Fase atual:** Hook 0 — Link Guardian totalmente implementado. Quando aluno envia URL → sistema pede contexto (Branch A) ou Super Prova investiga link via Gemini e injeta KB para o herói (Branch B). TypeCheck server 0 erros. Push + SQL migration pendentes via Escape Hatch.
+**Produção (Railway):** rebuilding (commit 4bb4787). Todos os fixes desta sessão em produção.
 
 **Próxima ação:**
-1. Push via Escape Hatch (inclui SQL migration no Supabase)
-2. QA com Layla: enviar link solto → sistema pede contexto; enviar link+contexto → herói responde com conhecimento do conteúdo
-3. QA 3 fixes anteriores: reconexão preserva contexto, quiz proativo, KB específica
+1. QA com Layla — 8 testes pendentes do Plano Isabela (ver tabela abaixo)
+2. Após QA aprovado → SEO + site de vendas
 
 ---
 
-## O QUE FOI FEITO HOJE (2026-04-13 — Sessão 4)
+## O QUE FOI FEITO HOJE (2026-04-15)
 
-### Hook 0 — Link Guardian — IMPLEMENTADO ✅
+### Sessão 1: Bug TEMPUS + Bug Super Prova KB
 
-**Motivação:** Layla mandou um link de texto do professor → GAIA funcionou (Gemini lê URL). Mas quando heróis migrarem para Kimi K2.5 (sem Google Search), URLs irão quebrar silenciosamente. Além disso, link solto sem contexto não deveria ser processado direto.
+**Bug 1 — TEMPUS parava no meio da frase (turnos 114 e 117):**
+- Causa raiz: `gemini-2.5-flash` é modelo de pensamento. Tokens de thinking consumiam o budget de `maxOutputTokens: 4000`, truncando o JSON antes do campo `observacoes_internas`
+- Fix: adicionado `thinkingConfig: { thinkingBudget: 0 }` em `chamarLLMStream` (llm.ts)
+- Evidência pós-fix: turnos 119-121 todos com `observacoes_internas` preenchido
 
-**Arquitetura:** "Quadrado dentro do círculo" — Hook 0 roda após `resetarSessaoAgente`, antes de `decidirPersona()`. Quando termina, fluxo existente continua intacto.
+**Bug 2 — Super Prova servindo KB errada (Grandes Navegações para União Ibérica):**
+- Causa raiz: PSICO não gerava `super_prova_query` → tema_hash defaultava para "historia" genérico → hit no cache de 2026-04-04
+- Fix: adicionado campo `"super_prova_query": null` + regras de preenchimento no PSICOPEDAGOGICO.md (ambas as pastas)
+- Evidência pós-fix: PSICO gerou `tema_hash: "redacaocronicanoticia"` no teste seguinte
 
-**Branch A — Link sem contexto:**
-- `detectarURL()` encontra URL, `textoAlem.length < 10`
-- Salva `link_pendente` na sessão
-- Responde: "Oi [nome]! Antes de eu abrir esse link, me conta: do que ele trata e o que a gente vai estudar com ele?"
-- `res.end()` — fluxo encerra aqui
+**Commit 8e9883c** — ambos os fixes.
 
-**Branch B — Link + contexto (ou `link_pendente` + qualquer resposta):**
-- Emite SSE `'search'` → "🔍 analisando conteúdo do link..."
-- `await investigarLink(url, mensagem, serie, heroiId)` — Gemini lê URL, retorna KB estruturada
-- `persistirKnowledgeBase()` — KB injetada para o herói
-- `atualizarSessao({ link_pendente: null })` — estado limpo
-- Fluxo continua para `decidirPersona()` normalmente
+### Sessão 2: investigarLink + ANTIRESPOSTA
 
-**Arquivos criados/modificados:**
-- `server/src/utils/detect-url.ts` — função pura `detectarURL()`, regex `https?://` apenas
-- `server/src/super-prova/investigar-link.ts` — Gemini lê URL, falha silenciosamente
-- `server/src/super-prova/index.ts` — re-exporta `investigarLink`
-- `server/src/routes/message.ts` — imports + Hook 0 inserido
-- `server/src/db/supabase.ts` — `link_pendente: string | null` na interface `Sessao`
-- `server/src/db/persistence.ts` — `link_pendente?: string | null` em `atualizarSessao`
+**F1: Fallback KB quando link inacessível (message.ts):**
+- Quando `investigarLink` retorna null, injeta KB instruindo herói a pedir o trecho ao aluno
+- `linkKbSalvaNesteTurno = true` mesmo no fallback (protege contra sobrescrita do Hook 1)
 
-**TypeCheck:** 0 erros ✅
+**Rewrite investigarLink (investigar-link.ts):**
+- Substituiu Google Search grounding por `fetch()` nativo com timeout 10s + stripHtml + Gemini sem tools
+- Google Search apenas buscava no Google (não fazia fetch direto) → sites institucionais não indexados falhavam silenciosamente
 
-**Migration SQL pendente (Escape Hatch):**
-```sql
-ALTER TABLE b2c_sessoes ADD COLUMN IF NOT EXISTS link_pendente TEXT DEFAULT NULL;
-```
+**F2: ANTIRESPOSTA EXCEÇÃO nos 7 heróis:**
+- Bloco `EXCEÇÃO — FRUSTRAÇÃO CLARA (1x por interação)` + `MODO IRRESTRITO` adicionado a:
+  - VERBETTA, NEURON, TEMPUS, GAIA, VECTOR, ALKA, FLEX
+  - Em ambas as pastas: `server/src/personas/` e `Prompts/` (14 arquivos)
+- Padrão CALCULUS replicado — sinaliza `sinal_psicopedagogico: true` + `motivo_sinal: "RELAXAMENTO_CONSTRUTIVISMO_ATIVADO"`
 
----
+**Commit d04a93c** — todos esses fixes.
 
-## O QUE FOI FEITO HOJE (2026-04-13 — Sessão 3)
+**Fallback automático fetch → Google Search (investigar-link.ts + index.ts):**
+- Se `fetch()` falha, tenta Google Search antes de retornar null
+- Exportado como `investigarLinkComFallback`, alias `investigarLink` no index.ts — sem mudança em message.ts
+- Decisão tomada: **não** turbinar PSICO com extração de slug do link (baixo ganho, risco real)
 
-### Fix 1: Bug nova_sessao destrói turnos — IMPLEMENTADO ✅
-
-**Problema:** `resetarSessaoAgente` em `persistence.ts` deletava TODOS os turnos da sessão quando `nova_sessao === true` (primeira mensagem após abrir/reabrir página). Layla saiu sem querer e voltou → 6 turnos de quilombos deletados → GAIA sem contexto → "papo esquisito".
-
-**Solução cirúrgica:**
-- `server/src/db/persistence.ts`: Removido bloco DELETE de b2c_turnos (linhas 89-97 originais)
-- `server/src/db/persistence.ts`: Removido `tema_atual: null` do update — PSICO agora preserva tema para oferecer continuidade ("quer continuar estudando quilombos?")
-- Função agora apenas reseta `agente_atual` para PSICOPEDAGOGICO + `ultimo_turno_at`
-
-### Fix 2: Oferta Proativa de Quiz — IMPLEMENTADO ✅ (16 arquivos)
-
-**Problema:** Heróis só emitiam QUIZ quando aluno pedia ou quando `fechar_com_quiz: true` no Universal Method. Nenhuma oferta proativa.
-
-**Solução:**
-- Seção `OFERTA PROATIVA DE QUIZ` adicionada em todos os 8 heróis × 2 pastas (16 arquivos)
-- Regra: quando herói detecta compreensão real → oferece gentilmente ("Quer fazer um quiz rápido?")
-- Máximo 1 oferta por tópico. Respeitar recusa. Não oferecer enquanto ainda há dificuldade.
-- Inserida imediatamente antes de `FECHAMENTO PEDAGÓGICO PÓS-QUIZ`
-
-### Fix 3: Super Prova KB Específico — IMPLEMENTADO ✅
-
-**Problema:** Hook 1 do Super Prova usava `temaDetectado` genérico ("geografia") para gerar KB. Todas as sessões de geografia compartilhavam o mesmo acervo genérico, independente do tópico específico.
-
-**Solução:**
-- `server/src/core/response-processor.ts`: Campo `super_prova_query: string | null` adicionado ao tipo `IntencaoCascata` + `extrairCascata` popula o campo do JSON do PSICO
-- `server/src/routes/message.ts` Hook 1 Caso A: `temaEspecifico_A` = `cascata.super_prova_query || respostaJSON.super_prova_query || temaDetectado`
-- `server/src/routes/message.ts`: `sessao.tema_atual` persistido com tema específico (não genérico)
-- `server/src/routes/message.ts` Hook 1 Caso B: `temaEspecifico_B` = `temaDetectado || sessao.tema_atual`
-
-**Resultado esperado:** PSICO emite `super_prova_query: "quilombos_atualidade"` → KB gerada sobre quilombos, não sobre "geografia" genérica.
-
-**TypeCheck:** server 0 erros, web 0 erros ✅
+**Commit 4bb4787** — fallback.
 
 ---
 
-## O QUE FOI FEITO HOJE (2026-04-13 — Sessões 1 e 2)
+## QA PENDENTE — Testes do Plano Isabela (do dia 2026-04-14)
 
-### Quiz Result Feedback Loop — IMPLEMENTADO ✅
+Executar com Layla. Critérios completos em `docs/RELATORIO_CORRECAO_2026-04-14.md`.
 
-**Loop completo:**
-```
-PSICO plano → herói executa tópicos → herói emite sinal QUIZ → Super Prova gera quiz →
-QuizCard roda → resultado → ChatContext.fecharQuiz → enviar "[Quiz concluído]" →
-herói recebe → fechamento pedagógico → Método Universal completo ✅
-```
+| Teste | O que verifica |
+|-------|---------------|
+| 1.A | Reload de página → turnos anteriores preservados no banco |
+| 2.A | Tema específico salvo no banco após cascata (não "historia" genérico) |
+| 2.B | `b2c_super_prova_acervo` com tema_hash específico |
+| 2.C | Reconexão: KB injetada é sobre o tema específico, não genérico |
+| 3.A | Link sem contexto → PSICO aparece (não herói anterior), turno PAUSA no banco |
+| 3.B | Link + contexto → PSICO cria plano → herói entra com KB do link |
+| 3.C | Após Branch B, 2+ turnos: `super_prova_kb` ainda tem conteúdo do link |
+| 3.D | Conversa normal sem link → fluxo PSICO→herói intacto (regressão) |
 
-### Universal Method + Router + Super Prova Session-Aware — IMPLEMENTADOS ✅
-
-(ver MEMORIA_LONGA.md Sessões 17-18 para detalhes completos)
-
----
-
-## ANÁLISE ROOT CAUSE — SESSÃO LAYLA GAIA (2026-04-13)
-
-**Bug confirmado:** `b2c_uso_diario` mostrava 11 interações hoje vs 5 turnos em `b2c_turnos` → 6 turnos deletados.
-**Causa:** `resetarSessaoAgente` em `persistence.ts` tinha bloco DELETE que apagava todos os turnos da sessão.
-**Gatilho:** Frontend envia `nova_sessao: true` na primeira mensagem de cada conexão → `message.ts` linha 213-215 chama `resetarSessaoAgente`.
-
-**BUG-CRON:** CRON NUNCA FOI IMPLEMENTADO. Foi planejado para n8n, Leon rejeitou n8n, está em checklist futuro para implementar no mesmo ambiente. Qualquer referência a "CRON rodou domingo" é incorreta.
-
-**Super Prova KB genérica:** `temaDetectado` no router é sempre a matéria genérica (keywords → "historia", "geografia"). O tema específico vem do PSICO via `super_prova_query`, que não estava sendo usado no Hook 1. Fix implementado na sessão de hoje.
-
----
-
-## PUSHES PENDENTES (acumulados)
-
-**Escape Hatch completo (copiar e colar no Claude Code CLI local):**
-
-**PASSO 1 — SQL migration no Supabase (rodar uma vez):**
-```sql
-ALTER TABLE b2c_sessoes ADD COLUMN IF NOT EXISTS link_pendente TEXT DEFAULT NULL;
-```
-
-**PASSO 2 — Git push:**
-```bash
-cd "C:\Users\Leon\Desktop\SuperAgentes_B2C_V2"
-git add -A
-git commit -m "feat: Link Guardian (Hook 0) + fix nova_sessao turnos + quiz proativo + superprova KB especifico"
-git push origin main
-```
-
-| Item | Arquivos | Status |
-|------|----------|--------|
-| Router Fixes (fb4e84a) | `server/src/core/router.ts` + PSICO.md | Commitado, push pendente |
-| EmptyState buttons | `web/src/components/EmptyState.tsx` | Push pendente |
-| MODO PAI dois estados | `server/src/core/context.ts` + 16 personas | Push pendente |
-| CLAUDE.md organogram | `CLAUDE.md` | Push pendente |
-| Universal Method completo | 16+ arquivos personas + message.ts + QuizCard + ChatContext | Push pendente |
-| Fix nova_sessao turnos | `server/src/db/persistence.ts` | Push pendente |
-| Quiz proativo 16 arquivos | 8 heróis × 2 pastas | Push pendente |
-| Super Prova KB específico | `message.ts` + `response-processor.ts` | Push pendente |
-| Link Guardian (Hook 0) | `detect-url.ts` + `investigar-link.ts` + `message.ts` + `supabase.ts` + `persistence.ts` | Push pendente + SQL migration |
+**Adicionais desta sessão (2026-04-15):**
+| 4.A | VERBETTA com frustração explícita ("não consigo") → dá resposta + convida para jornada |
+| 4.B | VERBETTA modo irrestrito (plano com `construtivismo_irrestrito`) → não dá resposta mesmo com frustração |
+| 4.C | Link da OIM ou similar → investigarLink tenta fetch, falha, tenta Search → retorna KB |
 
 ---
 
@@ -157,19 +86,27 @@ git push origin main
 - Conta: `leon@pense-ai.com` / senha `3282` / PIN responsável: `3282`
 - Layla: 7º ano | aluno_id: `0fb1c38f-7d34-45b1-8ff2-3e5c4ccff71e`
 - Maria Paz: 3º ano | aluno_id: `6fa15ba4-38e8-4628-9b51-e0a3076d631a`
+- Sessão ativa Layla: `3eb3e585-57c7-48a6-af2d-4b9c2e598e84`
 - Tabela de uso: `b2c_uso_diario` — resetar antes de cada fluxo de QA
 - Repo: `https://github.com/Leonmala/super-agentes-b2c`
 - LLM dev: Gemini 2.5 Flash (`GOOGLE_API_KEY`)
 - LLM prod: Kimi K2.5 (Moonshot AI)
+- Supabase: `ahopvaekwejpsxzzrvux.supabase.co`
 
 ---
 
-## AGENDA SUGERIDA — 2026-04-14 (Terça)
+## COMMITS DESTA SESSÃO (2026-04-15)
 
-1. **Push geral** (todos os commits acumulados) via Escape Hatch no Windows
-2. **QA sessão real com Layla** — validar os 3 fixes:
-   - Reconexão: GAIA mantém contexto (turnos preservados)
-   - Quiz proativo: GAIA oferece quiz quando percebe compreensão
-   - KB específica: logs Railway devem mostrar tema específico no Hook 1
-3. **Monitorar logs** (Railway) por 15min após push
-4. **SEO + site de vendas** — retomar planejamento (pendente desde 2026-04-07)
+| Hash | Descrição |
+|------|-----------|
+| 8e9883c | fix: thinkingBudget=0 (TEMPUS truncation) + super_prova_query no PSICO |
+| d04a93c | fix: investigarLink fetch direto + F1 fallback KB + ANTIRESPOSTA EXCEÇÃO 7 heróis (14 arquivos) |
+| 4bb4787 | fix: investigarLink fallback automático fetch → Google Search |
+
+---
+
+## AGENDA SUGERIDA — próxima sessão
+
+1. **QA com Layla** — 11 testes acima (Railway rodando com commits desta sessão)
+2. **Monitorar logs Railway** durante QA de link (confirmar qual caminho foi tomado: fetch ou Search)
+3. **SEO + site de vendas** — pendente desde 2026-04-07

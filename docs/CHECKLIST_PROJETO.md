@@ -405,7 +405,7 @@
 - [x] **UM-V2** `router.test.manual.ts` todos os casos passando
 - [x] **UM-V3** Grep confirma 16 arquivos de herói com "MÉTODO UNIVERSAL"
 - [x] **UM-V4** Grep confirma 16 arquivos de herói com "FECHAMENTO PEDAGÓGICO PÓS-QUIZ" ✅
-- [ ] **UM-PUSH** Push Escape Hatch: todo o Universal Method para main
+- [x] **UM-PUSH** Push feito via commit 84ec47c (2026-04-13 escape hatch) ✅
 
 ---
 
@@ -435,7 +435,111 @@
 - [x] **SP-KB4** `message.ts`: `sessao.tema_atual` persistido com tema específico (não genérico) ✅
 - [x] **SP-KB5** `message.ts` Hook 1 Caso B: `temaEspecifico_B` usa `temaDetectado || sessao.tema_atual` ✅
 - [x] **SP-KB6** TypeCheck server + web: 0 erros ✅
-- [ ] **SP-KB-PUSH** Push via Escape Hatch (pendente execução Leon)
+- [x] **SP-KB-PUSH** Push feito via commit 84ec47c (2026-04-13 escape hatch) ✅
+
+---
+
+## Plano Isabela — Correção Link Guardian + Super Prova KB (2026-04-14)
+
+> Plano: `docs/PLANO_EXECUCAO_CORRECAO.md` (Isabela Monteiro, consultora externa)
+> Relatório: `docs/RELATORIO_CORRECAO_2026-04-14.md`
+> Log de execução: `docs/LOG_EXECUCAO.md`
+
+### Etapa 0 — Preparação ✅
+
+- [x] **IS-E0.1** TypeCheck baseline: 0 erros ✅
+- [x] **IS-E0.2** Snapshot banco: sessão Layla + cache acervo capturados
+- [x] **IS-E0.3** Confirmado: Link Guardian JÁ em produção (commit 84ec47c pushado ontem)
+
+### Etapa 1 — Desativação urgente + push fixes seguros ✅ (commit 97e3473)
+
+- [x] **IS-E1.1** `message.ts`: Hook 0 envolto em `LINK_GUARDIAN_ATIVO = false` ✅
+- [x] **IS-E1.2** TypeCheck: 0 erros ✅
+- [x] **IS-E1.3** Push 97e3473: Hook 0 desativado em produção ✅
+- [ ] **IS-E1.T-A** Teste 1.A (nova_sessao preserva turnos): pendente QA com Layla
+- [ ] **IS-E1.T-B** Teste 1.B (quiz proativo): pendente QA com Layla
+
+### Etapa 2 — Super Prova KB raiz ✅ (commit f956349)
+
+- [x] **IS-E2.1** `message.ts`: `if (temaEspecifico_A) atualizarSessao(..., { tema_atual: temaEspecifico_A })` adicionado ✅
+- [x] **IS-E2.2** TypeCheck: 0 erros ✅
+- [x] **IS-E2.3** Push f956349: tema específico persistido no banco ✅
+- [ ] **IS-E2.T-A** Teste 2.A (tema_atual específico no banco): pendente QA
+- [ ] **IS-E2.T-B** Teste 2.B (cache específico gerado): pendente QA
+- [ ] **IS-E2.T-C** Teste 2.C (reconexão usa KB correta): pendente QA
+
+### Etapa 3 — Link Guardian corrigido ✅ (commit 4f47f4b)
+
+- [x] **IS-E3.1** `message.ts`: `let linkKbSalvaNesteTurno = false` adicionado ✅
+- [x] **IS-E3.2** Branch A: `enviarEvento('agente', { agente: 'PSICOPEDAGOGICO' })` hardcoded ✅
+- [x] **IS-E3.3** Branch A: `persistirTurno(...)` com status 'PAUSA' adicionado antes do `return` ✅
+- [x] **IS-E3.4** Branch B: `linkKbSalvaNesteTurno = true` após `persistirKnowledgeBase()` ✅
+- [x] **IS-E3.5** `if (agente_override && !linkKbSalvaNesteTurno)` — override ignorado quando KB do link existe ✅
+- [x] **IS-E3.6** Hook 1 CASO B: `&& !linkKbSalvaNesteTurno` — não sobrescreve KB do link ✅
+- [x] **IS-E3.7** `LINK_GUARDIAN_ATIVO = true` ✅
+- [x] **IS-E3.8** TypeCheck: 0 erros ✅
+- [x] **IS-E3.9** Push 4f47f4b ✅
+- [ ] **IS-E3.T-A** Teste 3.A (Branch A = PSICO, turno PAUSA no banco): pendente QA
+- [ ] **IS-E3.T-B** Teste 3.B (Branch B força cascata PSICO→herói com KB link): pendente QA
+- [ ] **IS-E3.T-C** Teste 3.C (Hook 1 não sobrescreve KB após 2+ turnos): pendente QA
+- [ ] **IS-E3.T-D** Teste 3.D (regressão — fluxo normal sem link): pendente QA
+
+### Etapa 4 — Fechamento ✅
+
+- [x] **IS-E4.1** `docs/RELATORIO_CORRECAO_2026-04-14.md` criado ✅
+- [x] **IS-E4.2** `docs/LOG_EXECUCAO.md` criado e atualizado ✅
+- [x] **IS-E4.3** `docs/MEMORIA_CURTA.md` atualizado ✅
+- [x] **IS-E4.4** `docs/CHECKLIST_PROJETO.md` atualizado ✅
+
+---
+
+## Sessão 2026-04-15 — TEMPUS Truncation + investigarLink + ANTIRESPOSTA
+
+### Bug 1: TEMPUS truncação (commit 8e9883c)
+
+- [x] **T15-B1.1** Diagnóstico: `gemini-2.5-flash` thinking tokens consomem budget de `maxOutputTokens: 4000` → JSON truncado antes de `observacoes_internas`
+- [x] **T15-B1.2** Fix: `thinkingConfig: { thinkingBudget: 0 }` adicionado a `chamarLLMStream` em `llm.ts`
+- [x] **T15-B1.3** Confirmado: turnos 119-121 todos com `observacoes_internas` preenchido
+- [x] **T15-B1.4** TypeCheck: 0 erros ✅ | Push: 8e9883c ✅
+
+### Bug 2: Super Prova KB genérica (commit 8e9883c)
+
+- [x] **T15-B2.1** Diagnóstico: PSICO sem `super_prova_query` → tema_hash "historia" → cache 2026-04-04 (Grandes Navegações)
+- [x] **T15-B2.2** Fix: campo `"super_prova_query": null` + regras de preenchimento em PSICOPEDAGOGICO.md (2 pastas)
+- [x] **T15-B2.3** Confirmado: PSICO gerou `tema_hash: "redacaocronicanoticia"` no teste
+
+### investigarLink rewrite + F1 fallback (commit d04a93c)
+
+- [x] **T15-IL.1** Diagnóstico: googleSearch grounding buscava no Google, não fazia fetch direto → sites institucionais falhavam
+- [x] **T15-IL.2** Rewrite `investigar-link.ts`: `fetch()` nativo (10s timeout) + `stripHtml()` + Gemini sem tools + `thinkingBudget: 0`
+- [x] **T15-IL.3** F1: fallback KB em `message.ts` quando `investigarLink` retorna null — herói pede trecho ao aluno
+- [x] **T15-IL.4** TypeCheck: 0 erros ✅
+
+### ANTIRESPOSTA EXCEÇÃO nos 7 heróis (commit d04a93c)
+
+- [x] **T15-AR.1** VERBETTA: bloco `EXCEÇÃO — FRUSTRAÇÃO CLARA` + `MODO IRRESTRITO` adicionado (server + Prompts)
+- [x] **T15-AR.2** NEURON: mesmo bloco adicionado
+- [x] **T15-AR.3** TEMPUS: mesmo bloco adicionado
+- [x] **T15-AR.4** GAIA: mesmo bloco adicionado
+- [x] **T15-AR.5** VECTOR: mesmo bloco adicionado
+- [x] **T15-AR.6** ALKA: mesmo bloco adicionado
+- [x] **T15-AR.7** FLEX: mesmo bloco adicionado (versão adaptada: "praticar usando")
+- [x] **T15-AR.8** TypeCheck: 0 erros ✅ | Push: d04a93c ✅
+
+### Fallback automático fetch → Google Search (commit 4bb4787)
+
+- [x] **T15-FB.1** `investigar-link.ts`: `investigarLinkViaSearch()` (método antigo) como fallback
+- [x] **T15-FB.2** `investigarLinkComFallback()` exportada como `investigarLink` no index.ts — interface inalterada
+- [x] **T15-FB.3** Decisão: NÃO turbinar PSICO com extração de slug de link (baixo ganho, risco real)
+- [x] **T15-FB.4** TypeCheck: 0 erros ✅ | Push: 4bb4787 ✅
+
+### QA Pendente (próxima sessão)
+
+- [ ] **T15-QA.1** Teste 1.A: reload → turnos preservados
+- [ ] **T15-QA.2** Teste 2.A/B/C: tema específico no banco + cache + reconexão
+- [ ] **T15-QA.3** Testes 3.A/B/C/D: Link Guardian (Branch A, B, hook 1, regressão)
+- [ ] **T15-QA.4** Testes 4.A/B: ANTIRESPOSTA EXCEÇÃO VERBETTA
+- [ ] **T15-QA.5** Teste 4.C: investigarLink com link de site institucional
 
 ---
 

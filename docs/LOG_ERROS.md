@@ -206,7 +206,67 @@ _(Atualizar conforme erros se repetem)_
 
 **Lição:** Operadores aritméticos isolados NÃO devem ser keywords. O classificador LLM lida melhor com "2+3=?" do que keywords isoladas. Keywords = termos técnicos/expressões compostas.
 
-### Super Prova: Acervo Estático → Quiz Session-Aware
+---
+
+## Erros Críticos — 2026-04-13 (Link Guardian)
+
+> **ATENÇÃO:** Estes erros foram introduzidos hoje e o push NÃO foi feito. O código de produção ainda está na versão anterior. NÃO fazer push até resolução.
+
+### ERRO-LG-1: Branch A usa herói errado (agente_atual em vez de agente_override)
+
+| Campo | Valor |
+|-------|-------|
+| Data | 2026-04-13 |
+| Arquivo | `server/src/routes/message.ts`, Hook 0 Branch A |
+| Causa | `enviarEvento('agente', { agente: sessao.agente_atual })` ignora `agente_override` |
+| Impacto | GAIA aparece quando aluno está em TEMPUS, porque sessão anterior foi de GAIA |
+| Confirmado em | Teste real Layla — turno entre 103 e 104 |
+| Status | ❌ NÃO CORRIGIDO |
+| Correção | `const heroiBranchA = agente_override \|\| sessao.agente_atual \|\| 'PSICOPEDAGOGICO'` |
+
+### ERRO-LG-2: Branch B não força PSICO cascade
+
+| Campo | Valor |
+|-------|-------|
+| Data | 2026-04-13 |
+| Arquivo | `server/src/routes/message.ts`, Hook 0 Branch B |
+| Causa | Após `investigarLink`, o fluxo continua para `decidirPersona()` e `agente_override` bypassa PSICO |
+| Impacto | Herói responde sem plano pedagógico baseado no conteúdo do link |
+| Confirmado em | Teste real — TEMPUS entrou direto sem PSICO cascade no turno 104 |
+| Status | ❌ NÃO CORRIGIDO |
+| Correção | Forçar `persona = 'PSICOPEDAGOGICO'` no Branch B, ignorar `agente_override` neste turno |
+
+### ERRO-LG-3: Hook 1 sobrescreve KB do link (race condition)
+
+| Campo | Valor |
+|-------|-------|
+| Data | 2026-04-13 |
+| Arquivo | `server/src/routes/message.ts`, CASO B Hook 1 |
+| Causa | Hook 1 fire-and-forget detecta mudança de tema e chama `persistirKnowledgeBase` com acervo genérico cacheado, sobrescrevendo a KB do link |
+| Impacto | A partir do 2º turno, herói perde conhecimento do link e recebe acervo irrelevante |
+| Confirmado em | Banco: `super_prova_kb` mostra Grandes Navegações após sessão de Oriente Médio |
+| Status | ❌ NÃO CORRIGIDO |
+| Correção | Flag `linkKbSalva = true` no escopo — Hook 1 verifica `!linkKbSalva` antes de disparar |
+
+### ERRO-LG-4: Super Prova KB genérica — problema raiz (pré-existente, não resolvido)
+
+| Campo | Valor |
+|-------|-------|
+| Data | Identificado em múltiplas sessões, nunca resolvido |
+| Arquivo | `server/src/super-prova/index.ts`, `gerar-acervo.ts` |
+| Causa | Cache usa `tema_hash` genérico ("historia", "geografia"). Uma vez cacheado, o acervo genérico é reutilizado em todas as sessões da mesma matéria |
+| Impacto | Super Prova nunca entregou KB específica de forma confiável. Link Guardian foi construído em cima deste sistema quebrado |
+| Confirmado em | Banco: `super_prova_kb` com Grandes Navegações após sessão sobre Oriente Médio |
+| Status | ❌ NÃO CORRIGIDO — problema raiz |
+| Correção | Redesenhar cache para usar tema específico (vindo do PSICO) como chave, não tema genérico do router |
+
+### LIÇÃO DO DIA: Não construir funcionalidade nova sobre fundação defeituosa
+
+Antes de implementar Link Guardian, o Super Prova KB já tinha o ERRO-LG-4. A decisão correta era resolver o ERRO-LG-4 primeiro. Ao construir Link Guardian em cima de Super Prova quebrado, os erros se somaram e ficaram mais difíceis de diagnosticar.
+
+---
+
+## Super Prova: Acervo Estático → Quiz Session-Aware
 
 **Contexto:** `b2c_super_prova_acervo` tem 1 entrada VERBETTA 7_fund criada em 2026-04-04, genérica ("portugues"). Quiz enviado para Layla não refletia a sessão real. VERBETTA nunca viu resultados.
 
@@ -221,3 +281,20 @@ _(Atualizar conforme erros se repetem)_
 **Princípio:** Sessão sem estrutura = conversa aberta = aluno se perde. PSICO deve qualificar tópicos antes de encaminhar ao herói quando o subtema está indefinido.
 
 **CUIDADO:** A qualificação de tópicos não deve ser burocrática. 1 pergunta curta e direta. Se o aluno trouxe enunciado específico, pular direto para o herói.
+
+---
+
+## Erros Identificados e Resolvidos — Sessão Real Layla (2026-04-15)
+
+| # | Data | Fase | Descrição | Causa Raiz | Correção | Status |
+|---|------|------|-----------|------------|----------|--------|
+| 62 | 2026-04-15 | Produção | **TEMPUS parava no meio da frase (turnos 114, 117)** — `observacoes_internas: null` no banco, resposta ao aluno truncada no meio de uma sentença, herói se repetia ao continuar | `gemini-2.5-flash` é modelo de pensamento. Tokens de thinking consumiam o budget de `maxOutputTokens: 4000`. JSON era cortado antes do campo `observacoes_internas`. `response-processor.ts` Camada 3 (regex) extraía texto parcial do JSON truncado — explicando por que texto aparecia em vez da mensagem de fallback | `thinkingConfig: { thinkingBudget: 0 }` adicionado em `chamarLLMStream` (llm.ts). Heróis não precisam de thinking — PSICO já planeja antes. Confirmado: turnos 119-121 completos. Commit 8e9883c ✅ | ✅ Resolvido |
+| 63 | 2026-04-15 | Produção | **Super Prova servindo KB errada para tema específico** — VERBETTA recebia conteúdo sobre União Ibérica quando deveria ser sobre "Redação: Crônica e Notícia" | PSICO não preenchia `super_prova_query` → `temaEspecifico_A` usava `temaDetectado` ("portugues") → cache hit no acervo genérico de "portugues" criado em 2026-04-04 | Campo `"super_prova_query": null` + seção "SUPER PROVA QUERY — QUANDO PREENCHER" adicionados ao PSICOPEDAGOGICO.md (ambas as pastas). Commit 8e9883c ✅. Confirmado: gerou `tema_hash: "redacaocronicanoticia"` | ✅ Resolvido |
+| 64 | 2026-04-15 | Produção | **investigarLink retornava null para link da OIM Brazil** — Branch B silenciosamente falhava, herói recebia KB vazia sobre o link | `investigarLink` usava `tools: [{ googleSearch: {} }]` — faz busca no Google, não fetch direto da URL. Site iom.int/br não está bem indexado no Google Search da API | Rewrite completo: `fetch()` nativo com AbortController (10s timeout) + `stripHtml()` + Gemini `generateContent` sem tools + `thinkingBudget: 0`. Fallback automático para googleSearch se fetch falhar. F1: KB fallback quando ambos falham, instrui herói a pedir trecho ao aluno. Commits d04a93c + 4bb4787 ✅ | ✅ Resolvido |
+| 65 | 2026-04-15 | Produção | **VERBETTA defensivamente construtivista em excesso** — aluno frustrado não recebe ajuda mesmo após 3+ tentativas frustradas | 6 dos 8 heróis tinham apenas `REGRA PADRÃO` no ANTIRESPOSTA, sem `EXCEÇÃO — FRUSTRAÇÃO CLARA` nem `MODO IRRESTRITO`. Somente CALCULUS tinha o sistema completo | Bloco `EXCEÇÃO — FRUSTRAÇÃO CLARA (1x por interação)` + `MODO IRRESTRITO` adicionado a VERBETTA, NEURON, TEMPUS, GAIA, VECTOR, ALKA, FLEX — em `server/src/personas/` e `Prompts/` (14 arquivos). Commit d04a93c ✅ | ✅ Resolvido |
+
+## Padrões de Erro — Novos (2026-04-15)
+
+- **Gemini 2.5 Flash + thinking tokens:** `gemini-2.5-flash` é modelo de pensamento. Thinking consome tokens do budget de output. SEMPRE incluir `thinkingConfig: { thinkingBudget: 0 }` para heróis (que não precisam de thinking — PSICO planeja). Apenas PSICO pode usar thinking se necessário.
+- **googleSearch grounding ≠ fetch direto:** `tools: [{ googleSearch: {} }]` no Gemini faz o modelo BUSCAR no Google, não acessar a URL diretamente. Para sites não indexados (institucionais, NGOs, artigos recentes), sempre usar `fetch()` nativo + stripHtml.
+- **PSICO `super_prova_query`:** campo obrigatório para Super Prova funcionar com tema específico. Sem ele, temaDetectado (genérico) vira chave do cache → KB errada. PSICO DEVE preencher quando identificar subtema específico.
