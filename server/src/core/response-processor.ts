@@ -15,6 +15,21 @@ export interface SinaisPedagogicos {
   observacoes_internas: string | null
 }
 
+// ── Plano Universal (Método Universal — progressão de tópicos) ──
+export interface PlanoUniversalTopico {
+  id: number
+  nome: string
+  status: 'pendente' | 'em_progresso' | 'concluido'
+}
+
+export interface PlanoUniversal {
+  ativo: boolean
+  topicos: PlanoUniversalTopico[]
+  topico_atual_id: number
+  total: number
+  fechar_com_quiz: boolean
+}
+
 export interface IntencaoCascata {
   acao: string
   heroi_escolhido: string | null
@@ -22,6 +37,7 @@ export interface IntencaoCascata {
   instrucoes_para_heroi: string | null
   resposta_para_aluno: string | null
   super_prova_query: string | null  // Tópico específico para Super Prova (ex: "quilombos_atualidade")
+  plano_universal: PlanoUniversal | null  // Plano de tópicos sequenciais (Método Universal)
 }
 
 export interface ProcessedResponse {
@@ -149,7 +165,8 @@ function extrairCascata(json: Record<string, unknown>): IntencaoCascata | null {
     plano_atendimento: (json.plano_atendimento ?? json.plano_pedagogico ?? json.plano ?? null) as Record<string, unknown> | null,
     instrucoes_para_heroi: (json.instrucoes_para_heroi ?? json.instrucoes_para_agente ?? json.instrucoes ?? null) as string | null,
     resposta_para_aluno: (json.resposta_para_aluno ?? null) as string | null,
-    super_prova_query: (json.super_prova_query ?? null) as string | null
+    super_prova_query: (json.super_prova_query ?? null) as string | null,
+    plano_universal: (json.plano_universal ?? null) as PlanoUniversal | null
   }
 }
 
@@ -200,12 +217,14 @@ function extrairPorRegex(raw: string): { texto: string | null; sinais: SinaisPed
       plano_atendimento: null, // Muito complexo para regex
       instrucoes_para_heroi: instrucoesMatch ? instrucoesMatch[1] : null,
       resposta_para_aluno: respostaMatch ? respostaMatch[1]?.replace(/\\n/g, '\n').replace(/\\"/g, '"') : null,
-      super_prova_query: null  // Regex fallback não extrai super_prova_query
+      super_prova_query: null, // Regex fallback não extrai super_prova_query
+      plano_universal: null    // Regex fallback não extrai plano_universal
     }
 
     // Se temos resposta_para_aluno na cascata, pode ser o texto
-    if (!texto && cascata.resposta_para_aluno) {
-      texto = cascata.resposta_para_aluno
+    const respostaParaAluno = cascata.resposta_para_aluno
+    if (!texto && respostaParaAluno) {
+      texto = respostaParaAluno
     }
   }
 

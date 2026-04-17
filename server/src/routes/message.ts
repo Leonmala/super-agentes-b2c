@@ -274,6 +274,12 @@ router.post('/message', async (req: Request, res: Response) => {
       mensagem, sessao, ultimosTurnos, nova_sessao === true
     )
 
+    // Chunk 5 — Branch B: link KB salva + sem plano ativo → forçar PSICO cascade para criar plano
+    if (linkKbSalvaNesteTurno && !sessao.plano_ativo) {
+      persona = 'PSICOPEDAGOGICO'
+      console.log(`[${aluno_id}] Branch B: KB de link + sem plano → PSICO cascade`)
+    }
+
     // Se agente_override fornecido (para SUPERVISOR_EDUCACIONAL, PROFESSOR_IA, ou herói direto)
     // Ignorar quando KB do link foi salva neste turno — forçar PSICO cascade para montar plano pedagógico
     if (agente_override && !linkKbSalvaNesteTurno) {
@@ -411,14 +417,17 @@ router.post('/message', async (req: Request, res: Response) => {
           }
           // ────────────────────────────────────────────────────────────────────
 
-          // Extrair plano do pipeline processado (com fallback para JSON original)
-          const planoObj = cascata?.plano_atendimento
+          // Extrair plano do pipeline — priorizar plano_universal (Método Universal)
+          const planoUniversalObj = cascata?.plano_universal ?? null
+          const planoAtendimentoObj = cascata?.plano_atendimento
             || respostaJSON?.plano_atendimento
             || respostaJSON?.plano_pedagogico
             || respostaJSON?.plano
             || null
-          if (planoObj) {
-            plano = JSON.stringify(planoObj, null, 2)
+          if (planoUniversalObj) {
+            plano = JSON.stringify(planoUniversalObj)  // compact — parseado por context.ts
+          } else if (planoAtendimentoObj) {
+            plano = JSON.stringify(planoAtendimentoObj, null, 2)
           }
           // Extrair instruções do pipeline processado (com fallback para JSON original)
           const instrucoesRaw = cascata?.instrucoes_para_heroi
@@ -541,6 +550,57 @@ router.post('/message', async (req: Request, res: Response) => {
             }
           }
           // ────────────────────────────────────────────────────────────────────
+
+          // ── MÉTODO UNIVERSAL: avançar_topico (CASO A) ──────────────────────────
+          {
+            const heroJsonMU = resultadoHeroi.processed.jsonOriginal
+            if (heroJsonMU?.['avançar_topico'] === true) {
+              const planoAtivoStr = plano || sessao.plano_ativo
+              if (planoAtivoStr) {
+                try {
+                  const planoMU = JSON.parse(planoAtivoStr) as Record<string, unknown>
+                  if (planoMU.ativo === true && Array.isArray(planoMU.topicos) && typeof planoMU.topico_atual_id === 'number') {
+                    type TopicoMU = { id: number; nome: string; status: string }
+                    const topicosMU = planoMU.topicos as TopicoMU[]
+                    const topicoAtualMU = topicosMU.find(t => t.id === planoMU.topico_atual_id)
+                    if (topicoAtualMU) topicoAtualMU.status = 'concluido'
+                    const proximoMU = topicosMU.find(t => t.status === 'pendente')
+                    if (proximoMU) {
+                      proximoMU.status = 'em_progresso'
+                      planoMU.topico_atual_id = proximoMU.id
+                      const planoAtualizado = JSON.stringify(planoMU)
+                      plano = planoAtualizado
+                      sessao.plano_ativo = planoAtualizado
+                      console.log(`[MetodoUniversal] CasoA: avançando → tópico ${proximoMU.id} "${proximoMU.nome}"`)
+                      enviarEvento('topico_avancado', { topico: proximoMU.nome, id: proximoMU.id })
+                    } else {
+                      // Todos os tópicos concluídos → QUIZ automático
+                      planoMU.ativo = false
+                      const planoFinalizado = JSON.stringify(planoMU)
+                      plano = planoFinalizado
+                      sessao.plano_ativo = planoFinalizado
+                      console.log(`[MetodoUniversal] CasoA: plano concluído — disparando QUIZ automático`)
+                      const temaQuizMU = temaEspecifico_A || temaDetectado || sessao.tema_atual || ''
+                      const resumoMU = ultimosTurnos
+                        .map(t => `[${t.agente}] Aluno: ${t.entrada.slice(0, 200)} | Herói: ${t.resposta.slice(0, 400)}`)
+                        .join('\n')
+                      quizSsePromise = processarQuiz(temaQuizMU, aluno.serie || '7ano', heroiEscolhido, resumoMU)
+                        .then(quiz => {
+                          if (quiz) {
+                            console.log(`[MetodoUniversal] Quiz enviado (CasoA) — ${quiz.questoes.length} questões`)
+                            res.write(`event: quiz\ndata: ${JSON.stringify(quiz)}\n\n`)
+                          }
+                        })
+                        .catch(() => {})
+                    }
+                  }
+                } catch {
+                  console.log('[MetodoUniversal] Erro ao processar avançar_topico (CasoA)')
+                }
+              }
+            }
+          }
+          // ── FIM MÉTODO UNIVERSAL (CASO A) ────────────────────────────────────
 
           chamadasMetricas.push({
             persona: heroiEscolhido,
@@ -808,6 +868,57 @@ router.post('/message', async (req: Request, res: Response) => {
         }
       }
       // ────────────────────────────────────────────────────────────────────────
+
+      // ── MÉTODO UNIVERSAL: avançar_topico (CASO B) ──────────────────────────
+      if (HEROIS_VALIDOS.includes(persona)) {
+        const heroJsonMU_B = resultadoHeroi.processed.jsonOriginal
+        if (heroJsonMU_B?.['avançar_topico'] === true) {
+          const planoAtivoStr_B = plano || sessao.plano_ativo
+          if (planoAtivoStr_B) {
+            try {
+              const planoMU_B = JSON.parse(planoAtivoStr_B) as Record<string, unknown>
+              if (planoMU_B.ativo === true && Array.isArray(planoMU_B.topicos) && typeof planoMU_B.topico_atual_id === 'number') {
+                type TopicoMU_B = { id: number; nome: string; status: string }
+                const topicosMU_B = planoMU_B.topicos as TopicoMU_B[]
+                const topicoAtualMU_B = topicosMU_B.find(t => t.id === planoMU_B.topico_atual_id)
+                if (topicoAtualMU_B) topicoAtualMU_B.status = 'concluido'
+                const proximoMU_B = topicosMU_B.find(t => t.status === 'pendente')
+                if (proximoMU_B) {
+                  proximoMU_B.status = 'em_progresso'
+                  planoMU_B.topico_atual_id = proximoMU_B.id
+                  const planoAtualizado_B = JSON.stringify(planoMU_B)
+                  plano = planoAtualizado_B
+                  sessao.plano_ativo = planoAtualizado_B
+                  console.log(`[MetodoUniversal] CasoB: avançando → tópico ${proximoMU_B.id} "${proximoMU_B.nome}"`)
+                  enviarEvento('topico_avancado', { topico: proximoMU_B.nome, id: proximoMU_B.id })
+                } else {
+                  // Todos os tópicos concluídos → QUIZ automático
+                  planoMU_B.ativo = false
+                  const planoFinalizado_B = JSON.stringify(planoMU_B)
+                  plano = planoFinalizado_B
+                  sessao.plano_ativo = planoFinalizado_B
+                  console.log(`[MetodoUniversal] CasoB: plano concluído — disparando QUIZ automático`)
+                  const temaQuizMU_B = temaDetectado || sessao.tema_atual || ''
+                  const resumoMU_B = ultimosTurnos
+                    .map(t => `[${t.agente}] Aluno: ${t.entrada.slice(0, 200)} | Herói: ${t.resposta.slice(0, 400)}`)
+                    .join('\n')
+                  quizSsePromise = processarQuiz(temaQuizMU_B, aluno.serie || '7ano', persona, resumoMU_B)
+                    .then(quiz => {
+                      if (quiz) {
+                        console.log(`[MetodoUniversal] Quiz enviado (CasoB) — ${quiz.questoes.length} questões`)
+                        res.write(`event: quiz\ndata: ${JSON.stringify(quiz)}\n\n`)
+                      }
+                    })
+                    .catch(() => {})
+                }
+              }
+            } catch {
+              console.log('[MetodoUniversal] Erro ao processar avançar_topico (CasoB)')
+            }
+          }
+        }
+      }
+      // ── FIM MÉTODO UNIVERSAL (CASO B) ────────────────────────────────────
 
       chamadasMetricas.push({
         persona,

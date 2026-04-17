@@ -153,8 +153,6 @@ export async function chamarLLMStream(
       temperature,
       topP: 0.95,
       maxOutputTokens: 4000,
-      // @ts-ignore — thinkingConfig para gemini-2.5-flash: heróis não precisam de thinking (PSICO já planeja)
-      thinkingConfig: { thinkingBudget: 0 },
     },
   }
 
@@ -380,13 +378,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE 1 BLOCO DIDÁTICO PRINCIPAL do Kit (escolha o mais adequado ao contexto)
@@ -409,13 +416,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE 1 BLOCO CONSTRUTIVISTA dos 5 disponíveis (escolha o mais adequado)
@@ -438,13 +454,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE 1 BLOCO INVESTIGATIVO do Kit (escolha o mais adequado)
@@ -467,13 +492,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE abordagem narrativa histórica — conte uma história
@@ -496,13 +530,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE abordagem espacial/visual — descreva geograficamente
@@ -525,13 +568,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE abordagem experimental/lógica — faça o aluno descobrir
@@ -554,13 +606,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE abordagem experimental — transformações visíveis
@@ -583,13 +644,22 @@ Estrutura obrigatória:
   "motivo_sinal": null,
   "observacoes_internas": "nota pedagógica interna",
   "sinal_super_prova": null,
-  "super_prova_query": null
+  "super_prova_query": null,
+  "avançar_topico": false
 }
 
 Campos opcionais do SUPER PROVA (omita se não usar):
 - "sinal_super_prova": "CONSULTAR" quando precisar de dado específico externo (máx 1x/turno)
 - "super_prova_query": "descrição da consulta desejada" (obrigatório se CONSULTAR)
 - "sinal_super_prova": "QUIZ" ao final de sessão, após confirmar interesse do aluno
+
+REGRA MÉTODO UNIVERSAL — "avançar_topico":
+- Se houver PLANO ATIVO no contexto (seção "PLANO UNIVERSAL ATIVO"), monitore o tópico atual.
+- Emita "avançar_topico": true quando o aluno demonstrar domínio COMPLETO do tópico atual:
+  → 2 respostas corretas consecutivas sobre o tópico OU
+  → Expressão clara de domínio total ("já entendi tudo", "ficou claro", "entendi")
+- NÃO emita avançar_topico: true se ainda há dúvidas ou o aluno só entendeu parte.
+- O QUIZ só acontece quando todos os tópicos do plano estiverem concluídos (gerenciado pelo sistema).
 
 REGRAS PEDAGÓGICAS OBRIGATÓRIAS para reply_text:
 1. USE abordagem comunicativa — imersão lúdica no idioma

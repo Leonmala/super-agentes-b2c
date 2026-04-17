@@ -37,10 +37,52 @@ export function montarContexto(
     partes.push(`TEMA ATUAL: ${sessao.tema_atual}`)
   }
 
-  // Plano ativo (se existir)
+  // Plano ativo (se existir) — injeta de forma estruturada para o herói
   if (sessao.plano_ativo) {
-    partes.push(`PLANO ATIVO: ${sessao.plano_ativo}`)
-    partes.push(`INSTRUÇÃO: Siga o plano acima fielmente.`)
+    try {
+      const planoObj = JSON.parse(sessao.plano_ativo) as Record<string, unknown>
+      // Detectar se é um plano_universal (Método Universal)
+      if (
+        planoObj.ativo === true &&
+        Array.isArray(planoObj.topicos) &&
+        typeof planoObj.topico_atual_id === 'number'
+      ) {
+        const topicos = planoObj.topicos as Array<{ id: number; nome: string; status: string }>
+        const topicoAtual = topicos.find(t => t.id === planoObj.topico_atual_id)
+        const pendentes = topicos.filter(t => t.status !== 'concluido')
+        const concluidos = topicos.filter(t => t.status === 'concluido')
+        const ehUltimo = pendentes.length === 1 && topicoAtual && topicoAtual.status !== 'concluido'
+
+        partes.push('')
+        partes.push('═══════════════════════════════════════════')
+        partes.push('PLANO UNIVERSAL ATIVO — MÉTODO UNIVERSAL')
+        partes.push('═══════════════════════════════════════════')
+        partes.push(`TÓPICO ATUAL: ${topicoAtual ? topicoAtual.nome : 'Desconhecido'}`)
+        partes.push(`PROGRESSO: ${concluidos.length}/${topicos.length} tópicos concluídos`)
+        if (pendentes.length > 1) {
+          const proximosNomes = pendentes.slice(1).map(t => t.nome).join(' → ')
+          partes.push(`PRÓXIMOS TÓPICOS: ${proximosNomes}`)
+        }
+        if (ehUltimo) {
+          partes.push(`⚡ ESTE É O ÚLTIMO TÓPICO. Ao concluir, o sistema emitirá o QUIZ automaticamente.`)
+        }
+        partes.push('')
+        partes.push('INSTRUÇÃO OBRIGATÓRIA — MÉTODO UNIVERSAL:')
+        partes.push(`1. Ensine APENAS o tópico atual: "${topicoAtual ? topicoAtual.nome : ''}"`)
+        partes.push('2. Monitore o domínio: 2 respostas corretas consecutivas OU "já entendi tudo" → emita avançar_topico: true')
+        partes.push('3. NÃO emita avançar_topico: true se o aluno ainda tem dúvidas')
+        partes.push('4. QUIZ só é disparado pelo sistema ao final de TODOS os tópicos — não peça quiz você mesmo')
+        partes.push('═══════════════════════════════════════════')
+      } else {
+        // plano_atendimento convencional (PSICO sem método universal)
+        partes.push(`PLANO ATIVO: ${sessao.plano_ativo}`)
+        partes.push(`INSTRUÇÃO: Siga o plano acima fielmente.`)
+      }
+    } catch {
+      // JSON inválido — exibir cru
+      partes.push(`PLANO ATIVO: ${sessao.plano_ativo}`)
+      partes.push(`INSTRUÇÃO: Siga o plano acima fielmente.`)
+    }
   } else {
     partes.push(`PLANO ATIVO: Nenhum — qualificar primeiro`)
   }
